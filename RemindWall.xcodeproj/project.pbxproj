@@ -14,6 +14,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		BFE331172C4440CA0095F675 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		BFE60AD02C4418E200E8AB67 /* RemindWall.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RemindWall.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BFE60AD32C4418E200E8AB67 /* RemindWallApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindWallApp.swift; sourceTree = "<group>"; };
 		BFE60AD92C4418E300E8AB67 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -57,6 +58,7 @@
 		BFE60AD22C4418E200E8AB67 /* RemindWall */ = {
 			isa = PBXGroup;
 			children = (
+				BFE331172C4440CA0095F675 /* Info.plist */,
 				BFE60AD32C4418E200E8AB67 /* RemindWallApp.swift */,
 				BFE60AD92C4418E300E8AB67 /* Assets.xcassets */,
 				BFE60ADB2C4418E300E8AB67 /* RemindWall.entitlements */,
@@ -293,10 +295,13 @@
 				DEVELOPMENT_ASSET_PATHS = "\"RemindWall/Preview Content\"";
 				DEVELOPMENT_TEAM = G53N9PU948;
 				ENABLE_HARDENED_RUNTIME = YES;
+				"ENABLE_HARDENED_RUNTIME[sdk=macosx*]" = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = RemindWall/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = RemindWall;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "The application idles by showing a slideshow";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -334,10 +339,13 @@
 				DEVELOPMENT_ASSET_PATHS = "\"RemindWall/Preview Content\"";
 				DEVELOPMENT_TEAM = G53N9PU948;
 				ENABLE_HARDENED_RUNTIME = YES;
+				"ENABLE_HARDENED_RUNTIME[sdk=macosx*]" = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = RemindWall/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = RemindWall;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "The application idles by showing a slideshow";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;

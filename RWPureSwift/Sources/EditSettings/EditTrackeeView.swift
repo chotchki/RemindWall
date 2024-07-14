@@ -9,6 +9,7 @@ import SwiftData
 import SwiftUI
 
 struct EditTrackeeView: View {
+    @Environment(\.calendar) var calendar
     @Environment(\.dismiss) var dismiss
     @Bindable var trackee: Trackee
     
@@ -23,7 +24,7 @@ struct EditTrackeeView: View {
                     List {
                         ForEach($trackee.reminderTimes){ reminderTime in
                             HStack{
-                                Picker("Day", selection: reminderTime.components.weekday){
+                                Picker("Day", selection: reminderTime.weekDay){
                                     Text("Sunday").tag(1)
                                     Text("Monday").tag(2)
                                     Text("Tuesday").tag(3)
@@ -32,6 +33,8 @@ struct EditTrackeeView: View {
                                     Text("Friday").tag(6)
                                     Text("Saturday").tag(7)
                                 }
+                                
+                                TimePicker(calendar: calendar, hour: reminderTime.hour, minute: reminderTime.minute)
                             }
                         }
                         Button("Add New Reminder"){

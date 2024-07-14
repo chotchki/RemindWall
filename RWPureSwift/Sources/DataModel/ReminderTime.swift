@@ -8,17 +8,25 @@ public class ReminderTime: Equatable, Identifiable {
     
     public var lastScan: Date?
     
-    public var components: DateComponents
+    public var weekDay: Int
+    public var hour: Int
+    public var minute: Int
     
-    public init(){
+    public init() {
         self.id = UUID()
-        self.components = DateComponents()
+        self.associatedTag = nil
+        self.lastScan = nil
+        self.weekDay = 1
+        self.hour = 1
+        self.minute = 1
     }
     
-    public init(id: UUID, associatedTag: [UInt8]? = nil, lastScan: Date? = nil, components: DateComponents) {
+    public init(id: UUID, associatedTag: [UInt8]? = nil, lastScan: Date? = nil, weekDay: Int, hour: Int, minute: Int) {
         self.id = id
         self.associatedTag = associatedTag
         self.lastScan = lastScan
-        self.components = components
+        self.weekDay = weekDay
+        self.hour = hour
+        self.minute = minute
     }
 }
