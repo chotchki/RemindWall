@@ -27,7 +27,7 @@ struct TimePicker: View {
     }
     
     var body: some View {
-        DatePicker("Reminder Day of Week and Time", selection: $internalTime,
+        DatePicker("Reminder Hour and Minute", selection: $internalTime,
                    displayedComponents: .hourAndMinute)
             .pickerStyle(.wheel)
             .labelsHidden()
