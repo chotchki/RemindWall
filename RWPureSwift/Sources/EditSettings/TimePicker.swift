@@ -8,24 +8,21 @@
 import SwiftUI
 
 struct TimePicker: View {
-    @Binding var selectedTime: DateComponents
+    @Binding var hour: Int
+    @Binding var minute: Int
     
     private var calendar: Calendar
     @State private var internalTime: Date
     
-    public init(calendar: Calendar, selectedTime: Binding<DateComponents>) {
+    public init(calendar: Calendar, hour: Binding<Int>, minute: Binding<Int>) {
         self.calendar = calendar
-        self._selectedTime = selectedTime
-        
-        guard let hour = selectedTime.wrappedValue.hour, let minute = selectedTime.wrappedValue.minute else {
-            self.internalTime = Date.now
-            return
-        }
+        self._hour = hour
+        self._minute = minute
         
         var iTime = Date.now
 
-        iTime = calendar.date(bySetting: .hour, value: hour, of: iTime) ?? iTime
-        iTime = calendar.date(bySetting: .minute, value: minute, of: iTime) ?? iTime
+        iTime = calendar.date(bySetting: .hour, value: hour.wrappedValue, of: iTime) ?? iTime
+        iTime = calendar.date(bySetting: .minute, value: minute.wrappedValue, of: iTime) ?? iTime
         self.internalTime = iTime
     }
     
@@ -37,17 +34,25 @@ struct TimePicker: View {
             .onSubmit {
                 let components = calendar.dateComponents([.hour, .minute], from: internalTime)
                 if let hour = components.hour {
-                    selectedTime.hour = hour
+                    self.hour = hour
                 }
                 if let minute = components.minute {
-                    selectedTime.minute = minute
+                    self.minute = minute
                 }
             }
     }
 }
 
-#Preview {
+#Preview("Morning") {
     @Environment(\.calendar) var calendar
-    @State var d = DateComponents()
-    return TimePicker(calendar: calendar, selectedTime: $d)
+    @State var hour = 2
+    @State var minute = 10
+    return TimePicker(calendar: calendar, hour: $hour, minute: $minute)
+}
+
+#Preview("Afternoon") {
+    @Environment(\.calendar) var calendar
+    @State var hour = 14
+    @State var minute = 10
+    return TimePicker(calendar: calendar, hour: $hour, minute: $minute)
 }
