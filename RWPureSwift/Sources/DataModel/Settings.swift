@@ -15,3 +15,13 @@ public class Settings: Equatable {
         self.selectedCalendarId = selectedCalendarId
     }
 }
+
+///Technique from here: https://stackoverflow.com/a/77775620
+extension Settings {
+    @MainActor
+    public static var preview: ModelContainer {
+        let container  = DataSchema.previewContainer
+        container.mainContext.insert(Settings())
+        return container
+    }
+}

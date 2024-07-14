@@ -30,3 +30,13 @@ public class ReminderTime: Equatable, Identifiable {
         self.minute = minute
     }
 }
+
+///Technique from here: https://stackoverflow.com/a/77775620
+extension ReminderTime {
+    @MainActor
+    public static var preview: ModelContainer {
+        let container  = DataSchema.previewContainer
+        container.mainContext.insert(ReminderTime())
+        return container
+    }
+}

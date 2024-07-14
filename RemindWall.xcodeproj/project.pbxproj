@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		BF4E60BF2C44458200BAC4F2 /* EditSettings in Frameworks */ = {isa = PBXBuildFile; productRef = BF4E60BE2C44458200BAC4F2 /* EditSettings */; };
 		BFE60AD42C4418E200E8AB67 /* RemindWallApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFE60AD32C4418E200E8AB67 /* RemindWallApp.swift */; };
 		BFE60ADA2C4418E300E8AB67 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BFE60AD92C4418E300E8AB67 /* Assets.xcassets */; };
 		BFE60ADE2C4418E300E8AB67 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BFE60ADD2C4418E300E8AB67 /* Preview Assets.xcassets */; };
@@ -30,6 +31,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				BFE60AE92C441A0900E8AB67 /* AppNavigation in Frameworks */,
+				BF4E60BF2C44458200BAC4F2 /* EditSettings in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -108,6 +110,7 @@
 			name = RemindWall;
 			packageProductDependencies = (
 				BFE60AE82C441A0900E8AB67 /* AppNavigation */,
+				BF4E60BE2C44458200BAC4F2 /* EditSettings */,
 			);
 			productName = RemindWall;
 			productReference = BFE60AD02C4418E200E8AB67 /* RemindWall.app */;
@@ -287,6 +290,7 @@
 		BFE60AE22C4418E300E8AB67 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = arm64;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = RemindWall/RemindWall.entitlements;
@@ -331,6 +335,7 @@
 		BFE60AE32C4418E300E8AB67 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = arm64;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = RemindWall/RemindWall.entitlements;
@@ -396,6 +401,10 @@
 /* End XCConfigurationList section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		BF4E60BE2C44458200BAC4F2 /* EditSettings */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = EditSettings;
+		};
 		BFE60AE82C441A0900E8AB67 /* AppNavigation */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AppNavigation;

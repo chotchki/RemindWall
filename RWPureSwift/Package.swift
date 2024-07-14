@@ -13,6 +13,9 @@ let package = Package(
         .library(name: "EditSettings", targets: ["EditSettings"]),
         .library(name: "Utility", targets: ["Utility"]),
     ],
+    dependencies: [
+        .package(url: "https://github.com/chotchki/LibNFCSwift.git", from: "0.1.0"),
+    ],
     targets: [
         .target(name: "AppNavigation", dependencies: [.target(name: "CheckPermissions"), .target(name: "EditSettings")]),
         .target(name: "CheckPermissions", dependencies: [.target(name: "Utility")]),
@@ -20,8 +23,10 @@ let package = Package(
         .testTarget(name: "DataModelTests", dependencies: [.target(name: "DataModel")]),
         .target(name: "EditSettings",
                 dependencies: [
+                    .product(name: "LibNFCSwift", package: "LibNFCSwift" , condition: .when(platforms: [.macCatalyst])),
                     .target(name: "DataModel"),
-                    .target(name: "Utility")
+                    .target(name: "Utility"),
+                    
                 ]),
         .target(name: "Utility"),
     ]

@@ -7,7 +7,6 @@ import Utility
 @MainActor
 public struct EditSettingsView: View {
     @Environment(\.dismiss) var dismiss
-    @Environment(\.modelContext) var modelContext
     
     private static func baseFetchOptions() -> PHFetchOptions {
         // From: https://stackoverflow.com/a/49495326/160208
@@ -67,6 +66,10 @@ public struct EditSettingsView: View {
 }
 
 #Preview {
-    @State var settings = Settings()
-    return EditSettingsView(settings: Bindable(settings))
+    let container = Settings.preview
+    let first = try! container.mainContext.fetch(FetchDescriptor<Settings>()).first!
+
+    return NavigationStack {
+        EditSettingsView(settings: Bindable(first))
+    }.modelContainer(container)
 }

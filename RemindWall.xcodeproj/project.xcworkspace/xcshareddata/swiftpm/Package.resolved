@@ -1,0 +1,15 @@
+{
+  "originHash" : "28fa131de2c2fe9598ece8b8cbb4e6fda9cb6e9b0dfc8306b08accc108942a16",
+  "pins" : [
+    {
+      "identity" : "libnfcswift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/chotchki/LibNFCSwift.git",
+      "state" : {
+        "revision" : "58be390474973aa39e7640044d6ede585937e2d2",
+        "version" : "0.1.0"
+      }
+    }
+  ],
+  "version" : 3
+}

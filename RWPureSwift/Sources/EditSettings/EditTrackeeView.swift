@@ -10,14 +10,21 @@ import SwiftUI
 
 struct EditTrackeeView: View {
     @Environment(\.calendar) var calendar
+    @Environment(\.modelContext) var context
     @Environment(\.dismiss) var dismiss
     @Bindable var trackee: Trackee
+    
+    public init(trackee: Bindable<Trackee>) {
+        self._trackee = trackee
+    }
     
     var body: some View {
         NavigationStack{
             Form{
                 Section {
                     TextField("Name", text: $trackee.name)
+                } header: {
+                    Text("Name")
                 }
                 
                 Section {
@@ -35,6 +42,11 @@ struct EditTrackeeView: View {
                                 }
                                 
                                 TimePicker(calendar: calendar, hour: reminderTime.hour, minute: reminderTime.minute)
+                                
+                                #if canImport(LibNFCSwift)
+                                Spacer()
+                                AssociateTag(associatedTag: reminderTime.associatedTag)
+                                #endif
                             }
                         }
                         Button("Add New Reminder"){
@@ -60,13 +72,11 @@ struct EditTrackeeView: View {
 }
 
 #Preview {
-    let config = ModelConfiguration(isStoredInMemoryOnly: true)
-    let container = try! ModelContainer(for: Trackee.self, configurations: config)
-
-    @State var trackee = Trackee(
-        id: UUID(),
-        name: "Bob",
-        reminderTimes: []
-    )
-    return EditTrackeeView(trackee: trackee).modelContainer(container)
+    let container = Trackee.preview
+    
+    let first = try! container.mainContext.fetch(FetchDescriptor<Trackee>()).first!
+    
+    return NavigationStack {
+        EditTrackeeView(trackee: Bindable(first))
+    }.modelContainer(container)
 }

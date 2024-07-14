@@ -19,3 +19,15 @@ public class Trackee: Comparable, Identifiable, Equatable {
         lhs.name < rhs.name
     }
 }
+
+///Technique from here: https://stackoverflow.com/a/77775620
+extension Trackee {
+    @MainActor
+    public static var preview: ModelContainer {
+        let container  = DataSchema.previewContainer
+        container.mainContext.insert(Trackee(id: UUID(), name: "Bob", reminderTimes: []))
+        container.mainContext.insert(Trackee(id: UUID(), name: "Sue", reminderTimes: []))
+        
+        return container
+    }
+}

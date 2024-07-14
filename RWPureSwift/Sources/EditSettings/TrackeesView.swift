@@ -14,7 +14,7 @@ struct TrackeesView: View {
             List {
                 ForEach(trackees, id: \.id){ trackee in
                     NavigationLink {
-                        EditTrackeeView(trackee: trackee)
+                        EditTrackeeView(trackee: Bindable(trackee))
                     } label: {
                         HStack {
                             Text(trackee.name)
@@ -47,15 +47,8 @@ struct TrackeesView: View {
 }
 
 #Preview {
-    let config = ModelConfiguration(isStoredInMemoryOnly: true)
-    let container = try! ModelContainer(
-        for: Trackee.self,
-        configurations: config
-    )
+    let container = Trackee.preview
     
-    container.mainContext.insert(Trackee(id: UUID(), name: "Bob", reminderTimes: []))
-    container.mainContext.insert(Trackee(id: UUID(), name: "Sue", reminderTimes: []))
-
     return NavigationStack{
         TrackeesView()
     }.modelContainer(container)
