@@ -1,0 +1,62 @@
+import DataModel
+import SwiftData
+import SwiftUI
+
+struct TrackeesView: View {
+    @Environment(\.dismiss) var dismiss
+    @Environment(\.modelContext) var modelContext
+    
+    @Query(sort: \Trackee.name)
+    var trackees: [Trackee]
+    
+    var body: some View {
+        NavigationStack{
+            List {
+                ForEach(trackees, id: \.id){ trackee in
+                    NavigationLink {
+                        EditTrackeeView(trackee: trackee)
+                    } label: {
+                        HStack {
+                            Text(trackee.name)
+                            Spacer()
+                            Text("Reminder Count - \(trackee.reminderTimes.count)")
+                        }
+                    }
+                    
+                }.onDelete(perform: { offsets in
+                    for offset in offsets {
+                        let trackee = trackees[offset]
+                        modelContext.delete(trackee)
+                    }
+                })
+                Button("Add Trackee", action: {
+                    modelContext
+                        .insert(Trackee(id: UUID(), name: "Unknown", reminderTimes: []))
+                })
+            }
+        }.navigationTitle("People to Track")
+            .toolbar(content: {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save", action:{
+                        try? modelContext.save()
+                        dismiss()
+                    })
+                }
+            })
+    }
+}
+
+#Preview {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(
+        for: Trackee.self,
+        configurations: config
+    )
+    
+    container.mainContext.insert(Trackee(id: UUID(), name: "Bob", reminderTimes: []))
+    container.mainContext.insert(Trackee(id: UUID(), name: "Sue", reminderTimes: []))
+
+    return NavigationStack{
+        TrackeesView()
+    }.modelContainer(container)
+}
