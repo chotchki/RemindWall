@@ -5,6 +5,7 @@
 //  Created by Christopher Hotchkiss on 7/4/24.
 //
 import DataModel
+import SwiftData
 import SwiftUI
 
 struct EditTrackeeView: View {
@@ -56,10 +57,13 @@ struct EditTrackeeView: View {
 }
 
 #Preview {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(for: Trackee.self, configurations: config)
+
     @State var trackee = Trackee(
         id: UUID(),
         name: "Bob",
         reminderTimes: []
     )
-    return EditTrackeeView(trackee: trackee)
+    return EditTrackeeView(trackee: trackee).modelContainer(container)
 }
