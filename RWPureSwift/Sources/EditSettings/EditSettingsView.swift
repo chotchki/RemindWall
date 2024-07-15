@@ -58,7 +58,9 @@ public struct EditSettingsView: View {
                 }
                 
                 Section {
-                    NavigationLink("Trackees", destination: TrackeesView())
+                    TrackeesView()
+                } header: {
+                    Text("Trackees")
                 }
             }
         }
