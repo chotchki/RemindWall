@@ -28,12 +28,19 @@ struct AssociateTag: View {
     
     public init(associatedTag: Binding<[UInt8]?>) {
         self._associatedTag = associatedTag
-        
-        
     }
     
     var body: some View {
         VStack{
+            HStack{
+                Image(systemName: "sensor.tag.radiowaves.forward")
+                if let tag = $associatedTag.wrappedValue {
+                    Text("Tag ID: \(tag.hexa)")
+                } else {
+                    Text("No Configured Tag")
+                }
+            }
+            Divider()
             switch readerState {
             case .loading:
                 Text("Loading")
@@ -57,6 +64,12 @@ struct AssociateTag: View {
                 }
             case .readerError(let error):
                 Text("Reader Error \(error)")
+                Button {
+                    self.readerState = .waitingForTag
+                    scanTag()
+                } label: {
+                    Text("Rescan Tag")
+                }
             }
         }.task {
             do {
@@ -77,8 +90,8 @@ struct AssociateTag: View {
             do {
                 let tag = try await self.readerDriver.findFirstTag(modulation: NFCModulation.iSO14443A(), clock: ContinuousClock(), timeout: 30)
                 if !tag.isEmpty {
-                    associatedTag = tag
-                    readerState = .readTag(tag)
+                    self.associatedTag = tag
+                    self.readerState = .readTag(tag)
                 }
             } catch {
                 self.readerState = .readerError(error.localizedDescription)
@@ -89,8 +102,13 @@ struct AssociateTag: View {
 
 
 
-#Preview {
+#Preview("No Tag") {
     @State var associatedTag: [UInt8]? = nil
+    return AssociateTag(associatedTag: $associatedTag)
+}
+
+#Preview("Existing Tag") {
+    @State var associatedTag: [UInt8]? = [0,1,2,3]
     return AssociateTag(associatedTag: $associatedTag)
 }
 #endif

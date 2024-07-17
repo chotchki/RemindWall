@@ -31,21 +31,30 @@ struct EditTrackeeView: View {
                     List {
                         ForEach($trackee.reminderTimes){ reminderTime in
                             HStack{
-                                Picker("Day", selection: reminderTime.weekDay){
-                                    Text("Sunday").tag(1)
-                                    Text("Monday").tag(2)
-                                    Text("Tuesday").tag(3)
-                                    Text("Wednesday").tag(4)
-                                    Text("Thursday").tag(5)
-                                    Text("Friday").tag(6)
-                                    Text("Saturday").tag(7)
+                                VStack {
+                                    Picker("Day of Week", selection: reminderTime.weekDay){
+                                        Text("Sunday").tag(1)
+                                        Text("Monday").tag(2)
+                                        Text("Tuesday").tag(3)
+                                        Text("Wednesday").tag(4)
+                                        Text("Thursday").tag(5)
+                                        Text("Friday").tag(6)
+                                        Text("Saturday").tag(7)
+                                    }
+                                    HStack {
+                                        Text("Time of Day")
+                                        TimePicker(calendar: calendar, hour: reminderTime.hour, minute: reminderTime.minute)
+                                    }
                                 }
                                 
-                                TimePicker(calendar: calendar, hour: reminderTime.hour, minute: reminderTime.minute)
-                                
                                 #if canImport(LibNFCSwift)
-                                Spacer()
                                 AssociateTag(associatedTag: reminderTime.associatedTag)
+                                #else
+                                if let tag = reminderTime.associatedTag {
+                                    Text("Configured Tag \(tag.hexa)")
+                                } else {
+                                    Text("No Tag Configured")
+                                }
                                 #endif
                             }
                         }
