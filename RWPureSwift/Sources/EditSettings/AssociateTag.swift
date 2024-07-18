@@ -71,7 +71,10 @@ struct AssociateTag: View {
                     Text("Rescan Tag")
                 }
             }
-        }.task {
+        }.padding()
+            .background(.tertiary)
+            .cornerRadius(15)
+        .task {
             do {
                 let readers = try await readerDriver.list_devices()
                 if readers.isEmpty {

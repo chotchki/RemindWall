@@ -43,6 +43,7 @@ struct EditTrackeeView: View {
                                     }
                                     HStack {
                                         Text("Time of Day")
+                                        Spacer()
                                         TimePicker(calendar: calendar, hour: reminderTime.hour, minute: reminderTime.minute)
                                     }
                                 }
@@ -70,13 +71,6 @@ struct EditTrackeeView: View {
                 }
             }
         }.navigationTitle("Edit Trackee")
-            .toolbar(content: {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save", action:{
-                        dismiss()
-                    })
-                }
-            })
     }
 }
 

@@ -10,8 +10,10 @@ struct TrackeesView: View {
     var trackees: [Trackee]
     
     var body: some View {
-        NavigationStack{
-            List {
+        List {
+            if trackees.isEmpty {
+                Text("No trackees configured")
+            } else {
                 ForEach(trackees, id: \.id){ trackee in
                     NavigationLink {
                         EditTrackeeView(trackee: Bindable(trackee))
@@ -21,28 +23,19 @@ struct TrackeesView: View {
                             Spacer()
                             Text("Reminder Count - \(trackee.reminderTimes.count)")
                         }
-                    }
-                    
+                    }.padding()
                 }.onDelete(perform: { offsets in
                     for offset in offsets {
                         let trackee = trackees[offset]
                         modelContext.delete(trackee)
                     }
                 })
-                Button("Add Trackee", action: {
-                    modelContext
-                        .insert(Trackee(id: UUID(), name: "Unknown", reminderTimes: []))
-                })
             }
-        }.navigationTitle("People to Track")
-            .toolbar(content: {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save", action:{
-                        try? modelContext.save()
-                        dismiss()
-                    })
-                }
+            Button("Add Trackee", action: {
+                modelContext
+                    .insert(Trackee(id: UUID(), name: "Unknown", reminderTimes: []))
             })
+        }
     }
 }
 
