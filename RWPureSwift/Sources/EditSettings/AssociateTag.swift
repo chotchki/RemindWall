@@ -88,11 +88,13 @@ struct AssociateTag: View {
         }
     }
     
+    @MainActor
     private func scanTag(){
         Task {
             do {
                 let tag = try await self.readerDriver.findFirstTag(modulation: NFCModulation.iSO14443A(), clock: ContinuousClock(), timeout: 30)
                 if !tag.isEmpty {
+                    //BUG: If a tag is rescanned under another person, it will throw a fatal swift data error
                     self.associatedTag = tag
                     self.readerState = .readTag(tag)
                 }
