@@ -7,18 +7,19 @@
 import EventKit
 import PhotosUI
 import SwiftUI
+import DataModel
 import Utility
 
 public struct CheckPermissionsView: View {
     @State var calenderStatus: EKAuthorizationStatus
     @State var photoStatus: PHAuthorizationStatus
     
-    @Binding var isSetup: Bool
+    @Binding var state: AppState
     
-    public init(isSetup: Binding<Bool>) {
+    public init(state: Binding<AppState>) {
         self.calenderStatus = EKEventStore.authorizationStatus(for: .event)
         self.photoStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
-        self._isSetup = isSetup
+        self._state = state
     }
     
     private func checkPermissions() {
@@ -26,7 +27,7 @@ public struct CheckPermissionsView: View {
         photoStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
         
         if calenderStatus == .fullAccess && photoStatus == .authorized {
-            isSetup = true
+            state = .editSettings
         }
     }
     
@@ -129,6 +130,6 @@ public struct CheckPermissionsView: View {
 }
 
 #Preview {
-    @State var isSetup = false
-    return CheckPermissionsView(isSetup: $isSetup)
+    @State var state = AppState.checkPermissions
+    return CheckPermissionsView(state: $state)
 }

@@ -51,7 +51,7 @@ struct EditTrackeeView: View {
                                 #if canImport(LibNFCSwift)
                                 AssociateTag(associatedTag: reminderTime.associatedTag)
                                 #else
-                                if let tag = reminderTime.associatedTag {
+                                if let tag = reminderTime.associatedTag? {
                                     Text("Configured Tag \(tag.hexa)")
                                 } else {
                                     Text("No Tag Configured")

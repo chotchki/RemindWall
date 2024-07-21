@@ -1,4 +1,5 @@
 import CheckPermissions
+import Dashboard
 import DataModel
 import EditSettings
 import SwiftData
@@ -11,23 +12,19 @@ public struct AppNavigation: View {
         s.id == 1
     }) var settingsQuery: [Settings]
     
-    @State var isSetup = false
-    
     public init() {}
-    
-    enum AppState {
-        case checkPermissions
-        case editSettings
-    }
     
     @State var state = AppState.checkPermissions
     
     public var body: some View {
         NavigationStack {
-            if !isSetup {
-                CheckPermissionsView(isSetup: $isSetup)
-            } else {
-                EditSettingsView(settings: Bindable(settingsQuery.first!))
+            switch state {
+            case .checkPermissions:
+                CheckPermissionsView(state: $state)
+            case .editSettings:
+                EditSettingsView(settings: Bindable(settingsQuery.first!), state: $state)
+            case .dashboard:
+                DashboardView(settings: Bindable(settingsQuery.first!), state: $state)
             }
         }
     }

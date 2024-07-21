@@ -24,9 +24,11 @@ public struct EditSettingsView: View {
     let availibleCalendars = GlobalEventStore.shared.getCalendars()
     
     @Bindable var settings: Settings
+    @Binding var state: AppState
     
-    public init(settings: Bindable<Settings>) {
+    public init(settings: Bindable<Settings>, state: Binding<AppState>) {
         self._settings = settings
+        self._state = state
     }
     
     public var body: some View {
@@ -62,16 +64,25 @@ public struct EditSettingsView: View {
                 } header: {
                     Text("Trackees")
                 }
+                
+                Section {
+                    Button {
+                        state = .dashboard
+                    } label: {
+                        Text("Start Slideshow")
+                    }
+                }
             }
         }
     }
 }
 
 #Preview {
+    @State var state = AppState.editSettings
     let container = Settings.preview
     let first = try! container.mainContext.fetch(FetchDescriptor<Settings>()).first!
 
     return NavigationStack {
-        EditSettingsView(settings: Bindable(first))
+        EditSettingsView(settings: Bindable(first), state: $state)
     }.modelContainer(container)
 }
