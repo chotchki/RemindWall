@@ -22,18 +22,16 @@ public struct AppNavigation: View {
             case .checkPermissions:
                 CheckPermissionsView(state: $state)
             case .editSettings:
-                EditSettingsView(settings: Bindable(settingsQuery.first!), state: $state)
+                EditSettingsView(state: $state)
             case .dashboard:
-                DashboardView(settings: Bindable(settingsQuery.first!), state: $state)
+                DashboardView(state: $state)
             }
-        }
+        }.environment(settingsQuery.first!)
     }
 }
 
 #Preview {
-    let config = ModelConfiguration(isStoredInMemoryOnly: true)
-    let container = try! ModelContainer(for: Settings.self, configurations: config)
-
-    @State var settings = Settings()
+    let container = Settings.preview
+    
     return AppNavigation().modelContainer(container)
 }

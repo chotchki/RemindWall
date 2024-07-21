@@ -3,10 +3,10 @@ import SwiftUI
 import Utility
 
 struct NowView: View {
-    @Binding private var currentEvent: EKEvent
+    private var currentEvent: EKEvent
     
-    public init(currentEvent: Binding<EKEvent>) {
-        self._currentEvent = currentEvent
+    public init(currentEvent: EKEvent) {
+        self.currentEvent = currentEvent
     }
     
     var body: some View {

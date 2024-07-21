@@ -7,6 +7,7 @@ import Utility
 @MainActor
 public struct EditSettingsView: View {
     @Environment(\.dismiss) var dismiss
+    @Environment(Settings.self) private var settings
     
     private static func baseFetchOptions() -> PHFetchOptions {
         // From: https://stackoverflow.com/a/49495326/160208
@@ -22,18 +23,17 @@ public struct EditSettingsView: View {
         options: baseFetchOptions()))
     
     let availibleCalendars = GlobalEventStore.shared.getCalendars()
-    
-    @Bindable var settings: Settings
+
     @Binding var state: AppState
     
-    public init(settings: Bindable<Settings>, state: Binding<AppState>) {
-        self._settings = settings
+    public init(state: Binding<AppState>) {
         self._state = state
     }
     
     public var body: some View {
         NavigationStack {
             Form{
+                @Bindable var settings = settings
                 Section {
                     Picker("Albums", selection: $settings.selectedAlbumId){
                         Text("Select Album").tag(nil as String?)
@@ -83,6 +83,6 @@ public struct EditSettingsView: View {
     let first = try! container.mainContext.fetch(FetchDescriptor<Settings>()).first!
 
     return NavigationStack {
-        EditSettingsView(settings: Bindable(first), state: $state)
+        EditSettingsView(state: $state)
     }.modelContainer(container)
 }

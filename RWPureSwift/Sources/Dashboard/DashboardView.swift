@@ -5,31 +5,44 @@ import SwiftUI
 import Utility
 
 public struct DashboardView: View {
-    @Bindable var settings: Settings
+    @Environment(Settings.self) private var settings
     @Binding var state: AppState
     
     @State private var currentEvent: EKEvent?
+    @State private var nextEvent: EKEvent?
     
-    public init(settings: Bindable<Settings>, state: Binding<AppState>) {
-        self._settings = settings
+    public init(state: Binding<AppState>) {
         self._state = state
     }
     
     public var body: some View {
         ZStack {
             VStack(alignment: .leading){
-                if currentEvent != nil {
-                    NowView(currentEvent: Binding($currentEvent)!)
+                if let c = currentEvent {
+                    NowView(currentEvent: c)
                 }
                 SlideshowView()
-                UpNextView()
+                if let n = nextEvent {
+                    UpNextView(nextEvent: n)
+                }
             }
             AlertView()
         }.onAppear(perform: {
-            if let cId = settings.selectedCalendarId {
-                currentEvent = GlobalEventStore.getActiveEvent(calendarId: cId, currentTime: Date())
+            refresh()
+        }).task {//From: https://fatbobman.com/en/posts/mastering_swiftui_task_modifier/
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: UInt64(5 * Double(NSEC_PER_SEC)))
+                refresh()
             }
-        })
+        }
+    }
+    
+    @MainActor private func refresh(){
+        let now = Date()
+        if let cId = settings.selectedCalendarId {
+            currentEvent = GlobalEventStore.getActiveEvent(calendarId: cId, currentTime: now)
+            nextEvent = GlobalEventStore.getNextEvent(calendarId: cId, currentTime: now)
+        }
     }
 }
 
@@ -37,5 +50,5 @@ public struct DashboardView: View {
     let container = Settings.preview
     let first = try! container.mainContext.fetch(FetchDescriptor<Settings>()).first!
     
-    return DashboardView(settings: Bindable(first), state: .constant(.dashboard))
+    return DashboardView(state: .constant(.dashboard))
 }
