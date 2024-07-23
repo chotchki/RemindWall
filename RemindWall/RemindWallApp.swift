@@ -1,4 +1,5 @@
 import EventKit
+import PhotosUI
 import SwiftUI
 import SwiftData
 
@@ -31,7 +32,7 @@ struct RemindWallApp: App {
             fatalError("Could not create ModelContainer: \(error)")
         }
     }()
-    
+        
     @State private var globalEventStore = GlobalEventStore.shared
 
     var body: some Scene {

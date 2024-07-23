@@ -1,5 +1,6 @@
 import EventKit
 import DataModel
+import Slideshow
 import SwiftData
 import SwiftUI
 import Utility
@@ -19,11 +20,11 @@ public struct DashboardView: View {
         ZStack {
             VStack(alignment: .leading){
                 if let c = currentEvent {
-                    NowView(currentEvent: c)
+                    NowView(currentEvent: c).transition(.slide)
                 }
-                SlideshowView()
+                SlideshowView(state: $state)
                 if let n = nextEvent {
-                    UpNextView(nextEvent: n)
+                    UpNextView(nextEvent: n).transition(.slide)
                 }
             }
             AlertView()
@@ -32,7 +33,9 @@ public struct DashboardView: View {
         }).task {//From: https://fatbobman.com/en/posts/mastering_swiftui_task_modifier/
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: UInt64(5 * Double(NSEC_PER_SEC)))
-                refresh()
+                withAnimation {
+                    refresh()
+                }
             }
         }
     }
