@@ -44,3 +44,70 @@ public func livePhotoRequestOptions() -> PHLivePhotoRequestOptions {
     lpro.deliveryMode = PHImageRequestOptionsDeliveryMode.highQualityFormat
     return lpro
 }
+
+
+public func loadAlbumAssets(albumId: String?) async -> [PHAsset]? {
+    guard let albumId = albumId else {
+        return nil
+    }
+    
+    let result = await Task {
+        guard let fetchAlbumObj = PHAssetCollection.fetchAssetCollections(withLocalIdentifiers: [albumId], options: baseFetchOptions()).firstObject else {
+            return nil as [PHAsset]?
+        }
+        
+        let fetchResult = PHAsset.fetchAssets(in: fetchAlbumObj, options: albumContentsFetchOptions())
+        
+        // The caching image manager demands an array so we can't leverage the fetchresult
+        var contents: [PHAsset] = []
+        fetchResult.enumerateObjects({ obj, _, _ in
+            contents.append(obj)
+        })
+        contents.shuffle()
+        
+        return contents
+    }.value
+
+    return result
+}
+
+public enum AssetType: Equatable, Sendable {
+    case loading
+    case staticImage(UIImage)
+    case livePhoto(PHLivePhoto)
+    case errorPhoto
+}
+
+// Based on my reading here: https://developer.apple.com/documentation/swift/sendable
+// NSCopyable should qualify as sendable
+extension PHLivePhoto: @unchecked Sendable {}
+
+public func loadAsset(imageManager: PHCachingImageManager, asset: PHAsset, viewSize: CGSize) async -> AssetType {
+    let result = await Task {
+        return await withCheckedContinuation({ continuation in
+            if asset.mediaSubtypes.contains(PHAssetMediaSubtype.photoLive){
+                imageManager.requestLivePhoto(for: asset, targetSize: viewSize, contentMode: getContentMode(), options: livePhotoRequestOptions(), resultHandler: { livephoto, _ in
+                    
+                        if let lp = livephoto {
+                            continuation.resume(returning: AssetType.livePhoto(lp))
+                        } else {
+                            continuation.resume(returning: .errorPhoto)
+                        }
+                })
+            } else if asset.mediaType == PHAssetMediaType.image {
+                    imageManager.requestImage(for: asset, targetSize: viewSize, contentMode: getContentMode(), options: imageRequestOptions(), resultHandler: {
+                        imageloaded, _ in
+                            if let il = imageloaded {
+                                continuation.resume(returning: .staticImage(il))
+                            } else {
+                                continuation.resume(returning: .errorPhoto)
+                            }
+                    })
+            } else {
+                continuation.resume(returning: .errorPhoto)
+            }
+        })
+    }.value
+    
+    return result
+}

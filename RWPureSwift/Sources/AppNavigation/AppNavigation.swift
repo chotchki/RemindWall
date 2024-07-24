@@ -2,8 +2,10 @@ import CheckPermissions
 import Dashboard
 import DataModel
 import EditSettings
+import PhotosUI
 import SwiftData
 import SwiftUI
+import Utility
 
 public struct AppNavigation: View {
     @Environment(\.modelContext) var modelContext
@@ -26,7 +28,9 @@ public struct AppNavigation: View {
             case .dashboard:
                 DashboardView(state: $state)
             }
-        }.environment(settingsQuery.first!)
+        }
+        .environment(settingsQuery.first!)
+        .environment(\.imageManager, PHCachingImageManager())
     }
 }
 

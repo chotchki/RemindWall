@@ -1,20 +1,23 @@
 import PhotosUI
 import SwiftUI
+import Utility
 
 public struct AssetLoaderView: View {
-    let imageManager: PHCachingImageManager
+    @Environment(\.imageManager) private var imageManager
+    
+    @Binding var asset: PHAsset
+    let viewSize: CGSize
+    
+    @State private var assetType: AssetType = .loading
 
-    @State var viewModel: AssetLoaderViewModel
-    
-    public init(imageManager: PHCachingImageManager, asset: PHAsset, viewSize: CGSize) {
-        self.imageManager = imageManager
-        
-        self.viewModel = AssetLoaderViewModel(asset: asset, viewSize: viewSize)
+    public init(asset: Binding<PHAsset>, viewSize: CGSize) {
+        self._asset = asset
+        self.viewSize = viewSize
     }
-    
+
     public var body: some View {
         VStack {
-            switch viewModel.assetType {
+            switch assetType {
             case .loading:
                 ProgressView()
             case let .staticImage(ui):
@@ -24,12 +27,9 @@ public struct AssetLoaderView: View {
             case .errorPhoto:
                 Text("Unable to load image")
             }
-        }.frame(width:viewModel.viewSize.width, height: viewModel.viewSize.width)
-        .task {
-            await viewModel.load(imageManager: imageManager)
-        }
-        .onDisappear(perform: {
-            imageManager.stopCachingImages(for: [viewModel.asset], targetSize: viewModel.viewSize, contentMode: getContentMode(), options: imageRequestOptions())
+        }.frame(width: viewSize.width, height: viewSize.width)
+        .task(id: asset, {
+            self.assetType = await loadAsset(imageManager: imageManager, asset: asset, viewSize: viewSize)
         })
     }
 }

@@ -3,40 +3,55 @@ import PhotosUI
 import SwiftUI
 
 public struct SlideshowView: View {
-    @Environment(Settings.self) private var settings
     @Binding var state: AppState
+    @Binding var selectedAlbumId: String?
     
-    @State private var viewModel = SlideshowViewModel()
-    
-    public init(state: Binding<AppState>){
+    @State private var assetList: [PHAsset]?
+    @State private var currentAlbumIndex: Int = 0
+    @State var currentAsset: PHAsset?
+        
+    public init(state: Binding<AppState>, selectedAlbumId: Binding<String?>){
         self._state = state
+        self._selectedAlbumId = selectedAlbumId
     }
     
     public var body: some View {
         Group {
-            if settings.selectedAlbumId == nil {
+            if selectedAlbumId == nil {
                 //Button("Return to Settings", action: {
                 //    state = .editSettings
                 //})
             } else {
                 GeometryReader { reader in
-                    if let ca = viewModel.currentAsset {
-                        AssetLoaderView(imageManager: viewModel.imageManager, asset: ca, viewSize: reader.size)
+                    if let ca = Binding($currentAsset) {
+                        AssetLoaderView(asset: ca, viewSize: reader.size)
                     } else {
                         ProgressView()
                     }
                 }
             }
         }
-        .task {//From: https://fatbobman.com/en/posts/mastering_swiftui_task_modifier/
+        .task(id: selectedAlbumId, {
+            assetList = await loadAlbumAssets(albumId: selectedAlbumId)
+            
             while !Task.isCancelled {
-                await viewModel.loadNextAsset(selectedAlbumId: settings.selectedAlbumId)
+                if let al = assetList{
+                    if al.count > currentAlbumIndex {
+                        currentAsset = al[currentAlbumIndex]
+                    }
+                }
+                
                 try? await Task.sleep(nanoseconds: UInt64(10 * Double(NSEC_PER_SEC)))
+                
+                currentAlbumIndex += 1
+                if currentAlbumIndex > assetList?.count ?? -1 {
+                    assetList = await loadAlbumAssets(albumId: selectedAlbumId)
+                    currentAlbumIndex = 0
+                }
             }
+        })
+        .task {//From: https://fatbobman.com/en/posts/mastering_swiftui_task_modifier/
+            
         }
     }
-}
-
-#Preview {
-    SlideshowView(state: .constant(.dashboard))
 }

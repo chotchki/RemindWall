@@ -45,7 +45,7 @@ let package = Package(
         .target(name: "Slideshow",
                 dependencies: [
                     .target(name: "DataModel"),
-                    
+                    .target(name: "Utility"),
                 ]),
         .target(name: "Utility"),
     ]

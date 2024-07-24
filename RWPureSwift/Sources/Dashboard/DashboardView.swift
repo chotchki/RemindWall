@@ -22,7 +22,8 @@ public struct DashboardView: View {
                 if let c = currentEvent {
                     NowView(currentEvent: c).transition(.slide)
                 }
-                SlideshowView(state: $state)
+                @Bindable var settings = settings
+                SlideshowView(state: $state, selectedAlbumId: $settings.selectedAlbumId)
                 if let n = nextEvent {
                     UpNextView(nextEvent: n).transition(.slide)
                 }
