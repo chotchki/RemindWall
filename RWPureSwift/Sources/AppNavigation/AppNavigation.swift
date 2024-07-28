@@ -31,7 +31,6 @@ public struct AppNavigation: View {
             }
         }
         .environment(settingsQuery.first!)
-        .environment(\.aVAudioSession, AVAudioSessionKey.defaultValue)
     }
 }
 
