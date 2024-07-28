@@ -39,7 +39,7 @@ public class ReminderTimeModel: Equatable, Identifiable {
 extension ReminderTimeModel {
     @MainActor
     public static var preview: ModelContainer {
-        let container  = DataSchema.previewContainer
+        let container  = DataSchema.modelContainer
         container.mainContext.insert(ReminderTimeModel())
         return container
     }

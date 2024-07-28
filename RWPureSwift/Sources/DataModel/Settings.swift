@@ -20,7 +20,7 @@ public class Settings: Equatable {
 extension Settings {
     @MainActor
     public static var preview: ModelContainer {
-        let container  = DataSchema.previewContainer
+        let container  = DataSchema.modelContainer
         container.mainContext.insert(Settings())
         return container
     }

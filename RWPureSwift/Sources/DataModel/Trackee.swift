@@ -24,7 +24,7 @@ public class Trackee: Comparable, Identifiable, Equatable {
 extension Trackee {
     @MainActor
     public static var preview: ModelContainer {
-        let container  = DataSchema.previewContainer
+        let container  = DataSchema.modelContainer
         container.mainContext.insert(Trackee(id: UUID(), name: "Bob", reminderTimes: []))
         container.mainContext.insert(Trackee(id: UUID(), name: "Sue", reminderTimes: []))
         
