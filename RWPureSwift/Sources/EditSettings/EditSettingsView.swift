@@ -80,7 +80,6 @@ public struct EditSettingsView: View {
 #Preview {
     @State var state = AppState.editSettings
     let container = Settings.preview
-    let first = try! container.mainContext.fetch(FetchDescriptor<Settings>()).first!
 
     return NavigationStack {
         EditSettingsView(state: $state)

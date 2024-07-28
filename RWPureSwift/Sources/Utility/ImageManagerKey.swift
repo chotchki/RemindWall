@@ -1,8 +1,8 @@
 import PhotosUI
 import SwiftUI
 
-private struct ImageManagerKey: EnvironmentKey {
-  static let defaultValue = PHCachingImageManager()
+public struct ImageManagerKey: EnvironmentKey {
+  public static let defaultValue = PHCachingImageManager()
 }
 
 extension EnvironmentValues {

@@ -2,7 +2,7 @@ import Foundation
 import SwiftData
 
 @Model
-public final class ReminderTime: Equatable, Sendable {
+public final class ReminderTime: Equatable {
     //Range 1 = Sun to 7 = Sat
     public var weekDay: Int
     public var hour: Int

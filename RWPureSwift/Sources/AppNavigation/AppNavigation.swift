@@ -1,3 +1,4 @@
+import AVFAudio
 import CheckPermissions
 import Dashboard
 import DataModel
@@ -30,7 +31,8 @@ public struct AppNavigation: View {
             }
         }
         .environment(settingsQuery.first!)
-        .environment(\.imageManager, PHCachingImageManager())
+        .environment(\.aVAudioSession, AVAudioSessionKey.defaultValue)
+        .environment(\.imageManager, ImageManagerKey.defaultValue)
     }
 }
 

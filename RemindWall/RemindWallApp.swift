@@ -33,7 +33,7 @@ struct RemindWallApp: App {
     }()
     
     @State private var globalEventStore = GlobalEventStore.shared
-
+    
     var body: some Scene {
         WindowGroup {
             AppNavigation()

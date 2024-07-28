@@ -59,8 +59,7 @@ public struct DashboardView: View {
 }
 
 #Preview {
-    let container = Settings.preview
-    let first = try! container.mainContext.fetch(FetchDescriptor<Settings>()).first!
+    let _ = Settings.preview
     
     return DashboardView(state: .constant(.dashboard))
 }

@@ -15,12 +15,14 @@ public struct LivePhotoView: UIViewRepresentable {
     }
 
     public func makeUIView(context: Context) -> PHLivePhotoView {
-        PHLivePhotoView()
+        let phlpv = PHLivePhotoView()
+        phlpv.isMuted = true
+        
+        return phlpv
     }
 
     public func updateUIView(_ lpView: PHLivePhotoView, context: Context) {
         if livephoto != lpView.livePhoto {
-            lpView.isMuted = true
             lpView.livePhoto = livephoto
             lpView.startPlayback(with: .full)
         }
