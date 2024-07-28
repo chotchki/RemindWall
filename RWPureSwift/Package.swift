@@ -24,18 +24,18 @@ let package = Package(
             .target(name: "CheckPermissions"),
             .target(name: "Dashboard"),
             .target(name: "EditSettings")
-        ]),
+        ], swiftSettings: [ .enableExperimentalFeature("StrictConcurrency")]),
         .target(name: "CheckPermissions", dependencies: [
             .target(name: "DataModel"),
             .target(name: "Utility")
-        ]),
+        ], swiftSettings: [ .enableExperimentalFeature("StrictConcurrency")]),
         .target(name: "Dashboard", dependencies: [
             .target(name: "DataModel"),
             .target(name: "Slideshow"),
             .target(name: "Utility"),
             .target(name: "TagScan", condition: .when(platforms: [.macCatalyst]))
-        ]),
-        .target(name: "DataModel"),
+        ], swiftSettings: [ .enableExperimentalFeature("StrictConcurrency")]),
+        .target(name: "DataModel", swiftSettings: [ .enableExperimentalFeature("StrictConcurrency")]),
         .testTarget(name: "DataModelTests", dependencies: [.target(name: "DataModel")]),
         .target(name: "EditSettings",
                 dependencies: [
@@ -43,18 +43,18 @@ let package = Package(
                     .target(name: "DataModel"),
                     .target(name: "Utility"),
                     
-                ]),
+                ], swiftSettings: [ .enableExperimentalFeature("StrictConcurrency")]),
         .target(name: "Slideshow",
                 dependencies: [
                     .target(name: "DataModel"),
                     .target(name: "Utility"),
-                ]),
+                ], swiftSettings: [ .enableExperimentalFeature("StrictConcurrency")]),
         .target(name: "TagScan",
                 dependencies: [
                     .product(name: "LibNFCSwift", package: "LibNFCSwift"),
                     .target(name: "DataModel"),
                     .target(name: "Utility"),
-                ]),
-        .target(name: "Utility"),
+                ], swiftSettings: [ .enableExperimentalFeature("StrictConcurrency")]),
+        .target(name: "Utility", swiftSettings: [ .enableExperimentalFeature("StrictConcurrency")]),
     ]
 )
