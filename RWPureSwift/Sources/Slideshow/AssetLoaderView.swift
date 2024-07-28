@@ -3,8 +3,6 @@ import SwiftUI
 import Utility
 
 public struct AssetLoaderView: View {
-    @Environment(\.imageManager) private var imageManager
-    
     @Binding var asset: PHAsset
     let viewSize: CGSize
     
@@ -29,7 +27,7 @@ public struct AssetLoaderView: View {
             }
         }.frame(width: viewSize.width, height: viewSize.width)
         .task(id: asset, {
-            self.assetType = await loadAsset(imageManager: imageManager, asset: asset, viewSize: viewSize)
+            self.assetType = await PHImageCacheActor.shared.loadAsset(asset: asset, viewSize: viewSize)
         })
     }
 }

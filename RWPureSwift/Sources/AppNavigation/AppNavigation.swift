@@ -32,7 +32,6 @@ public struct AppNavigation: View {
         }
         .environment(settingsQuery.first!)
         .environment(\.aVAudioSession, AVAudioSessionKey.defaultValue)
-        .environment(\.imageManager, ImageManagerKey.defaultValue)
     }
 }
 
