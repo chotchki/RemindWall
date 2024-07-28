@@ -4,6 +4,9 @@ import Slideshow
 import SwiftData
 import SwiftUI
 import Utility
+#if canImport(TagScan)
+import TagScan
+#endif
 
 public struct DashboardView: View {
     @Environment(Settings.self) private var settings
@@ -31,6 +34,9 @@ public struct DashboardView: View {
             AlertView().onTapGesture {
                 state = .editSettings
             }
+            #if canImport(TagScan)
+            TagScanView()
+            #endif
         }.onAppear(perform: {
             refresh()
         }).task {//From: https://fatbobman.com/en/posts/mastering_swiftui_task_modifier/

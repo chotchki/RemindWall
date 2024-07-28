@@ -20,13 +20,14 @@ public enum TagReaderState: Equatable {
 }
 
 struct AssociateTag: View {
+    @Environment(\.modelContext) var modelContext
     private var readerDriver = LibNFCActor.shared
     
     @State var readerState: TagReaderState = .loading
     
-    @Binding var associatedTag: [UInt8]?
+    @Binding var associatedTag: String?
     
-    public init(associatedTag: Binding<[UInt8]?>) {
+    public init(associatedTag: Binding<String?>) {
         self._associatedTag = associatedTag
     }
     
@@ -35,7 +36,7 @@ struct AssociateTag: View {
             HStack{
                 Image(systemName: "sensor.tag.radiowaves.forward")
                 if let tag = $associatedTag.wrappedValue {
-                    Text("Tag ID: \(tag.hexa)")
+                    Text("Tag ID: \(tag)")
                 } else {
                     Text("No Configured Tag")
                 }
@@ -95,7 +96,8 @@ struct AssociateTag: View {
                 let tag = try await self.readerDriver.findFirstTag(modulation: NFCModulation.iSO14443A(), clock: ContinuousClock(), timeout: 30)
                 if !tag.isEmpty {
                     //BUG: If a tag is rescanned under another person, it will throw a fatal swift data error
-                    self.associatedTag = tag
+                    self.associatedTag = tag.hexa
+                    try modelContext.save()
                     self.readerState = .readTag(tag)
                 }
             } catch {
@@ -108,12 +110,12 @@ struct AssociateTag: View {
 
 
 #Preview("No Tag") {
-    @State var associatedTag: [UInt8]? = nil
+    @State var associatedTag: String? = nil
     return AssociateTag(associatedTag: $associatedTag)
 }
 
 #Preview("Existing Tag") {
-    @State var associatedTag: [UInt8]? = [0,1,2,3]
+    @State var associatedTag: String? = "0:0:0"
     return AssociateTag(associatedTag: $associatedTag)
 }
 #endif

@@ -13,6 +13,7 @@ let package = Package(
         .library(name: "DataModel", targets: ["DataModel"]),
         .library(name: "EditSettings", targets: ["EditSettings"]),
         .library(name: "Slideshow", targets: ["Slideshow"]),
+        .library(name: "TagScan", targets: ["TagScan"]),
         .library(name: "Utility", targets: ["Utility"]),
     ],
     dependencies: [
@@ -31,7 +32,8 @@ let package = Package(
         .target(name: "Dashboard", dependencies: [
             .target(name: "DataModel"),
             .target(name: "Slideshow"),
-            .target(name: "Utility")
+            .target(name: "Utility"),
+            .target(name: "TagScan", condition: .when(platforms: [.macCatalyst]))
         ]),
         .target(name: "DataModel"),
         .testTarget(name: "DataModelTests", dependencies: [.target(name: "DataModel")]),
@@ -44,6 +46,12 @@ let package = Package(
                 ]),
         .target(name: "Slideshow",
                 dependencies: [
+                    .target(name: "DataModel"),
+                    .target(name: "Utility"),
+                ]),
+        .target(name: "TagScan",
+                dependencies: [
+                    .product(name: "LibNFCSwift", package: "LibNFCSwift"),
                     .target(name: "DataModel"),
                     .target(name: "Utility"),
                 ]),

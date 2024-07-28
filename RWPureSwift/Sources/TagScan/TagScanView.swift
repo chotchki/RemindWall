@@ -1,0 +1,94 @@
+import DataModel
+import SwiftData
+import SwiftUI
+import LibNFCSwift
+import OSLog
+import Utility
+
+public struct TagScanView: View {
+    let log = Logger()
+    @Environment(\.calendar) var calendar
+    @Environment(\.modelContext) var modelContext
+    
+    let timeout: Int = 60
+    
+    public init(){}
+    
+    public enum TagScanViewError: Error {
+        case unknownTag
+        case wrongScanWindow
+        case noDevice
+        case unknown(String)
+    }
+    
+    @State private var scanResult: Result<(), TagScanViewError>?
+    
+    public var body: some View {
+        Group {
+            if let sr = scanResult {
+                Spacer()
+                switch sr {
+                case .success:
+                    Text("Thank you for taking your meds!")
+                case .failure(.unknownTag):
+                    Text("Unknown Tag Scanned")
+                case .failure(.wrongScanWindow):
+                    Text("Tag not scannable now, are you taking the right meds?")
+                case .failure(.noDevice):
+                    Text("No NFC reader found, scans disabled.")
+                case let .failure(.unknown(e)):
+                    Text("Unknown failure \(e)")
+                }
+                Spacer()
+            } else {
+                EmptyView()
+            }
+        }.onTapGesture {
+            self.scanResult = nil //Clear scan
+        }
+        .padding()
+        .background(Color.white)
+        .task {
+            while !Task.isCancelled {
+                do {
+                    let tagFound = try await LibNFCActor.shared.findFirstTag(modulation: .iSO14443A(), clock: .continuous, timeout: timeout).hexa
+                    
+                    log.debug("Found \(tagFound)")
+                    
+                    let fd = FetchDescriptor<ReminderTimeModel>(predicate: #Predicate { rtm in
+                        rtm.associatedTag.flatMap { $0 == tagFound } ?? false
+                    })
+                    let rtms = try modelContext.fetch(fd)
+                    
+                    guard let rtm = rtms.first else {
+                        self.scanResult = .failure(.unknownTag)
+                        continue
+                    }
+                    
+                    log.debug("Lookup worked")
+                    
+                    if rtm.isScannable(date: Date.now, calendar: calendar){
+                        rtm.lastScan = Date.now
+                        try modelContext.save()
+                        
+                        self.scanResult = .success(())
+                        
+                    } else {
+                        self.scanResult = .failure(.wrongScanWindow)
+                    }
+                } catch LibNFCError.pollTimeout {
+                    //Timeout is fine
+                } catch LibNFCError.deviceConnectFailed {
+                    self.scanResult = .failure(.noDevice)
+                } catch {
+                    // Supress other errors
+                    self.scanResult = .failure(.unknown(error.localizedDescription))
+                }
+            }
+        }
+    }
+}
+
+#Preview {
+    TagScanView()
+}

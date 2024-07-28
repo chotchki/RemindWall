@@ -33,7 +33,6 @@ struct EditTrackeeView: View {
                             @Bindable var reminderTime = reminderTimeModel.reminderTime
                             HStack{
                                 VStack {
-                                    
                                     Picker("Day of Week", selection: $reminderTime.weekDay){
                                         Text("Sunday").tag(1)
                                         Text("Monday").tag(2)
@@ -47,6 +46,11 @@ struct EditTrackeeView: View {
                                         Text("Time of Day")
                                         Spacer()
                                         TimePicker(calendar: calendar, hour: $reminderTime.hour, minute: $reminderTime.minute)
+                                    }
+                                    if let ls = reminderTimeModel.lastScan {
+                                        Text("Last Scanned: \(ls)")
+                                    } else {
+                                        Text("Never Scanned")
                                     }
                                 }
                                 

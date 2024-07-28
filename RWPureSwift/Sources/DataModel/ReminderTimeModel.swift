@@ -4,7 +4,7 @@ import SwiftData
 @Model
 public class ReminderTimeModel: Equatable, Identifiable {
     @Attribute(.unique) public var id: UUID
-    @Attribute(.unique) public var associatedTag: [UInt8]?
+    @Attribute(.unique) public var associatedTag: String?
     
     public var lastScan: Date?
     
@@ -19,7 +19,7 @@ public class ReminderTimeModel: Equatable, Identifiable {
         self.reminderTime = ReminderTime(weekDay: 1, hour: 1, minute: 1)
     }
     
-    public init(id: UUID, associatedTag: [UInt8]? = nil, lastScan: Date? = nil, reminderTime: ReminderTime ) {
+    public init(id: UUID, associatedTag: String? = nil, lastScan: Date? = nil, reminderTime: ReminderTime ) {
         self.id = id
         self.associatedTag = associatedTag
         self.lastScan = lastScan
