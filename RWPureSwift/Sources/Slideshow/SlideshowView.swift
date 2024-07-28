@@ -18,15 +18,22 @@ public struct SlideshowView: View {
     public var body: some View {
         Group {
             if selectedAlbumId == nil {
-                //Button("Return to Settings", action: {
-                //    state = .editSettings
-                //})
+                Button("Return to Settings", action: {
+                    state = .editSettings
+                })
             } else {
                 GeometryReader { reader in
                     if let ca = Binding($currentAsset) {
-                        AssetLoaderView(asset: ca, viewSize: reader.size)
+                        AssetLoaderView(asset: ca, viewSize: reader.size).onTapGesture {
+                            state = .editSettings
+                        }
                     } else {
-                        ProgressView()
+                        VStack {
+                            ProgressView()
+                            Button("Return to Settings", action: {
+                                state = .editSettings
+                            })
+                        }
                     }
                 }
             }

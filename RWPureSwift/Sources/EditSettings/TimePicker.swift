@@ -31,7 +31,7 @@ struct TimePicker: View {
                    displayedComponents: .hourAndMinute)
             .pickerStyle(.wheel)
             .labelsHidden()
-            .onSubmit {
+            .onChange(of: internalTime) {
                 let components = calendar.dateComponents([.hour, .minute], from: internalTime)
                 if let hour = components.hour {
                     self.hour = hour

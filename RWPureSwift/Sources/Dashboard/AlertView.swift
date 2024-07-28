@@ -35,7 +35,7 @@ struct AlertView: View {
         }.background(Color.red.opacity(0.5))
         .task {
             while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: UInt64(60 * Double(NSEC_PER_SEC)))
+                try? await Task.sleep(nanoseconds: UInt64(5 * Double(NSEC_PER_SEC))) //TODO: Change to a minute later
                 withAnimation {
                     currentTime = Date.now
                 }

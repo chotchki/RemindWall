@@ -127,3 +127,9 @@ public final class ReminderTime: Equatable, Sendable {
         return true
     }
 }
+
+extension ReminderTime: CustomDebugStringConvertible {
+    public var debugDescription: String {
+        return "ReminderTime(weekDay: \(weekDay), hour: \(hour), minute: \(minute)"
+    }
+}

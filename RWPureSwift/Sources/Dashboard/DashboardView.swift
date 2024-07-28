@@ -28,7 +28,9 @@ public struct DashboardView: View {
                     UpNextView(nextEvent: n).transition(.slide)
                 }
             }
-            AlertView()
+            AlertView().onTapGesture {
+                state = .editSettings
+            }
         }.onAppear(perform: {
             refresh()
         }).task {//From: https://fatbobman.com/en/posts/mastering_swiftui_task_modifier/
