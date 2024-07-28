@@ -2,7 +2,7 @@ import Foundation
 import SwiftData
 
 @Model
-public class ReminderTime: Equatable, Identifiable {
+public class ReminderTimeModel: Equatable, Identifiable {
     @Attribute(.unique) public var id: UUID
     @Attribute(.unique) public var associatedTag: [UInt8]?
     
@@ -11,6 +11,8 @@ public class ReminderTime: Equatable, Identifiable {
     public var weekDay: Int
     public var hour: Int
     public var minute: Int
+    
+    @Relationship(inverse: \Trackee.reminderTimes)
     
     public init() {
         self.id = UUID()
@@ -32,11 +34,11 @@ public class ReminderTime: Equatable, Identifiable {
 }
 
 ///Technique from here: https://stackoverflow.com/a/77775620
-extension ReminderTime {
+extension ReminderTimeModel {
     @MainActor
     public static var preview: ModelContainer {
         let container  = DataSchema.previewContainer
-        container.mainContext.insert(ReminderTime())
+        container.mainContext.insert(ReminderTimeModel())
         return container
     }
 }

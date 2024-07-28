@@ -62,7 +62,7 @@ struct EditTrackeeView: View {
                         Button("Add New Reminder"){
                             trackee.reminderTimes
                                 .append(
-                                    ReminderTime()
+                                    ReminderTimeModel()
                                 )
                         }
                     }

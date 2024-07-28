@@ -1,13 +1,23 @@
-//
-//  SwiftUIView.swift
-//  
-//
-//  Created by Christopher Hotchkiss on 7/20/24.
-//
-
+import DataModel
+import SwiftData
 import SwiftUI
 
 struct AlertView: View {
+    
+    @Query(filter: #Predicate<Trackee> { t in
+        !t.reminderTimes.isEmpty
+    }) var trackees: [Trackee]
+    
+    private var lateTrackees: [Trackee] {
+        let date = Date.now
+        let calendar = Calendar.current
+        return trackees.compactMap { t in
+            for rt in t.reminderTimes {
+                
+            }
+        }
+    }
+    
     var body: some View {
         VStack {
             Spacer()

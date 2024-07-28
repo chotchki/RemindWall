@@ -2,7 +2,7 @@ import Foundation
 import SwiftData
 
 public struct DataSchema {
-    public static let schema: Schema = Schema([ReminderTime.self, Settings.self, Trackee.self])
+    public static let schema: Schema = Schema([ReminderTimeModel.self, Settings.self, Trackee.self])
     
     @MainActor
     public static var previewContainer: ModelContainer {

@@ -7,9 +7,9 @@ public class Trackee: Comparable, Identifiable, Equatable {
     @Attribute(.unique) public var name: String
     
     @Relationship(deleteRule: .cascade)
-    public var reminderTimes: [ReminderTime]
+    public var reminderTimes: [ReminderTimeModel]
     
-    public init(id: UUID, name: String, reminderTimes: [ReminderTime]) {
+    public init(id: UUID, name: String, reminderTimes: [ReminderTimeModel]) {
         self.id = id
         self.name = name
         self.reminderTimes = reminderTimes
