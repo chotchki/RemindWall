@@ -22,15 +22,6 @@ public struct CheckPermissionsView: View {
         self._state = state
     }
     
-    private func checkPermissions() {
-        calenderStatus = EKEventStore.authorizationStatus(for: .event)
-        photoStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
-        
-        if calenderStatus == .fullAccess && photoStatus == .authorized {
-            state = .editSettings
-        }
-    }
-    
     private func openPhotoSettings(){
         #if targetEnvironment(macCatalyst)
         Task.detached { @MainActor in
@@ -71,23 +62,16 @@ public struct CheckPermissionsView: View {
                     Button("Open Settings Application"){
                         openCalendarSettings()
                     }
-                    Button("Recheck Calendar Access"){
-                        checkPermissions()
-                    }
                 } else if calenderStatus == .restricted {
                     Text("In order to use this application you will need to allow full calendar access from Screen Time.")
                     Button("Open Settings Application"){
                         openCalendarSettings()
-                    }
-                    Button("Recheck Calendar Access"){
-                        checkPermissions()
                     }
                 } else if calenderStatus != .fullAccess {
                     Button("Authorize Calendar Access"){
                         Task.detached(operation: {
                             _ = try await GlobalEventStore.shared
                                 .requestAccess()
-                            checkPermissions()
                         })
                     }
                 } else {
@@ -101,31 +85,34 @@ public struct CheckPermissionsView: View {
                     Button("Open Settings Application"){
                         openPhotoSettings()
                     }
-                    Button("Recheck Photo Access"){
-                        checkPermissions()
-                    }
                 } else if photoStatus == .restricted {
                     Text("In order to use this application you will need to allow full photo access from Screen Time.")
                     Button("Open Settings Application"){
                         openPhotoSettings()
                     }
-                    Button("Recheck Photo Access"){
-                        checkPermissions()
-                    }
                 } else if photoStatus != .authorized {
                     Button("Authorize Photo Access"){
                         Task.detached(operation: {
                             await PHPhotoLibrary.requestAuthorization(for: .readWrite)
-                            checkPermissions()
                         })
                     }
                 } else {
                     Text("Photo Access Granted")
                 }
             }
-        }.onAppear(perform: {
-            self.checkPermissions()
-        })
+        }.task {
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: UInt64(1 * Double(NSEC_PER_SEC)))
+                withAnimation {
+                    calenderStatus = EKEventStore.authorizationStatus(for: .event)
+                    photoStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+                    
+                    if calenderStatus == .fullAccess && photoStatus == .authorized {
+                        state = .editSettings
+                    }
+                }
+            }
+        }
     }
 }
 
