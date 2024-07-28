@@ -8,9 +8,7 @@ public class ReminderTimeModel: Equatable, Identifiable {
     
     public var lastScan: Date?
     
-    public var weekDay: Int
-    public var hour: Int
-    public var minute: Int
+    public var reminderTime: ReminderTime
     
     @Relationship(inverse: \Trackee.reminderTimes)
     
@@ -18,18 +16,22 @@ public class ReminderTimeModel: Equatable, Identifiable {
         self.id = UUID()
         self.associatedTag = nil
         self.lastScan = nil
-        self.weekDay = 1
-        self.hour = 1
-        self.minute = 1
+        self.reminderTime = ReminderTime(weekDay: 1, hour: 1, minute: 1)
     }
     
-    public init(id: UUID, associatedTag: [UInt8]? = nil, lastScan: Date? = nil, weekDay: Int, hour: Int, minute: Int) {
+    public init(id: UUID, associatedTag: [UInt8]? = nil, lastScan: Date? = nil, reminderTime: ReminderTime ) {
         self.id = id
         self.associatedTag = associatedTag
         self.lastScan = lastScan
-        self.weekDay = weekDay
-        self.hour = hour
-        self.minute = minute
+        self.reminderTime = reminderTime
+    }
+    
+    public func isLate(date: Date, calendar: Calendar) -> Bool {
+        return reminderTime.inLateWindow(asOf: date, calendar: calendar) && (lastScan == nil || lastScan!.timeIntervalSince(date) > TimeInterval(60*60*6))
+    }
+    
+    public func isScannable(date: Date, calendar: Calendar) -> Bool {
+        return reminderTime.inScanWindow(asOf: date, calendar: calendar)
     }
 }
 

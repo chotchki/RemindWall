@@ -29,10 +29,12 @@ struct EditTrackeeView: View {
                 
                 Section {
                     List {
-                        ForEach($trackee.reminderTimes){ reminderTime in
+                        ForEach($trackee.reminderTimes){ $reminderTimeModel in
+                            @Bindable var reminderTime = reminderTimeModel.reminderTime
                             HStack{
                                 VStack {
-                                    Picker("Day of Week", selection: reminderTime.weekDay){
+                                    
+                                    Picker("Day of Week", selection: $reminderTime.weekDay){
                                         Text("Sunday").tag(1)
                                         Text("Monday").tag(2)
                                         Text("Tuesday").tag(3)
@@ -44,12 +46,12 @@ struct EditTrackeeView: View {
                                     HStack {
                                         Text("Time of Day")
                                         Spacer()
-                                        TimePicker(calendar: calendar, hour: reminderTime.hour, minute: reminderTime.minute)
+                                        TimePicker(calendar: calendar, hour: $reminderTime.hour, minute: $reminderTime.minute)
                                     }
                                 }
                                 
                                 #if canImport(LibNFCSwift)
-                                AssociateTag(associatedTag: reminderTime.associatedTag)
+                                AssociateTag(associatedTag: $reminderTimeModel.associatedTag)
                                 #else
                                 if let tag = reminderTime.associatedTag? {
                                     Text("Configured Tag \(tag.hexa)")
