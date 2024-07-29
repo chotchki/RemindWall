@@ -1,3 +1,4 @@
+import AppModel
 import DataModel
 import PhotosUI
 import SwiftUI
@@ -18,9 +19,13 @@ public struct SlideshowView: View {
     public var body: some View {
         Group {
             if selectedAlbumId == nil {
-                Button("Return to Settings", action: {
-                    state = .editSettings
-                })
+                ContentUnavailableView {
+                    Label("Slideshow Not Configured", systemImage: "photo.stack")
+                } description: {
+                    Button("Return to Settings", action: {
+                        state = .editSettings
+                    })
+                }
             } else {
                 GeometryReader { reader in
                     if let ca = Binding($currentAsset) {
