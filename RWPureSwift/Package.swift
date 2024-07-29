@@ -7,6 +7,7 @@ let package = Package(
     name: "RWPureSwift",
     platforms: [.iOS(.v17), .macCatalyst(.v17)],
     products: [
+        .library(name: "AppModel", targets: ["AppModel"]),
         .library(name: "AppNavigation", targets: ["AppNavigation"]),
         .library(name: "CheckPermissions", targets: ["CheckPermissions"]),
         .library(name: "Dashboard", targets: ["Dashboard"]),
@@ -20,12 +21,15 @@ let package = Package(
         .package(url: "https://github.com/chotchki/LibNFCSwift.git", from: "0.1.0"),
     ],
     targets: [
+        .target(name: "AppModel", swiftSettings: [ .enableExperimentalFeature("StrictConcurrency")]),
         .target(name: "AppNavigation", dependencies: [
+            .target(name: "AppModel"),
             .target(name: "CheckPermissions"),
             .target(name: "Dashboard"),
             .target(name: "EditSettings")
         ], swiftSettings: [ .enableExperimentalFeature("StrictConcurrency")]),
         .target(name: "CheckPermissions", dependencies: [
+            .target(name: "AppModel"),
             .target(name: "DataModel"),
             .target(name: "Utility")
         ], swiftSettings: [ .enableExperimentalFeature("StrictConcurrency")]),
@@ -39,13 +43,14 @@ let package = Package(
         .testTarget(name: "DataModelTests", dependencies: [.target(name: "DataModel")]),
         .target(name: "EditSettings",
                 dependencies: [
-                    .product(name: "LibNFCSwift", package: "LibNFCSwift" , condition: .when(platforms: [.macCatalyst])),
+                    .target(name: "AppModel"),
                     .target(name: "DataModel"),
+                    .target(name: "TagScan", condition: .when(platforms: [.macCatalyst])),
                     .target(name: "Utility"),
-                    
                 ], swiftSettings: [ .enableExperimentalFeature("StrictConcurrency")]),
         .target(name: "Slideshow",
                 dependencies: [
+                    .target(name: "AppModel"),
                     .target(name: "DataModel"),
                     .target(name: "Utility"),
                 ], swiftSettings: [ .enableExperimentalFeature("StrictConcurrency")]),

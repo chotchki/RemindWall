@@ -1,8 +1,8 @@
-//
-//  File.swift
-//  
-//
-//  Created by Christopher Hotchkiss on 7/28/24.
-//
-
-import Foundation
+public enum TagReaderState: Equatable {
+    case loading
+    case noReader
+    case waitingForRequest
+    case waitingForTag
+    case readTag([UInt8])
+    case readerError(String)
+}

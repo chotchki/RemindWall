@@ -2,21 +2,13 @@ import Foundation
 import SwiftData
 
 @Model
-public class Trackee: Comparable, Identifiable, Equatable {
-    @Attribute(.unique) public var id: UUID
-    @Attribute(.unique) public var name: String
+public class Trackee {
+    public var id: UUID = UUID()
+    public var name: String = "Unknown"
     
-    @Relationship(deleteRule: .cascade)
-    public var reminderTimes: [ReminderTimeModel]
-    
-    public init(id: UUID, name: String, reminderTimes: [ReminderTimeModel]) {
+    public init(id: UUID = UUID(), name: String) {
         self.id = id
         self.name = name
-        self.reminderTimes = reminderTimes
-    }
-    
-    public static func < (lhs: Trackee, rhs: Trackee) -> Bool {
-        lhs.name < rhs.name
     }
 }
 
@@ -25,8 +17,8 @@ extension Trackee {
     @MainActor
     public static var preview: ModelContainer {
         let container  = DataSchema.modelContainer
-        container.mainContext.insert(Trackee(id: UUID(), name: "Bob", reminderTimes: []))
-        container.mainContext.insert(Trackee(id: UUID(), name: "Sue", reminderTimes: []))
+        container.mainContext.insert(Trackee(name: "Bob"))
+        container.mainContext.insert(Trackee(name: "Sue"))
         
         return container
     }

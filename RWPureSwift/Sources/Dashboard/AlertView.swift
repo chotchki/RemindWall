@@ -2,48 +2,40 @@ import DataModel
 import SwiftData
 import SwiftUI
 
-struct AlertView: View {
-    let calendar = Calendar.current
+public struct AlertView: View {
+    @Environment(\.calendar) var calendar
+    @Environment(\.modelContext) var modelContext
     
-    @Query(filter: #Predicate<Trackee> { t in
-        !t.reminderTimes.isEmpty
-    }) var trackees: [Trackee]
-    
-    @State private var currentTime = Date.now
-    
-    private var lateTrackees: [Trackee] {
-        return trackees.compactMap { t in
-            for rt in t.reminderTimes {
-                if rt.isLate(date: currentTime, calendar: calendar) {
-                    return t
-                }
-            }
-            return nil
-        }
-    }
-    
-    var body: some View {
+    @State var lateTrackees: [Trackee] = []
+        
+    public var body: some View {
         VStack {
-            Spacer()
-            ForEach(lateTrackees){ lt in
-                Text("\(lt.name) you are late for your meds!")
-                    .font(.custom("Overlay", size: 200.0 / CGFloat(lateTrackees.count), relativeTo: .largeTitle))
-                    .colorInvert()
-                    .frame(maxWidth:.infinity).multilineTextAlignment(.center)
+            if !lateTrackees.isEmpty {
+                Spacer()
+                ForEach(lateTrackees){ lt in
+                    Text("\(lt.name) you are late for your meds!")
+                        .font(.custom("Overlay", size: 200.0 / CGFloat(lateTrackees.count), relativeTo: .largeTitle))
+                        .colorInvert()
+                        .frame(maxWidth:.infinity).multilineTextAlignment(.center)
+                }
+                Spacer()
             }
-            Spacer()
         }.background(Color.red.opacity(0.5))
         .task {
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: UInt64(5 * Double(NSEC_PER_SEC))) //TODO: Change to a minute later
+                
+                let ft = FetchDescriptor<ReminderTimeModel>()
+                let rTMs: [ReminderTimeModel] = (try? modelContext.fetch(ft)) ?? []
+                let lateTrackeeIds = rTMs.filter{ $0.isLate(date: Date.now, calendar: calendar) }.map { $0.trackeeId }
+                
+                let ftt = FetchDescriptor<Trackee>()
+                let trackees = (try? modelContext.fetch(ftt)) ?? []
+                
                 withAnimation {
-                    currentTime = Date.now
+                    lateTrackees = trackees.filter{ lateTrackeeIds.contains($0.id) }
                 }
             }
         }
     }
-}
-
-#Preview {
-    AlertView()
 }

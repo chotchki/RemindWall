@@ -1,3 +1,4 @@
+import AppModel
 import DataModel
 import PhotosUI
 import SwiftData

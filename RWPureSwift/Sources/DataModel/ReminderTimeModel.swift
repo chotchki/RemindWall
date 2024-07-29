@@ -2,28 +2,34 @@ import Foundation
 import SwiftData
 
 @Model
-public class ReminderTimeModel: Equatable, Identifiable {
-    @Attribute(.unique) public var id: UUID
-    @Attribute(.unique) public var associatedTag: String?
+public class ReminderTimeModel: Equatable {
+    public var trackeeId: UUID = UUID()
+    
+    public var associatedTag: String?
     
     public var lastScan: Date?
     
-    public var reminderTime: ReminderTime
+    //Range 1 = Sun to 7 = Sat
+    public var weekDay: Int = 1
+    public var hour: Int = 1
+    public var minute: Int = 1
     
-    @Relationship(inverse: \Trackee.reminderTimes)
-    
+    public var reminderTime: ReminderTime {
+        ReminderTime(weekDay: weekDay, hour: hour, minute: minute)
+    }
+        
     public init() {
-        self.id = UUID()
         self.associatedTag = nil
         self.lastScan = nil
-        self.reminderTime = ReminderTime(weekDay: 1, hour: 1, minute: 1)
     }
     
-    public init(id: UUID, associatedTag: String? = nil, lastScan: Date? = nil, reminderTime: ReminderTime ) {
-        self.id = id
+    public init(trackeeId: UUID = UUID(), associatedTag: String? = nil, lastScan: Date? = nil, weekDay: Int = 1, hour: Int = 1, minute: Int = 1) {
+        self.trackeeId = trackeeId
         self.associatedTag = associatedTag
         self.lastScan = lastScan
-        self.reminderTime = reminderTime
+        self.weekDay = weekDay
+        self.hour = hour
+        self.minute = minute
     }
     
     public func isLate(date: Date, calendar: Calendar) -> Bool {

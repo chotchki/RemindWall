@@ -3,7 +3,7 @@ import SwiftData
 
 @Model
 public class Settings: Equatable {
-    @Attribute(.unique) public var id: Int = 1
+    public var id: Int = 1
     public var selectedAlbumId: String?
     public var selectedCalendarId: String?
 

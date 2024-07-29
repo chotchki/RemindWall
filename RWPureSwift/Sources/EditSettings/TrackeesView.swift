@@ -21,7 +21,6 @@ struct TrackeesView: View {
                         HStack {
                             Text(trackee.name)
                             Spacer()
-                            Text("Reminder Count - \(trackee.reminderTimes.count)")
                         }
                     }.padding()
                 }.onDelete(perform: { offsets in
@@ -33,7 +32,7 @@ struct TrackeesView: View {
             }
             Button("Add Trackee", action: {
                 modelContext
-                    .insert(Trackee(id: UUID(), name: "Unknown", reminderTimes: []))
+                    .insert(Trackee(name: "Unknown"))
             })
         }
     }

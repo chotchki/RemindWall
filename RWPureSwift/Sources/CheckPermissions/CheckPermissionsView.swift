@@ -1,9 +1,4 @@
-//
-//  CheckPermissionsView.swift
-//  RemindWall2
-//
-//  Created by Christopher Hotchkiss on 6/29/24.
-//
+import AppModel
 import EventKit
 import PhotosUI
 import SwiftUI

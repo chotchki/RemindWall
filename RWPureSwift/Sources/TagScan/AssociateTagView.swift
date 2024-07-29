@@ -6,20 +6,9 @@
 //
 
 import SwiftUI
-
-#if canImport(LibNFCSwift)
 import LibNFCSwift
 
-public enum TagReaderState: Equatable {
-    case loading
-    case noReader
-    case waitingForRequest
-    case waitingForTag
-    case readTag([UInt8])
-    case readerError(String)
-}
-
-struct AssociateTag: View {
+public struct AssociateTagView: View {
     @Environment(\.modelContext) var modelContext
     private var readerDriver = LibNFCActor.shared
     
@@ -31,7 +20,7 @@ struct AssociateTag: View {
         self._associatedTag = associatedTag
     }
     
-    var body: some View {
+    public var body: some View {
         VStack{
             HStack{
                 Image(systemName: "sensor.tag.radiowaves.forward")
@@ -107,15 +96,12 @@ struct AssociateTag: View {
     }
 }
 
-
-
 #Preview("No Tag") {
     @State var associatedTag: String? = nil
-    return AssociateTag(associatedTag: $associatedTag)
+    return AssociateTagView(associatedTag: $associatedTag)
 }
 
 #Preview("Existing Tag") {
     @State var associatedTag: String? = "0:0:0"
-    return AssociateTag(associatedTag: $associatedTag)
+    return AssociateTagView(associatedTag: $associatedTag)
 }
-#endif

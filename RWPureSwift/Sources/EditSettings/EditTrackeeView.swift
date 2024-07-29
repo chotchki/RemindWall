@@ -12,10 +12,11 @@ struct EditTrackeeView: View {
     @Environment(\.calendar) var calendar
     @Environment(\.modelContext) var context
     @Environment(\.dismiss) var dismiss
+    
     @Bindable var trackee: Trackee
     
     public init(trackee: Bindable<Trackee>) {
-        self._trackee = trackee
+        self._trackee = trackee        
     }
     
     var body: some View {
@@ -29,48 +30,7 @@ struct EditTrackeeView: View {
                 
                 Section {
                     List {
-                        ForEach($trackee.reminderTimes){ $reminderTimeModel in
-                            @Bindable var reminderTime = reminderTimeModel.reminderTime
-                            HStack{
-                                VStack {
-                                    Picker("Day of Week", selection: $reminderTime.weekDay){
-                                        Text("Sunday").tag(1)
-                                        Text("Monday").tag(2)
-                                        Text("Tuesday").tag(3)
-                                        Text("Wednesday").tag(4)
-                                        Text("Thursday").tag(5)
-                                        Text("Friday").tag(6)
-                                        Text("Saturday").tag(7)
-                                    }
-                                    HStack {
-                                        Text("Time of Day")
-                                        Spacer()
-                                        TimePicker(calendar: calendar, hour: $reminderTime.hour, minute: $reminderTime.minute)
-                                    }
-                                    if let ls = reminderTimeModel.lastScan {
-                                        Text("Last Scanned: \(ls)")
-                                    } else {
-                                        Text("Never Scanned")
-                                    }
-                                }
-                                
-                                #if canImport(LibNFCSwift)
-                                AssociateTag(associatedTag: $reminderTimeModel.associatedTag)
-                                #else
-                                if let tag = reminderTime.associatedTag? {
-                                    Text("Configured Tag \(tag.hexa)")
-                                } else {
-                                    Text("No Tag Configured")
-                                }
-                                #endif
-                            }
-                        }
-                        Button("Add New Reminder"){
-                            trackee.reminderTimes
-                                .append(
-                                    ReminderTimeModel()
-                                )
-                        }
+                        ReminderTimeModelsView(trackeeId: trackee.id)
                     }
                 } header: {
                     Text("Reminder Times")
