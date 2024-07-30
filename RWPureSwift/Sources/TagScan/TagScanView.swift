@@ -24,48 +24,49 @@ public struct TagScanView: View {
     @State private var scanResult: Result<(), TagScanViewError>?
     
     public var body: some View {
-        Group {
+        VStack{
             if let sr = scanResult {
-                Spacer()
-                switch sr {
-                case .success:
-                    Text("Thank you for taking your meds!")
-                case .failure(.unknownTag):
-                    Text("Unknown Tag Scanned")
-                case .failure(.wrongScanWindow):
-                    Text("Tag not scannable now, are you taking the right meds?")
-                case .failure(.noDevice):
-                    Text("No NFC reader found, scans disabled.")
-                case let .failure(.unknown(e)):
-                    Text("Unknown failure \(e)")
-                }
-                Spacer()
+                VStack {
+                    Spacer()
+                    switch sr {
+                    case .success:
+                        Text("Thank you for taking your meds!")
+                    case .failure(.unknownTag):
+                        Text("Unknown Tag Scanned")
+                    case .failure(.wrongScanWindow):
+                        Text("Tag not scannable now, are you taking the right meds?")
+                    case .failure(.noDevice):
+                        Text("No NFC reader found, scans disabled.")
+                    case let .failure(.unknown(e)):
+                        Text("Unknown failure \(e)")
+                    }
+                    Spacer()
+                }.padding()
+                .background(Color.white)
             } else {
                 EmptyView()
             }
-        }.onTapGesture {
-            self.scanResult = nil //Clear scan
         }
-        .padding()
-        .background(Color.white)
         .task {
             while !Task.isCancelled {
                 do {
                     let tagFound = try await LibNFCActor.shared.findFirstTag(modulation: .iSO14443A(), clock: .continuous, timeout: timeout).hexa
                     
-                    log.debug("Found \(tagFound)")
+                    log.warning("Found \(tagFound)")
                     
-                    let fd = FetchDescriptor<ReminderTimeModel>(predicate: #Predicate { rtm in
-                        rtm.associatedTag.flatMap { $0 == tagFound } ?? false
-                    })
+                    let fd = FetchDescriptor<ReminderTimeModel>()
                     let rtms = try modelContext.fetch(fd)
                     
-                    guard let rtm = rtms.first else {
+                    let filteredRtms = rtms.filter{
+                        $0.associatedTag != nil && $0.associatedTag == tagFound
+                    }
+                    
+                    guard let rtm = filteredRtms.first else {
                         self.scanResult = .failure(.unknownTag)
                         continue
                     }
                     
-                    log.debug("Lookup worked")
+                    log.warning("Lookup worked")
                     
                     if rtm.isScannable(date: Date.now, calendar: calendar){
                         rtm.lastScan = Date.now
@@ -85,6 +86,8 @@ public struct TagScanView: View {
                     self.scanResult = .failure(.unknown(error.localizedDescription))
                 }
             }
+        }.onTapGesture {
+            self.scanResult = nil //Clear scan
         }
     }
 }
