@@ -14,7 +14,6 @@ let package = Package(
         .library(name: "DataModel", targets: ["DataModel"]),
         .library(name: "EditSettings", targets: ["EditSettings"]),
         .library(name: "Slideshow", targets: ["Slideshow"]),
-        .library(name: "TagScan", targets: ["TagScan"]),
         .library(name: "Utility", targets: ["Utility"]),
     ],
     dependencies: [
@@ -56,7 +55,7 @@ let package = Package(
                 ], swiftSettings: [ .enableExperimentalFeature("StrictConcurrency")]),
         .target(name: "TagScan",
                 dependencies: [
-                    .product(name: "LibNFCSwift", package: "LibNFCSwift"),
+                    .product(name: "LibNFCSwift", package: "LibNFCSwift", condition: .when(platforms: [.macCatalyst])),
                     .target(name: "DataModel"),
                     .target(name: "Utility"),
                 ], swiftSettings: [ .enableExperimentalFeature("StrictConcurrency")]),

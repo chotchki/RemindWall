@@ -36,7 +36,7 @@ public struct EditReminderTimeModelView: View {
 #if canImport(TagScan)
             AssociateTagView(associatedTag: $rtm.associatedTag)
 #else
-            if let tag = reminderTime.associatedTag? {
+            if let tag = rtm.associatedTag {
                 Text("Configured Tag \(tag)")
             } else {
                 Text("No Tag Configured")

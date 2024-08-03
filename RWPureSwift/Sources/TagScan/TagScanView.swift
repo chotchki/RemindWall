@@ -81,6 +81,7 @@ public struct TagScanView: View {
                     //Timeout is fine
                 } catch LibNFCError.deviceConnectFailed {
                     self.scanResult = .failure(.noDevice)
+                    try? await Task.sleep(nanoseconds: UInt64(Double(timeout) * Double(NSEC_PER_SEC))) //TODO: Change to a minute later
                 } catch {
                     // Supress other errors
                     self.scanResult = .failure(.unknown(error.localizedDescription))

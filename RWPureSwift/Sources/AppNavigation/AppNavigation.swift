@@ -12,7 +12,7 @@ public struct AppNavigation: View {
     @Environment(\.modelContext) var modelContext
     
     @Query(filter: #Predicate<Settings> { s in
-        s.id == 1
+        s.id == "0D8698C8-B58A-42F3-AB32-AAB565C074A2"
     }) var settingsQuery: [Settings]
     
     public init() {}

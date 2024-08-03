@@ -6,6 +6,8 @@ public struct AlertView: View {
     @Environment(\.calendar) var calendar
     @Environment(\.modelContext) var modelContext
     
+    let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    
     @State var lateTrackees: [Trackee] = []
         
     public var body: some View {
