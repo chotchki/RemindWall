@@ -17,7 +17,8 @@ public struct LivePhotoView: UIViewRepresentable {
     public func makeUIView(context: Context) -> PHLivePhotoView {
         let phlpv = PHLivePhotoView()
         phlpv.isMuted = true
-        
+        phlpv.livePhoto = livephoto
+        phlpv.startPlayback(with: .full)
         return phlpv
     }
 

@@ -25,8 +25,10 @@ struct UpNextView: View {
                     Text("Unknown Event in \(timeUntil())").font(.title)
                 }
             }
-            
-        }.padding()
+            Spacer()
+        }
+        .padding()
+        .background(Color.white)
     }
     
     func timeUntil() -> String {

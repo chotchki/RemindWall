@@ -22,12 +22,13 @@ public struct DashboardView: View {
     
     public var body: some View {
         ZStack {
+            @Bindable var settings = settings
+            SlideshowView(state: $state, selectedAlbumId: $settings.selectedAlbumId)
             VStack(alignment: .leading){
                 if let c = currentEvent {
                     NowView(currentEvent: c).transition(.slide)
                 }
-                @Bindable var settings = settings
-                SlideshowView(state: $state, selectedAlbumId: $settings.selectedAlbumId)
+                Spacer()
                 if let n = nextEvent {
                     UpNextView(nextEvent: n).transition(.slide)
                 }

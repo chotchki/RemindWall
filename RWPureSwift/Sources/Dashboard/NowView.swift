@@ -15,6 +15,9 @@ struct NowView: View {
                 .font(.largeTitle)
             Text(currentEvent.title)
                 .font(.title)
-        }.padding()
+            Spacer()
+        }
+        .padding()
+        .background(Color.white)
     }
 }

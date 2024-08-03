@@ -31,7 +31,7 @@ public struct SlideshowView: View {
             } else {
                 GeometryReader { reader in
                     if let ca = currentAsset {
-                        AssetLoaderView(asset: ca, nextAsset: nextAsset, viewSize: reader.size).onTapGesture {
+                        AssetLoaderView(asset: ca, nextAsset: nextAsset, frame: reader.frame(in: .local)).onTapGesture {
                             state = .editSettings
                         }
                     } else {
