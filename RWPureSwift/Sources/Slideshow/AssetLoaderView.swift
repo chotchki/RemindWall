@@ -3,13 +3,17 @@ import SwiftUI
 import Utility
 
 public struct AssetLoaderView: View {
-    @Binding var asset: PHAsset
+    let asset: PHAsset
+    let nextAsset: PHAsset?
+    
     let viewSize: CGSize
     
     @State private var assetType: AssetType = .loading
 
-    public init(asset: Binding<PHAsset>, viewSize: CGSize) {
-        self._asset = asset
+    public init(asset: PHAsset, nextAsset: PHAsset?, viewSize: CGSize) {
+        self.asset = asset
+        self.nextAsset = nextAsset
+        
         self.viewSize = viewSize
     }
 
@@ -28,6 +32,13 @@ public struct AssetLoaderView: View {
         }.frame(width: viewSize.width, height: viewSize.width)
         .task(id: asset, {
             self.assetType = await PHImageCacheActor.shared.loadAsset(asset: asset, viewSize: viewSize)
+            if let nA = nextAsset {
+                await PHImageCacheActor.shared.startCaching(asset: nA, viewSize: viewSize)
+            }
+        }).onDisappear(perform: {
+            Task {
+                await PHImageCacheActor.shared.unloadCache(asset: asset, viewSize: viewSize)
+            }
         })
     }
 }

@@ -9,7 +9,9 @@ public struct SlideshowView: View {
     
     @State private var assetList: [PHAsset]?
     @State private var currentAlbumIndex: Int = 0
+    
     @State var currentAsset: PHAsset?
+    @State var nextAsset: PHAsset?
         
     public init(state: Binding<AppState>, selectedAlbumId: Binding<String?>){
         self._state = state
@@ -28,8 +30,8 @@ public struct SlideshowView: View {
                 }
             } else {
                 GeometryReader { reader in
-                    if let ca = Binding($currentAsset) {
-                        AssetLoaderView(asset: ca, viewSize: reader.size).onTapGesture {
+                    if let ca = currentAsset {
+                        AssetLoaderView(asset: ca, nextAsset: nextAsset, viewSize: reader.size).onTapGesture {
                             state = .editSettings
                         }
                     } else {
@@ -51,6 +53,10 @@ public struct SlideshowView: View {
                     if al.count > currentAlbumIndex {
                         currentAsset = al[currentAlbumIndex]
                     }
+                    
+                    if al.count > currentAlbumIndex + 1 {
+                        nextAsset = al[currentAlbumIndex + 1]
+                    }
                 }
                 
                 try? await Task.sleep(nanoseconds: UInt64(10 * Double(NSEC_PER_SEC)))
@@ -62,8 +68,5 @@ public struct SlideshowView: View {
                 }
             }
         })
-        .task {//From: https://fatbobman.com/en/posts/mastering_swiftui_task_modifier/
-            
-        }
     }
 }
