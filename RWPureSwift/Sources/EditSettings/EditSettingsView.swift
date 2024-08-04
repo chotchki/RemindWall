@@ -72,6 +72,14 @@ public struct EditSettingsView: View {
                     } label: {
                         Text("Start Slideshow")
                     }
+                    
+                    #if targetEnvironment(macCatalyst)
+                    Button {
+                        exit(0)
+                    } label: {
+                        Text("Quit Application")
+                    }
+                    #endif
                 }
             }
         }
