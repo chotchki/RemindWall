@@ -41,7 +41,17 @@ public struct DashboardView: View {
             #endif
         }.onAppear(perform: {
             refresh()
-        }).task {//From: https://fatbobman.com/en/posts/mastering_swiftui_task_modifier/
+            
+            #if targetEnvironment(macCatalyst)
+            NSCursor.hide()
+            #endif
+        }).onDisappear(perform: {
+            #if targetEnvironment(macCatalyst)
+            NSCursor.unhide()
+            #endif
+        })
+        
+        .task {//From: https://fatbobman.com/en/posts/mastering_swiftui_task_modifier/
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: UInt64(5 * Double(NSEC_PER_SEC)))
                 withAnimation {

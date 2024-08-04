@@ -18,4 +18,3 @@ struct RemindWallApp: App {
         .modelContainer(DataSchema.modelContainer)
     }
 }
-
