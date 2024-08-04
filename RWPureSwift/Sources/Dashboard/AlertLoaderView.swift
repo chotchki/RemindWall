@@ -2,27 +2,16 @@ import DataModel
 import SwiftData
 import SwiftUI
 
-public struct AlertView: View {
+struct AlertLoaderView: View {
     @Environment(\.calendar) var calendar
     @Environment(\.modelContext) var modelContext
     
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
-    @State var lateTrackees: [Trackee] = []
-        
-    public var body: some View {
-        VStack {
-            if !lateTrackees.isEmpty {
-                Spacer()
-                ForEach(lateTrackees){ lt in
-                    Text("\(lt.name) you are late for your meds!")
-                        .font(.custom("Overlay", size: 200.0 / CGFloat(lateTrackees.count), relativeTo: .largeTitle))
-                        .colorInvert()
-                        .frame(maxWidth:.infinity).multilineTextAlignment(.center)
-                }
-                Spacer()
-            }
-        }.background(Color.red.opacity(0.5))
+    @State private var lateTrackees: [Trackee] = []
+    
+    var body: some View {
+        AlertView(lateTrackees: lateTrackees)
         .task {
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: UInt64(5 * Double(NSEC_PER_SEC))) //TODO: Change to a minute later

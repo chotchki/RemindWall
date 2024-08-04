@@ -33,7 +33,7 @@ public struct DashboardView: View {
                     UpNextView(nextEvent: n).transition(.slide)
                 }
             }
-            AlertView().onTapGesture {
+            AlertLoaderView().onTapGesture {
                 state = .editSettings
             }
             #if canImport(TagScan)

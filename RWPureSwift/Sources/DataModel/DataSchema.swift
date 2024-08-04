@@ -8,7 +8,7 @@ public struct DataSchema {
         let schema = Schema([ReminderTimeModel.self, Settings.self, Trackee.self])
         
         let modelConfig = if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
-            ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, allowsSave: true, groupContainer: .automatic, cloudKitDatabase: .private("iCloud.com.remindwall.tracker"))
+            ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         } else {
             //Once I figure out production, I'll need to change this
             ModelConfiguration(schema: schema, isStoredInMemoryOnly: false, allowsSave: true, groupContainer: .automatic, cloudKitDatabase: .private("iCloud.com.remindwall.tracker"))
