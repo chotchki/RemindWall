@@ -37,16 +37,16 @@ public struct DashboardView: View {
                 state = .editSettings
             }
             #if canImport(TagScan)
-            TagScanView()
+            TagScanLoaderView()
             #endif
         }.onAppear(perform: {
             refresh()
             
-            #if targetEnvironment(macCatalyst)
+            #if !DEBUG && targetEnvironment(macCatalyst)
             NSCursor.hide()
             #endif
         }).onDisappear(perform: {
-            #if targetEnvironment(macCatalyst)
+            #if !DEBUG && targetEnvironment(macCatalyst)
             NSCursor.unhide()
             #endif
         })
