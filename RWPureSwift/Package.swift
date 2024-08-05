@@ -52,7 +52,9 @@ let package = Package(
                     .target(name: "AppModel"),
                     .target(name: "DataModel"),
                     .target(name: "Utility"),
-                ], swiftSettings: [ .enableExperimentalFeature("StrictConcurrency")]),
+                ], 
+                resources:[ .process("Widget/Resources/PreviewAssets.xcassets")],
+                swiftSettings: [ .enableExperimentalFeature("StrictConcurrency")]),
         .target(name: "TagScan",
                 dependencies: [
                     .product(name: "LibNFCSwift", package: "LibNFCSwift", condition: .when(platforms: [.macCatalyst])),

@@ -19,6 +19,7 @@ public struct LivePhotoView: UIViewRepresentable {
         phlpv.isMuted = true
         phlpv.livePhoto = livephoto
         phlpv.startPlayback(with: .full)
+        phlpv.contentMode = .scaleAspectFill
         return phlpv
     }
 

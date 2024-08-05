@@ -19,21 +19,7 @@ public struct AssetLoaderView: View {
     }
 
     public var body: some View {
-        VStack {
-            switch assetType {
-            case .loading:
-                ProgressView()
-            case let .staticImage(ui):
-                withAnimation {
-                    Image(uiImage: ui).frame(width: frame.width, height: frame.height, alignment: align).background(Color.red).clipped()
-                }
-            case let .livePhoto(ph):
-                LivePhotoView(livephoto: ph)
-            case .errorPhoto:
-                Text("Unable to load image")
-            }
-        }
-        .frame(width: frame.width, height: frame.width)
+        KenBurnsPanView(assetType: assetType, size: frame.size)
         .task(id: asset, {
             self.align = .topLeading
             self.assetType = await PHImageCacheActor.shared.loadAsset(asset: asset, viewSize: frame.size)
