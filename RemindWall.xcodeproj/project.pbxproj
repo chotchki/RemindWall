@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		BF2973102C8667AC0029F361 /* RemindWalliOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF29730F2C8667AC0029F361 /* RemindWalliOSApp.swift */; };
+		BF2973162C8667AD0029F361 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BF2973152C8667AD0029F361 /* Assets.xcassets */; };
+		BF2973192C8667AD0029F361 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BF2973182C8667AD0029F361 /* Preview Assets.xcassets */; };
+		BF29731F2C86688C0029F361 /* AppNavigation in Frameworks */ = {isa = PBXBuildFile; productRef = BF29731E2C86688C0029F361 /* AppNavigation */; };
 		BF4E60BF2C44458200BAC4F2 /* EditSettings in Frameworks */ = {isa = PBXBuildFile; productRef = BF4E60BE2C44458200BAC4F2 /* EditSettings */; };
 		BFE60AD42C4418E200E8AB67 /* RemindWallApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFE60AD32C4418E200E8AB67 /* RemindWallApp.swift */; };
 		BFE60ADA2C4418E300E8AB67 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BFE60AD92C4418E300E8AB67 /* Assets.xcassets */; };
@@ -15,6 +19,11 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		BF29730D2C8667AC0029F361 /* RemindWalliOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RemindWalliOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BF29730F2C8667AC0029F361 /* RemindWalliOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindWalliOSApp.swift; sourceTree = "<group>"; };
+		BF2973152C8667AD0029F361 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		BF2973182C8667AD0029F361 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		BF29731D2C8668430029F361 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		BFE331172C4440CA0095F675 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		BFE60AD02C4418E200E8AB67 /* RemindWall.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RemindWall.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BFE60AD32C4418E200E8AB67 /* RemindWallApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindWallApp.swift; sourceTree = "<group>"; };
@@ -26,6 +35,14 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		BF29730A2C8667AC0029F361 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BF29731F2C86688C0029F361 /* AppNavigation in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		BFE60ACD2C4418E200E8AB67 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -38,12 +55,32 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		BF29730E2C8667AC0029F361 /* RemindWalliOS */ = {
+			isa = PBXGroup;
+			children = (
+				BF29731D2C8668430029F361 /* Info.plist */,
+				BF29730F2C8667AC0029F361 /* RemindWalliOSApp.swift */,
+				BF2973152C8667AD0029F361 /* Assets.xcassets */,
+				BF2973172C8667AD0029F361 /* Preview Content */,
+			);
+			path = RemindWalliOS;
+			sourceTree = "<group>";
+		};
+		BF2973172C8667AD0029F361 /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+				BF2973182C8667AD0029F361 /* Preview Assets.xcassets */,
+			);
+			path = "Preview Content";
+			sourceTree = "<group>";
+		};
 		BFE60AC72C4418E200E8AB67 = {
 			isa = PBXGroup;
 			children = (
 				BFE60AE62C44194F00E8AB67 /* ci_scripts */,
 				BFE60AE42C44191F00E8AB67 /* RWPureSwift */,
 				BFE60AD22C4418E200E8AB67 /* RemindWall */,
+				BF29730E2C8667AC0029F361 /* RemindWalliOS */,
 				BFE60AD12C4418E200E8AB67 /* Products */,
 				BFE60AE72C441A0900E8AB67 /* Frameworks */,
 			);
@@ -53,6 +90,7 @@
 			isa = PBXGroup;
 			children = (
 				BFE60AD02C4418E200E8AB67 /* RemindWall.app */,
+				BF29730D2C8667AC0029F361 /* RemindWalliOS.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -95,6 +133,26 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		BF29730C2C8667AC0029F361 /* RemindWalliOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BF29731C2C8667AD0029F361 /* Build configuration list for PBXNativeTarget "RemindWalliOS" */;
+			buildPhases = (
+				BF2973092C8667AC0029F361 /* Sources */,
+				BF29730A2C8667AC0029F361 /* Frameworks */,
+				BF29730B2C8667AC0029F361 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = RemindWalliOS;
+			packageProductDependencies = (
+				BF29731E2C86688C0029F361 /* AppNavigation */,
+			);
+			productName = RemindWalliOS;
+			productReference = BF29730D2C8667AC0029F361 /* RemindWalliOS.app */;
+			productType = "com.apple.product-type.application";
+		};
 		BFE60ACF2C4418E200E8AB67 /* RemindWall */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = BFE60AE12C4418E300E8AB67 /* Build configuration list for PBXNativeTarget "RemindWall" */;
@@ -126,6 +184,9 @@
 				LastSwiftUpdateCheck = 1540;
 				LastUpgradeCheck = 1540;
 				TargetAttributes = {
+					BF29730C2C8667AC0029F361 = {
+						CreatedOnToolsVersion = 15.4;
+					};
 					BFE60ACF2C4418E200E8AB67 = {
 						CreatedOnToolsVersion = 15.4;
 					};
@@ -145,11 +206,21 @@
 			projectRoot = "";
 			targets = (
 				BFE60ACF2C4418E200E8AB67 /* RemindWall */,
+				BF29730C2C8667AC0029F361 /* RemindWalliOS */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		BF29730B2C8667AC0029F361 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BF2973192C8667AD0029F361 /* Preview Assets.xcassets in Resources */,
+				BF2973162C8667AD0029F361 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		BFE60ACE2C4418E200E8AB67 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -162,6 +233,14 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		BF2973092C8667AC0029F361 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BF2973102C8667AC0029F361 /* RemindWalliOSApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		BFE60ACC2C4418E200E8AB67 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -173,6 +252,75 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
+		BF29731A2C8667AD0029F361 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"RemindWalliOS/Preview Content\"";
+				DEVELOPMENT_TEAM = G53N9PU948;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = RemindWalliOS/Info.plist;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 2.3;
+				PRODUCT_BUNDLE_IDENTIFIER = io.hotchkiss.mrAnderson.RemindWalliOS;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		BF29731B2C8667AD0029F361 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"RemindWalliOS/Preview Content\"";
+				DEVELOPMENT_TEAM = G53N9PU948;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = RemindWalliOS/Info.plist;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 2.3;
+				PRODUCT_BUNDLE_IDENTIFIER = io.hotchkiss.mrAnderson.RemindWalliOS;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 		BFE60ADF2C4418E300E8AB67 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -324,7 +472,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 2.2;
+				MARKETING_VERSION = 2.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.RemindWall.RemindWallCloud;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -369,7 +517,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 2.2;
+				MARKETING_VERSION = 2.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.RemindWall.RemindWallCloud;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -384,6 +532,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		BF29731C2C8667AD0029F361 /* Build configuration list for PBXNativeTarget "RemindWalliOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BF29731A2C8667AD0029F361 /* Debug */,
+				BF29731B2C8667AD0029F361 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		BFE60ACB2C4418E200E8AB67 /* Build configuration list for PBXProject "RemindWall" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -405,6 +562,10 @@
 /* End XCConfigurationList section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		BF29731E2C86688C0029F361 /* AppNavigation */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AppNavigation;
+		};
 		BF4E60BE2C44458200BAC4F2 /* EditSettings */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = EditSettings;
