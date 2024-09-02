@@ -40,7 +40,10 @@ public enum SchemaV2: VersionedSchema {
         }
         
         public func isLate(date: Date, calendar: Calendar) -> Bool {
-            return reminderTime.inLateWindow(asOf: date, calendar: calendar) && (lastScan == nil || lastScan!.timeIntervalSince(date) > TimeInterval(60*60*6))
+            let inLateWindow = reminderTime.inLateWindow(asOf: date, calendar: calendar)
+            let timeSinceLastScan = abs(lastScan?.timeIntervalSince(date) ?? TimeInterval.greatestFiniteMagnitude)
+            let lastScanAged = timeSinceLastScan > TimeInterval(60*60*6)
+            return inLateWindow && lastScanAged
         }
         
         public func isScannable(date: Date, calendar: Calendar) -> Bool {
