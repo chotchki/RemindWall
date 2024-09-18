@@ -1,6 +1,6 @@
 import CoreData
 import Foundation
-import SwiftData
+@preconcurrency import SwiftData
 
 @MainActor
 public struct DataSchema {

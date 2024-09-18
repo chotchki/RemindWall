@@ -4,7 +4,7 @@ import Dashboard
 import DataModel
 import EditSettings
 import PhotosUI
-import SwiftData
+@preconcurrency import SwiftData
 import SwiftUI
 import Utility
 

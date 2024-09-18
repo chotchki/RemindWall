@@ -16,12 +16,11 @@ public struct CheckPermissionsView: View {
         self.photoStatus = PHPhotoLibrary.authorizationStatus(for: .readWrite)
         self._state = state
     }
-    
     private func openPhotoSettings(){
         #if targetEnvironment(macCatalyst)
-        Task.detached { @MainActor in
+        Task.detached {
             let url = "x-apple.systempreferences:com.apple.preference.security?Privacy_Photos"
-            UIApplication.shared.open(URL(string: url)!)
+            await UIApplication.shared.open(URL(string: url)!)
         }
         #else
         Task.detached { @MainActor in
@@ -33,9 +32,9 @@ public struct CheckPermissionsView: View {
 
     private func openCalendarSettings(){
         #if targetEnvironment(macCatalyst)
-        Task.detached { @MainActor in
+        Task.detached {
             let url = "x-apple.systempreferences:com.apple.preference.security?Privacy_Calendars"
-            UIApplication.shared.open(URL(string: url)!)
+            await UIApplication.shared.open(URL(string: url)!)
         }
         #else
         Task.detached { @MainActor in
@@ -112,6 +111,6 @@ public struct CheckPermissionsView: View {
 }
 
 #Preview {
-    @State var state = AppState.checkPermissions
+    @Previewable @State var state = AppState.checkPermissions
     return CheckPermissionsView(state: $state)
 }

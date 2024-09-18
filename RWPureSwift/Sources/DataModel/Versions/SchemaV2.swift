@@ -1,5 +1,5 @@
 import Foundation
-import SwiftData
+@preconcurrency import SwiftData
 
 public enum SchemaV2: VersionedSchema {
     public static let versionIdentifier = Schema.Version(2, 0, 0)

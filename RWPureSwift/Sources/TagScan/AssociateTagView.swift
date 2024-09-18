@@ -135,11 +135,11 @@ public struct AssociateTagView: View {
 }
 
 #Preview("No Tag") {
-    @State var associatedTag: String? = nil
+    @Previewable @State var associatedTag: String? = nil
     return AssociateTagView(associatedTag: $associatedTag)
 }
 
 #Preview("Existing Tag") {
-    @State var associatedTag: String? = "0:0:0"
+    @Previewable @State var associatedTag: String? = "0:0:0"
     return AssociateTagView(associatedTag: $associatedTag)
 }

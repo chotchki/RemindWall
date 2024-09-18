@@ -87,7 +87,7 @@ public struct EditSettingsView: View {
 }
 
 #Preview {
-    @State var state = AppState.editSettings
+    @Previewable @State var state = AppState.editSettings
     let container = Settings.preview
 
     return NavigationStack {

@@ -44,15 +44,15 @@ struct TimePicker: View {
 }
 
 #Preview("Morning") {
-    @Environment(\.calendar) var calendar
-    @State var hour = 2
-    @State var minute = 10
+    @Previewable @Environment(\.calendar) var calendar
+    @Previewable @State var hour = 2
+    @Previewable @State var minute = 10
     return TimePicker(calendar: calendar, hour: $hour, minute: $minute)
 }
 
 #Preview("Afternoon") {
-    @Environment(\.calendar) var calendar
-    @State var hour = 14
-    @State var minute = 10
+    @Previewable @Environment(\.calendar) var calendar
+    @Previewable @State var hour = 14
+    @Previewable @State var minute = 10
     return TimePicker(calendar: calendar, hour: $hour, minute: $minute)
 }
