@@ -1,8 +1,6 @@
 import DataModel
 import SwiftUI
-#if canImport(TagScan)
 import TagScan
-#endif
 
 public struct EditReminderTimeModelView: View {
     @Environment(\.calendar) var calendar
@@ -33,15 +31,7 @@ public struct EditReminderTimeModelView: View {
                 }
             }
             
-#if canImport(TagScan)
             AssociateTagView(associatedTag: $rtm.associatedTag)
-#else
-            if let tag = rtm.associatedTag {
-                Text("Configured Tag \(tag)")
-            } else {
-                Text("No Tag Configured")
-            }
-#endif
         }
     }
 }

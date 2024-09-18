@@ -29,9 +29,7 @@ struct EditTrackeeView: View {
                 }
                 
                 Section {
-                    List {
-                        ReminderTimeModelsView(trackeeId: trackee.id)
-                    }
+                    ReminderTimeModelsView(trackeeId: trackee.id)
                 } header: {
                     Text("Reminder Times")
                 }

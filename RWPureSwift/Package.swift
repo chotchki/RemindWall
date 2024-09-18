@@ -44,7 +44,7 @@ let package = Package(
                 dependencies: [
                     .target(name: "AppModel"),
                     .target(name: "DataModel"),
-                    .target(name: "TagScan", condition: .when(platforms: [.macCatalyst])),
+                    .target(name: "TagScan"),
                     .target(name: "Utility"),
                 ], swiftSettings: [ .enableExperimentalFeature("StrictConcurrency")]),
         .target(name: "Slideshow",
