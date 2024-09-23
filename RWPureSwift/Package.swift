@@ -37,7 +37,7 @@ let package = Package(
             .target(name: "DataModel"),
             .target(name: "Slideshow"),
             .target(name: "Utility"),
-            .target(name: "TagScan", condition: .when(platforms: [.macCatalyst]))
+            .target(name: "TagScan")
         ]),
         .target(name: "PhotoKitAsync"),
         .testTarget(name: "PhotoKitAsyncTests", dependencies: [.target(name: "PhotoKitAsync")]),

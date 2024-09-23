@@ -148,12 +148,12 @@
             landmarkType = "24">
             <Locations>
                <Location
-                  uuid = "1E2F19E5-C76D-4824-93A2-6F4077FBAC54 - 58a03a2a7bc43b87"
+                  uuid = "1E2F19E5-C76D-4824-93A2-6F4077FBAC54 - 40fcb4747c4b5602"
                   shouldBeEnabled = "Yes"
                   ignoreCount = "0"
                   continueAfterRunningActions = "No"
                   symbolName = "(3) suspend resume partial function for closure #1 @Sendable () async -&gt; () in Dashboard.AlertLoaderView.body.getter : some"
-                  moduleName = "RemindWall"
+                  moduleName = "RemindWall.debug.dylib"
                   usesParentBreakpointCondition = "Yes"
                   urlString = "file:///Users/chotchki/workspace/RemindWall/RWPureSwift/Sources/Dashboard/AlertLoaderView.swift"
                   startingColumnNumber = "9223372036854775807"
@@ -162,12 +162,12 @@
                   endingLineNumber = "19">
                </Location>
                <Location
-                  uuid = "1E2F19E5-C76D-4824-93A2-6F4077FBAC54 - f9332325b0f0d986"
+                  uuid = "1E2F19E5-C76D-4824-93A2-6F4077FBAC54 - e16fad7bb77fb403"
                   shouldBeEnabled = "Yes"
                   ignoreCount = "0"
                   continueAfterRunningActions = "No"
                   symbolName = "(4) suspend resume partial function for closure #1 @Sendable () async -&gt; () in Dashboard.AlertLoaderView.body.getter : some"
-                  moduleName = "RemindWall"
+                  moduleName = "RemindWall.debug.dylib"
                   usesParentBreakpointCondition = "Yes"
                   urlString = "file:///Users/chotchki/workspace/RemindWall/RWPureSwift/Sources/Dashboard/AlertLoaderView.swift"
                   startingColumnNumber = "9223372036854775807"
