@@ -1,11 +1,11 @@
-// swift-tools-version: 5.10
+// swift-tools-version: 6.0
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
 
 let package = Package(
     name: "RWPureSwift",
-    platforms: [.iOS(.v17), .macCatalyst(.v17)],
+    platforms: [.iOS(.v18), .macCatalyst(.v18)],
     products: [
         .library(name: "AppModel", targets: ["AppModel"]),
         .library(name: "AppNavigation", targets: ["AppNavigation"]),
@@ -13,6 +13,7 @@ let package = Package(
         .library(name: "Dashboard", targets: ["Dashboard"]),
         .library(name: "DataModel", targets: ["DataModel"]),
         .library(name: "EditSettings", targets: ["EditSettings"]),
+        .library(name: "PhotoKitAsync", targets: ["PhotoKitAsync"]),
         .library(name: "Slideshow", targets: ["Slideshow"]),
         .library(name: "Utility", targets: ["Utility"]),
     ],
@@ -20,47 +21,49 @@ let package = Package(
         .package(url: "https://github.com/chotchki/LibNFCSwift.git", from: "0.1.0"),
     ],
     targets: [
-        .target(name: "AppModel", swiftSettings: [ .enableExperimentalFeature("StrictConcurrency")]),
+        .target(name: "AppModel"),
         .target(name: "AppNavigation", dependencies: [
             .target(name: "AppModel"),
             .target(name: "CheckPermissions"),
             .target(name: "Dashboard"),
             .target(name: "EditSettings")
-        ], swiftSettings: [ .enableExperimentalFeature("StrictConcurrency")]),
+        ]),
         .target(name: "CheckPermissions", dependencies: [
             .target(name: "AppModel"),
             .target(name: "DataModel"),
             .target(name: "Utility")
-        ], swiftSettings: [ .enableExperimentalFeature("StrictConcurrency")]),
+        ]),
         .target(name: "Dashboard", dependencies: [
             .target(name: "DataModel"),
             .target(name: "Slideshow"),
             .target(name: "Utility"),
             .target(name: "TagScan", condition: .when(platforms: [.macCatalyst]))
-        ], swiftSettings: [ .enableExperimentalFeature("StrictConcurrency")]),
-        .target(name: "DataModel", swiftSettings: [ .enableExperimentalFeature("StrictConcurrency")]),
-        .testTarget(name: "DataModelTests", dependencies: [.target(name: "DataModel")]),
+        ]),
+        .target(name: "PhotoKitAsync"),
+        .testTarget(name: "PhotoKitAsyncTests", dependencies: [.target(name: "PhotoKitAsync")]),
         .target(name: "EditSettings",
                 dependencies: [
                     .target(name: "AppModel"),
                     .target(name: "DataModel"),
                     .target(name: "TagScan"),
                     .target(name: "Utility"),
-                ], swiftSettings: [ .enableExperimentalFeature("StrictConcurrency")]),
+                ]),
+        .target(name: "DataModel"),
+        .testTarget(name: "DataModelTests", dependencies: [.target(name: "DataModel")]),
         .target(name: "Slideshow",
                 dependencies: [
                     .target(name: "AppModel"),
                     .target(name: "DataModel"),
+                    .target(name: "PhotoKitAsync"),
                     .target(name: "Utility"),
                 ], 
-                resources:[ .process("Widget/Resources/PreviewAssets.xcassets")],
-                swiftSettings: [ .enableExperimentalFeature("StrictConcurrency")]),
+                resources:[ .process("Widget/Resources/PreviewAssets.xcassets")]),
         .target(name: "TagScan",
                 dependencies: [
                     .product(name: "LibNFCSwift", package: "LibNFCSwift", condition: .when(platforms: [.macCatalyst])),
                     .target(name: "DataModel"),
                     .target(name: "Utility"),
-                ], swiftSettings: [ .enableExperimentalFeature("StrictConcurrency")]),
-        .target(name: "Utility", swiftSettings: [ .enableExperimentalFeature("StrictConcurrency")]),
+                ]),
+        .target(name: "Utility"),
     ]
 )

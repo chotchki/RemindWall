@@ -1,5 +1,5 @@
 //From: https://en.wikipedia.org/wiki/Ken_Burns_effect
-
+import PhotoKitAsync
 import SwiftUI
 
 struct KenBurnsPanView: View {
@@ -18,7 +18,7 @@ struct KenBurnsPanView: View {
                     .resizable()
                     .aspectRatio(contentMode: .fill)
             case .livePhoto(let pHLivePhoto):
-                LivePhotoView(livephoto: pHLivePhoto).aspectRatio(contentMode: .fill)
+                LivePhotoView(livephoto: pHLivePhoto.value).aspectRatio(contentMode: .fill)
             case .errorPhoto:
                 ContentUnavailableView("Error Loading", image: "photo")
             }

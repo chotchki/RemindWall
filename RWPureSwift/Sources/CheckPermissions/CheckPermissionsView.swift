@@ -18,12 +18,12 @@ public struct CheckPermissionsView: View {
     }
     private func openPhotoSettings(){
         #if targetEnvironment(macCatalyst)
-        Task.detached {
+        Task{ @MainActor in
             let url = "x-apple.systempreferences:com.apple.preference.security?Privacy_Photos"
             await UIApplication.shared.open(URL(string: url)!)
         }
         #else
-        Task.detached { @MainActor in
+        Task{ @MainActor in
             let url = UIApplication.openSettingsURLString
             UIApplication.shared.open(URL(string: url)!)
         }
@@ -32,12 +32,12 @@ public struct CheckPermissionsView: View {
 
     private func openCalendarSettings(){
         #if targetEnvironment(macCatalyst)
-        Task.detached {
+        Task{ @MainActor in
             let url = "x-apple.systempreferences:com.apple.preference.security?Privacy_Calendars"
             await UIApplication.shared.open(URL(string: url)!)
         }
         #else
-        Task.detached { @MainActor in
+        Task{ @MainActor in
             let url = UIApplication.openSettingsURLString
             UIApplication.shared.open(URL(string: url)!)
         }

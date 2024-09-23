@@ -1,6 +1,7 @@
 import AppModel
 import DataModel
 import PhotosUI
+import PhotoKitAsync
 import SwiftData
 import SwiftUI
 import Utility
