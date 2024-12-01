@@ -15,10 +15,11 @@ let package = Package(
         .library(name: "EditSettings", targets: ["EditSettings"]),
         .library(name: "PhotoKitAsync", targets: ["PhotoKitAsync"]),
         .library(name: "Slideshow", targets: ["Slideshow"]),
+        .library(name: "TagScan", targets: ["TagScan"]),
         .library(name: "Utility", targets: ["Utility"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/chotchki/LibNFCSwift.git", from: "0.1.0"),
+        .package(url: "https://github.com/ph1ps/swift-concurrency-deadline.git", from: "1.0.0")
     ],
     targets: [
         .target(name: "AppModel"),
@@ -60,9 +61,9 @@ let package = Package(
                 resources:[ .process("Widget/Resources/PreviewAssets.xcassets")]),
         .target(name: "TagScan",
                 dependencies: [
-                    .product(name: "LibNFCSwift", package: "LibNFCSwift", condition: .when(platforms: [.macCatalyst])),
                     .target(name: "DataModel"),
                     .target(name: "Utility"),
+                    .product(name: "Deadline", package: "swift-concurrency-deadline")
                 ]),
         .target(name: "Utility"),
     ]

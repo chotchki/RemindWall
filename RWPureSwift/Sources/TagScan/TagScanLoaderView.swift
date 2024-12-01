@@ -1,15 +1,8 @@
+import CoreNFC
+import CryptoTokenKit
 import DataModel
 import SwiftData
 import SwiftUI
-
-#if canImport(LibNFCSwift)
-import LibNFCSwift
-#endif
-
-#if canImport(CoreNFC)
-import CoreNFC
-#endif
-
 import OSLog
 import Utility
 
@@ -17,6 +10,8 @@ public struct TagScanLoaderView: View {
     let log = Logger()
     @Environment(\.calendar) var calendar
     @Environment(\.modelContext) var modelContext
+    
+    @State private var slotManager: TKSmartCardSlotManager? = TKSmartCardSlotManager.default
     
     let timeout: Int = 60
     
@@ -28,46 +23,9 @@ public struct TagScanLoaderView: View {
         TagScanView(scanResult: $scanResult)
         .task {
             while !Task.isCancelled {
-                var tagFound: String?
-                #if canImport(LibNFCSwift)
-                do {
-                    tagFound = try await LibNFCActor.shared.findFirstTag(modulation: .iSO14443A(), clock: .continuous, timeout: timeout).hexa
-                } catch LibNFCError.pollTimeout {
-                    //Timeout is fine
-                    continue
-                } catch LibNFCError.deviceConnectFailed {
-                    withAnimation(.easeInOut(duration: 0.5)) {
-                        self.scanResult = .failure(.noDevice)
-                    }
-                    try? await Task.sleep(nanoseconds: UInt64(Double(timeout) * Double(NSEC_PER_SEC)))
-                    continue
-                } catch {
-                    // Supress other errors
-                    withAnimation(.easeInOut(duration: 0.5)) {
-                        self.scanResult = .failure(.unknown(error.localizedDescription))
-                    }
-                    continue
-                }
-                #elseif canImport(CoreNFC)
-                let stream = NFCTagReaderSessionStream()
-                guard let session = NFCTagReaderSession(pollingOption: .iso14443, delegate: stream) else {
-                    self.scanResult = .failure(.noDevice)
-                    try? await Task.sleep(nanoseconds: UInt64(Double(timeout) * Double(NSEC_PER_SEC)))
-                    continue
-                }
-                session.begin()
-                
-                for await tag in stream.stream {
-                    tagFound = tag.hexa
-                    break
-                }
-                #endif
-                
-                if Task.isCancelled {
-                    return
-                }
-                
-                guard let tagFound = tagFound else {
+                let result = await ReaderUtils.getNextTag()
+                                
+                guard let tagFound = result?.hexa else {
                     //No tag found, that's fine
                     continue
                 }

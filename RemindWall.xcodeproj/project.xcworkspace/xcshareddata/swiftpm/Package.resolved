@@ -1,13 +1,13 @@
 {
-  "originHash" : "7cd4433319fa11aebca9711f311cbfc7b46a1c91574e8ab78169b0b6c38fef58",
+  "originHash" : "d08597ff06bbe177c69d9599d8a919169f54820690790e41d7ea00bdb29230ec",
   "pins" : [
     {
-      "identity" : "libnfcswift",
+      "identity" : "swift-concurrency-deadline",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/chotchki/LibNFCSwift.git",
+      "location" : "https://github.com/ph1ps/swift-concurrency-deadline.git",
       "state" : {
-        "revision" : "13311c0b164c6f3de63efd808fb37dee596b97d6",
-        "version" : "0.1.2"
+        "revision" : "435251f9f98f30f62f35d1b4512666df10df09aa",
+        "version" : "1.0.0"
       }
     }
   ],
