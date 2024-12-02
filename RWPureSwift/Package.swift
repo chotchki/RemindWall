@@ -46,6 +46,7 @@ let package = Package(
                 dependencies: [
                     .target(name: "AppModel"),
                     .target(name: "DataModel"),
+                    .target(name: "PhotoKitAsync"),
                     .target(name: "TagScan"),
                     .target(name: "Utility"),
                 ]),
