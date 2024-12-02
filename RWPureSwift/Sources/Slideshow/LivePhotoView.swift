@@ -28,5 +28,7 @@ public struct LivePhotoView: UIViewRepresentable {
             lpView.livePhoto = livephoto
             lpView.startPlayback(with: .full)
         }
+        
+        context.animate {}
     }
 }

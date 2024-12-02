@@ -6,7 +6,7 @@
 //
 import PhotosUI
 
-public enum AssetType: Sendable {
+public enum AssetType: Sendable, Equatable {
     case loading
     case staticImage(UIImage)
     case livePhoto(LivePhotoWrapper)

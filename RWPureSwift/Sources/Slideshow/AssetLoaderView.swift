@@ -20,7 +20,7 @@ public struct AssetLoaderView: View {
     }
 
     public var body: some View {
-        KenBurnsPanView(assetType: assetType, size: frame.size)
+        KenBurnsPanView(assetType: $assetType, size: frame.size)
         .task(id: asset, {
             self.align = .topLeading
             self.assetType = await PHImageCacheActor.shared.loadAsset(asset: asset, viewSize: frame.size)

@@ -3,7 +3,7 @@ import PhotoKitAsync
 import SwiftUI
 
 struct KenBurnsPanView: View {
-    let assetType: AssetType
+    @Binding var assetType: AssetType
     let size: CGSize
     
     @State private var align : Alignment  = .topLeading
@@ -25,7 +25,13 @@ struct KenBurnsPanView: View {
         }
         .frame(width: size.width, height: size.height, alignment: align).clipped()
         .background(Color.red)
-        .task {
+        .onAppear {
+            withAnimation(.linear(duration: 10)) {
+                self.align = .bottomTrailing
+            }
+        }
+        .onChange(of: assetType){
+            self.align = .topLeading
             withAnimation(.linear(duration: 10)) {
                 self.align = .bottomTrailing
             }
@@ -34,25 +40,44 @@ struct KenBurnsPanView: View {
 }
 
 #Preview("Portrait") {
-    let image = UIImage(named: "PortraitTest", in: Bundle.module, compatibleWith: nil)
-    return VStack {
+    @Previewable @State var image = AssetType.staticImage(UIImage(named: "PortraitTest", in: Bundle.module, compatibleWith: nil)!)
+    
+    VStack {
         //Spacer()
         HStack{
             //Spacer()
-            KenBurnsPanView(assetType: .staticImage(image!), size: CGSize(width: 400, height: 600))
+            KenBurnsPanView(assetType: $image, size: CGSize(width: 400, height: 600))
         }
     }.background(Color.blue)
     .frame(width: 500, height: 700, alignment: .center)
 }
 
 #Preview("Landscape") {
-    let image = UIImage(named: "LandscapeTest", in: Bundle.module, compatibleWith: nil)
-    return VStack {
+    @Previewable @State var image = AssetType.staticImage(UIImage(named: "LandscapeTest", in: Bundle.module, compatibleWith: nil)!)
+    
+    VStack {
         //Spacer()
         HStack{
             //Spacer()
-            KenBurnsPanView(assetType: .staticImage(image!), size: CGSize(width: 400, height: 600))
+            KenBurnsPanView(assetType: $image, size: CGSize(width: 400, height: 600))
         }
     }.background(Color.blue)
     .frame(width: 500, height: 700, alignment: .center)
+}
+
+#Preview("Transition") {
+    @Previewable @State var image = AssetType.staticImage(UIImage(named: "LandscapeTest", in: Bundle.module, compatibleWith: nil)!)
+    
+    VStack {
+        //Spacer()
+        HStack{
+            //Spacer()
+            KenBurnsPanView(assetType: $image, size: CGSize(width: 400, height: 600))
+        }
+    }.task{
+        try? await Task.sleep(for: .seconds(10));
+        image = AssetType.staticImage(UIImage(named: "PortraitTest", in: Bundle.module, compatibleWith: nil)!)
+    }
+    .background(Color.blue)
+        .frame(width: 500, height: 700, alignment: .center)
 }
