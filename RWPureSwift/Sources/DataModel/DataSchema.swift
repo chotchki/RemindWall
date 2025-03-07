@@ -30,11 +30,11 @@ public struct DataSchema {
 
 public enum MigrationPlan: SchemaMigrationPlan {
     public static var schemas: [any VersionedSchema.Type] {
-        [SchemaV1.self, SchemaV2.self]
+        [SchemaV1.self, SchemaV2.self, SchemaV3.self]
     }
     
     public static var stages: [MigrationStage] {
-        [migrateV1toV2]
+        [migrateV1toV2, migrateV2toV3]
     }
     
     public static let migrateV1toV2 = MigrationStage.custom(
@@ -45,8 +45,16 @@ public enum MigrationPlan: SchemaMigrationPlan {
             
             //Wiping out old settings since they were never public
             for s in settingss {
-                context.delete(s)
+                //context.delete(s)
             }
+        }, didMigrate: nil
+    )
+    
+    public static let migrateV2toV3 = MigrationStage.custom(
+        fromVersion: SchemaV2.self,
+        toVersion: SchemaV3.self,
+        willMigrate: { context in
+            
         }, didMigrate: nil
     )
 }
