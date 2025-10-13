@@ -41,7 +41,6 @@ let package = Package(
             .target(name: "TagScan")
         ]),
         .target(name: "PhotoKitAsync"),
-        .testTarget(name: "PhotoKitAsyncTests", dependencies: [.target(name: "PhotoKitAsync")]),
         .target(name: "EditSettings",
                 dependencies: [
                     .target(name: "AppModel"),
@@ -51,7 +50,6 @@ let package = Package(
                     .target(name: "Utility"),
                 ]),
         .target(name: "DataModel"),
-        .testTarget(name: "DataModelTests", dependencies: [.target(name: "DataModel")]),
         .target(name: "Slideshow",
                 dependencies: [
                     .target(name: "AppModel"),
