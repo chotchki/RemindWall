@@ -19,7 +19,8 @@ let package = Package(
         .library(name: "Utility", targets: ["Utility"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/ph1ps/swift-concurrency-deadline.git", from: "1.0.0")
+        .package(url: "https://github.com/ph1ps/swift-concurrency-deadline.git", from: "1.0.0"),
+        .package(url: "https://github.com/pointfreeco/swift-dependencies", from: "1.0.0"),
     ],
     targets: [
         .target(name: "AppModel"),
@@ -40,7 +41,12 @@ let package = Package(
             .target(name: "Utility"),
             .target(name: "TagScan")
         ]),
-        .target(name: "PhotoKitAsync"),
+        .target(name: "PhotoKitAsync", dependencies: [
+            .product(
+                name: "Dependencies",
+                package: "swift-dependencies"
+              ),
+            .product(name: "DependenciesMacros", package: "swift-dependencies"),]),
         .target(name: "EditSettings",
                 dependencies: [
                     .target(name: "AppModel"),
