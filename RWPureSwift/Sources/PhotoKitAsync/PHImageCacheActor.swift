@@ -11,7 +11,7 @@ import PhotosUI
             return await withCheckedContinuation({ continuation in
                 cache.requestLivePhoto(for: asset, targetSize: viewSize, contentMode: getContentMode(), options: livePhotoRequestOptions(), resultHandler: { livephoto, _ in
                     if let lp = livephoto {
-                        continuation.resume(returning: .livePhoto(LivePhotoWrapper(lp)))
+                        continuation.resume(returning: .livePhoto(lp))
                     } else {
                         continuation.resume(returning: .errorPhoto)
                     }

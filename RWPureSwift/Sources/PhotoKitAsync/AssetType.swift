@@ -9,6 +9,6 @@ import PhotosUI
 public enum AssetType: Sendable, Equatable {
     case loading
     case staticImage(UIImage)
-    case livePhoto(LivePhotoWrapper)
+    case livePhoto(PHLivePhoto)
     case errorPhoto
 }
