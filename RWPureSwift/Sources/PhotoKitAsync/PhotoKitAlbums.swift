@@ -30,6 +30,10 @@ extension PhotoKitAlbums: DependencyKey {
             },
             
             loadAlbumAssets: {albumId in
+                if PHPhotoLibrary.authorizationStatus(for: .readWrite) != .authorized {
+                    return nil
+                }
+                
                 let result = await Task {
                     guard let fetchAlbumObj = PHAssetCollection.fetchAssetCollections(withLocalIdentifiers: [albumId], options: baseFetchOptions()).firstObject else {
                         return nil as [PHAsset]?

@@ -24,6 +24,7 @@ extension PhotoKitAssets: DependencyKey {
         return Self(
             loadAsset: {
                 asset, viewSize in
+                
                 if asset.mediaSubtypes.contains(PHAssetMediaSubtype.photoLive){
                     return await withCheckedContinuation({ continuation in
                         cache.requestLivePhoto(for: asset, targetSize: viewSize, contentMode: getContentMode(), options: livePhotoRequestOptions(), resultHandler: { livephoto, _ in
