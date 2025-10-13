@@ -10,6 +10,7 @@ import Photos
 
 @DependencyClient
 public struct PhotoKitAlbums: Sendable {
+    public var libraryAccess: @Sendable () -> PHAuthorizationStatus = { .denied }
     public var availibleAlbums: @Sendable () async -> PHFetchResultAssetCollection?
     public var loadAlbumAssets: @Sendable (String) async -> [PHAsset]?
 }
@@ -17,6 +18,9 @@ public struct PhotoKitAlbums: Sendable {
 extension PhotoKitAlbums: DependencyKey {
     public static var liveValue: Self {
         return Self(
+            libraryAccess: {
+                return PHPhotoLibrary.authorizationStatus(for: .readWrite)
+            },
             availibleAlbums: {
                 if PHPhotoLibrary.authorizationStatus(for: .readWrite) != .authorized {
                     return nil
@@ -28,7 +32,6 @@ extension PhotoKitAlbums: DependencyKey {
                     options: baseFetchOptions())
                 return PHFetchResultAssetCollection(fetchResult: albums)
             },
-            
             loadAlbumAssets: {albumId in
                 if PHPhotoLibrary.authorizationStatus(for: .readWrite) != .authorized {
                     return nil
