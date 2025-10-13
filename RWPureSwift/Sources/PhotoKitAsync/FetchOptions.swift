@@ -7,7 +7,7 @@
 import Photos
 
 // These are common settings for fetches in PhotoKit
-public func baseFetchOptions() -> PHFetchOptions {
+func baseFetchOptions() -> PHFetchOptions {
     // From: https://stackoverflow.com/a/49495326/160208
     // We don't sort because we'll be shuffling anyway
     let pfo = PHFetchOptions()
@@ -16,7 +16,7 @@ public func baseFetchOptions() -> PHFetchOptions {
     return pfo
 }
 
-public func albumContentsFetchOptions() -> PHFetchOptions {
+func albumContentsFetchOptions() -> PHFetchOptions {
     let pfo = baseFetchOptions()
 
     // Get all still images
@@ -31,11 +31,11 @@ public func albumContentsFetchOptions() -> PHFetchOptions {
     return pfo
 }
 
-public func getContentMode() -> PHImageContentMode {
+func getContentMode() -> PHImageContentMode {
     return PHImageContentMode.aspectFill
 }
 
-public func imageRequestOptions() -> PHImageRequestOptions {
+func imageRequestOptions() -> PHImageRequestOptions {
     let iro = PHImageRequestOptions()
     iro.isNetworkAccessAllowed = true
     iro.isSynchronous = true
@@ -44,7 +44,7 @@ public func imageRequestOptions() -> PHImageRequestOptions {
     return iro
 }
 
-public func livePhotoRequestOptions() -> PHLivePhotoRequestOptions {
+func livePhotoRequestOptions() -> PHLivePhotoRequestOptions {
     let lpro = PHLivePhotoRequestOptions()
     lpro.isNetworkAccessAllowed = true
     lpro.deliveryMode = PHImageRequestOptionsDeliveryMode.highQualityFormat

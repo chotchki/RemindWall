@@ -1,6 +1,6 @@
 import PhotosUI
 import PhotoKitAsync
-
+/*
 public func loadAlbumAssets(albumId: String?) async -> [PHAsset]? {
     guard let albumId = albumId else {
         return nil
@@ -25,3 +25,4 @@ public func loadAlbumAssets(albumId: String?) async -> [PHAsset]? {
 
     return result
 }
+*/

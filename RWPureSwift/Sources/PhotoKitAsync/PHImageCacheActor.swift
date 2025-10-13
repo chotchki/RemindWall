@@ -1,6 +1,6 @@
 import Foundation
 import PhotosUI
-
+/*
 @globalActor public actor PHImageCacheActor: GlobalActor {
     public static let shared = PHImageCacheActor()
     
@@ -41,3 +41,4 @@ import PhotosUI
         cache.stopCachingImages(for: [asset], targetSize: viewSize, contentMode: getContentMode(), options: imageRequestOptions())
     }
 }
+*/

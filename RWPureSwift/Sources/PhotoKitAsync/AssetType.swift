@@ -10,5 +10,5 @@ public enum AssetType: Sendable, Equatable {
     case loading
     case staticImage(UIImage)
     case livePhoto(PHLivePhoto)
-    case errorPhoto
+    case errorPhoto(PHAsset)
 }
