@@ -23,7 +23,7 @@ public struct DashboardView: View {
     public var body: some View {
         ZStack {
             @Bindable var settings = settings
-            SlideshowView(state: $state, selectedAlbumId: $settings.selectedAlbumId)
+            SlideshowView(selectedAlbumId: $settings.selectedAlbumId)
             VStack(alignment: .leading){
                 if let c = currentEvent {
                     NowView(currentEvent: c).transition(.slide)

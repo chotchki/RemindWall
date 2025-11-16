@@ -1,42 +1,83 @@
+import ComposableArchitecture
 import PhotosUI
 import PhotoKitAsync
 import SwiftUI
-import Utility
+
+@Reducer
+public struct AssetLoaderFeature : Sendable{
+    @Dependency(\.photoKitAssets) var photoKitAssets
+    
+    @ObservableState
+    public struct State: Equatable {
+        let asset: PHAsset
+        let nextAsset: PHAsset?
+        
+        var size: CGSize?
+        var currentAsset: AssetType = .loading
+        
+        public init(asset: PHAsset, nextAsset: PHAsset?){
+            self.asset = asset
+            self.nextAsset = nextAsset
+        }
+      }
+    
+    public enum Action {
+        case resize(CGSize)
+        case load
+        case loadAsset(AssetType)
+        case disappear
+    }
+    
+    public init(){}
+    
+    public var body: some Reducer<State, Action> {
+        Reduce { state, action in
+            switch action {
+            case let .resize(size):
+                state.size = size
+                return .none
+            case .load:
+                guard let size = state.size else { return .none}
+                return .run { [asset = state.asset, size = size, nextAsset = state.nextAsset] send in
+                    let assetType = await self.photoKitAssets.loadAsset(asset, size)
+                    await send(.loadAsset(assetType))
+                    if let nA = nextAsset {
+                        self.photoKitAssets.startCaching(nA, size)
+                    }
+                }
+            case .loadAsset(let assetType):
+                state.currentAsset = assetType
+                return .none
+            case .disappear:
+                guard let size = state.size else { return .none}
+                return .run { [asset = state.asset, size = size] send in
+                    self.photoKitAssets.unloadCache(asset, size)
+                }
+            }
+        }
+    }
+}
 
 public struct AssetLoaderView: View {
-    let asset: PHAsset
-    let nextAsset: PHAsset?
+    let store: StoreOf<AssetLoaderFeature>
     
-    let frame: CGRect
-    
-    @State private var assetType: AssetType = .loading
-    @State private var align: Alignment = .topLeading
-
-    public init(asset: PHAsset, nextAsset: PHAsset?, frame: CGRect) {
-        self.asset = asset
-        self.nextAsset = nextAsset
-        
-        self.frame = frame
+    public init(store: StoreOf<AssetLoaderFeature>) {
+        self.store = store
     }
 
     public var body: some View {
-        KenBurnsPanView(assetType: $assetType, size: frame.size)
-        .task(id: asset, {
-            self.align = .topLeading
-            self.assetType = await PHImageCacheActor.shared.loadAsset(asset: asset, viewSize: frame.size)
-            
-            withAnimation(.linear(duration: 10)) {
-                self.align = .bottomTrailing
-            }
-            
-            if let nA = nextAsset {
-                await PHImageCacheActor.shared.startCaching(asset: nA, viewSize: frame.size)
-            }
-        })
-        .onDisappear(perform: {
-            Task {
-                await PHImageCacheActor.shared.unloadCache(asset: asset, viewSize: frame.size)
-            }
-        })
+        GeometryReader { reader in
+            KenBurnsPanView(assetType: store.currentAsset, size: reader.size)
+                .onAppear(perform: {
+                    store.send(.load)
+                })
+                .onChange(of: reader.size, initial: true){
+                    _, newSize in
+                    store.send(.resize(newSize))
+                }
+                .onDisappear(perform: {
+                    store.send(.disappear)
+                })
+        }
     }
 }

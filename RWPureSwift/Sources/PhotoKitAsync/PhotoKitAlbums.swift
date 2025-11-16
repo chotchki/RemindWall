@@ -12,7 +12,7 @@ import Photos
 public struct PhotoKitAlbums: Sendable {
     public var libraryAccess: @Sendable () -> PHAuthorizationStatus = { .denied }
     public var availibleAlbums: @Sendable () async -> PHFetchResultAssetCollection?
-    public var loadAlbumAssets: @Sendable (String) async -> [PHAsset]?
+    public var loadAlbumAssets: @Sendable (AlbumLocalId) async -> [PHAsset]?
 }
 
 extension PhotoKitAlbums: DependencyKey {
@@ -38,7 +38,7 @@ extension PhotoKitAlbums: DependencyKey {
                 }
                 
                 let result = await Task {
-                    guard let fetchAlbumObj = PHAssetCollection.fetchAssetCollections(withLocalIdentifiers: [albumId], options: baseFetchOptions()).firstObject else {
+                    guard let fetchAlbumObj = PHAssetCollection.fetchAssetCollections(withLocalIdentifiers: [albumId.rawValue], options: baseFetchOptions()).firstObject else {
                         return nil as [PHAsset]?
                     }
                     

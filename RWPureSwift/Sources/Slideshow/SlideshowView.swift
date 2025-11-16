@@ -1,72 +1,121 @@
 import AppModel
-import DataModel
+import ComposableArchitecture
 import PhotosUI
+import PhotoKitAsync
 import SwiftUI
 
-public struct SlideshowView: View {
-    @Binding var state: AppState
-    @Binding var selectedAlbumId: String?
+@Reducer
+public struct SlideShowFeature: Sendable {
+    static let slideUpdateDuration = Duration.seconds(10)
     
-    @State private var assetList: [PHAsset]?
-    @State private var currentAlbumIndex: Int = 0
+    @Dependency(\.continuousClock) var clock
+    @Dependency(\.photoKitAlbums) var photoKitAlbums
     
-    @State var currentAsset: PHAsset?
-    @State var nextAsset: PHAsset?
+    @ObservableState
+    public struct State: Equatable {
+        @Shared var selectedAlbum: AlbumLocalId?
         
-    public init(state: Binding<AppState>, selectedAlbumId: Binding<String?>){
-        self._state = state
-        self._selectedAlbumId = selectedAlbumId
+        var assetList: [PHAsset]?
+        var assetLoader: AssetLoaderFeature.State?
+
+        public init(selectedAlbum: Shared<AlbumLocalId?>) {
+            self._selectedAlbum = selectedAlbum
+        }
+    }
+    
+    public enum Action {
+        case viewAppeared
+        case tapReturnToSettings
+        case tick
+        case loadAlbum
+        case loadAlbumContents([PHAsset]?)
+        case assetLoader(AssetLoaderFeature.Action)
+    }
+    
+    public init(){}
+    
+    public var body: some Reducer<State, Action> {
+        Reduce { state, action in
+            switch action {
+            case .viewAppeared:
+                return .run { send in
+                    for await _ in self.clock.timer(interval: SlideShowFeature.slideUpdateDuration){
+                        await send(.tick)
+                    }
+                }
+            case .tapReturnToSettings, .assetLoader:
+                return .none
+            case .tick:
+                guard var assetList = state.assetList else { return .none }
+                
+                if assetList.isEmpty {
+                    return .run { send in
+                        await send(.loadAlbum)
+                    }
+                } else {
+                    state.assetLoader = AssetLoaderFeature.State(
+                        asset: assetList.removeFirst(), nextAsset: assetList.first
+                    )
+                    
+                    return .none
+                }
+            case .loadAlbum:
+                guard let selectedAlbum = state.selectedAlbum else { return .none }
+                return .run { send in
+                    let albumItems = await self.photoKitAlbums.loadAlbumAssets(selectedAlbum)
+                    await send(.loadAlbumContents(albumItems))
+                }
+            case let .loadAlbumContents(albumItems):
+                state.assetList = albumItems
+                
+                guard var assetList = state.assetList else { return .none }
+                if !assetList.isEmpty {
+                    state.assetLoader = AssetLoaderFeature.State(
+                        asset: assetList.removeFirst(), nextAsset: assetList.first
+                    )
+                }
+                return .none
+            }
+        }.ifLet(\.assetLoader, action: \.assetLoader){
+            AssetLoaderFeature()
+        }
+    }
+}
+
+public struct SlideshowView: View {
+    @Bindable var store: StoreOf<SlideShowFeature>
+    
+    public init(store: StoreOf<SlideShowFeature>) {
+        self.store = store
     }
     
     public var body: some View {
         Group {
-            if selectedAlbumId == nil {
+            if let al = store.scope(state: \.assetLoader, action: \.assetLoader) {
+                AssetLoaderView(store: al)
+            } else if store.selectedAlbum == nil {
                 ContentUnavailableView {
                     Label("Slideshow Not Configured", systemImage: "photo.stack")
                 } description: {
-                    Button("Return to Settings", action: {
-                        state = .editSettings
-                    })
+                    Text("Select a shared album to display in settings,")
+                } actions: {
+                    Button("Return to Settings"){
+                        store.send(.tapReturnToSettings)
+                    }
                 }
             } else {
-                GeometryReader { reader in
-                    if let ca = currentAsset {
-                        AssetLoaderView(asset: ca, nextAsset: nextAsset, frame: reader.frame(in: .local)).onTapGesture {
-                            state = .editSettings
-                        }
-                    } else {
-                        VStack {
-                            ProgressView()
-                            Button("Return to Settings", action: {
-                                state = .editSettings
-                            })
-                        }
+                ContentUnavailableView {
+                    Label("Slideshow Loading", systemImage: "photo.stack")
+                } description: {
+                    ProgressView()
+                } actions: {
+                    Button("Return to Settings"){
+                        store.send(.tapReturnToSettings)
                     }
                 }
             }
-        }
-        .task(id: selectedAlbumId, {
-            assetList = await loadAlbumAssets(albumId: selectedAlbumId)
-            
-            while !Task.isCancelled {
-                if let al = assetList{
-                    if al.count > currentAlbumIndex {
-                        currentAsset = al[currentAlbumIndex]
-                    }
-                    
-                    if al.count > currentAlbumIndex + 1 {
-                        nextAsset = al[currentAlbumIndex + 1]
-                    }
-                }
-                
-                try? await Task.sleep(nanoseconds: UInt64(10 * Double(NSEC_PER_SEC)))
-                
-                currentAlbumIndex += 1
-                if currentAlbumIndex > assetList?.count ?? -1 {
-                    assetList = await loadAlbumAssets(albumId: selectedAlbumId)
-                    currentAlbumIndex = 0
-                }
-            }
+        }.onAppear(perform:{
+            store.send(.viewAppeared)
         })
     }
 }

@@ -19,8 +19,14 @@ let package = Package(
         .library(name: "Utility", targets: ["Utility"]),
     ],
     dependencies: [
+        .package(url: "https://github.com/pointfreeco/sqlite-data", from: "1.0.0"),
+        .package(
+              url: "https://github.com/pointfreeco/swift-composable-architecture",
+              from: "1.22.0"
+            ),
         .package(url: "https://github.com/ph1ps/swift-concurrency-deadline.git", from: "1.0.0"),
         .package(url: "https://github.com/pointfreeco/swift-dependencies", from: "1.0.0"),
+        .package(url: "https://github.com/pointfreeco/swift-tagged", from: "0.6.0")
     ],
     targets: [
         .target(name: "AppModel"),
@@ -46,7 +52,10 @@ let package = Package(
                 name: "Dependencies",
                 package: "swift-dependencies"
               ),
-            .product(name: "DependenciesMacros", package: "swift-dependencies"),]),
+            .product(name: "DependenciesMacros", package: "swift-dependencies"),
+            .product(name:"Tagged", package: "swift-tagged")
+        ]),
+        .testTarget(name: "PhotoKitAsyncTests", dependencies: ["PhotoKitAsync"]),
         .target(name: "EditSettings",
                 dependencies: [
                     .target(name: "AppModel"),
@@ -58,6 +67,7 @@ let package = Package(
         .target(name: "DataModel"),
         .target(name: "Slideshow",
                 dependencies: [
+                    .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
                     .target(name: "AppModel"),
                     .target(name: "DataModel"),
                     .target(name: "PhotoKitAsync"),

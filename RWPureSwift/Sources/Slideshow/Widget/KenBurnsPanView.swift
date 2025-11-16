@@ -3,7 +3,7 @@ import PhotoKitAsync
 import SwiftUI
 
 struct KenBurnsPanView: View {
-    @Binding var assetType: AssetType
+    let assetType: AssetType
     let size: CGSize
     
     @State private var align : Alignment  = .topLeading
@@ -46,7 +46,7 @@ struct KenBurnsPanView: View {
         //Spacer()
         HStack{
             //Spacer()
-            KenBurnsPanView(assetType: $image, size: CGSize(width: 400, height: 600))
+            KenBurnsPanView(assetType: image, size: CGSize(width: 400, height: 600))
         }
     }.background(Color.blue)
     .frame(width: 500, height: 700, alignment: .center)
@@ -59,7 +59,7 @@ struct KenBurnsPanView: View {
         //Spacer()
         HStack{
             //Spacer()
-            KenBurnsPanView(assetType: $image, size: CGSize(width: 400, height: 600))
+            KenBurnsPanView(assetType: image, size: CGSize(width: 400, height: 600))
         }
     }.background(Color.blue)
     .frame(width: 500, height: 700, alignment: .center)
@@ -72,7 +72,7 @@ struct KenBurnsPanView: View {
         //Spacer()
         HStack{
             //Spacer()
-            KenBurnsPanView(assetType: $image, size: CGSize(width: 400, height: 600))
+            KenBurnsPanView(assetType: image, size: CGSize(width: 400, height: 600))
         }
     }.task{
         try? await Task.sleep(for: .seconds(10));
