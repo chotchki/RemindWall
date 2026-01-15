@@ -1,22 +1,32 @@
-//
-//  EditTrackeeView.swift
-//  RemindWall2
-//
-//  Created by Christopher Hotchkiss on 7/4/24.
-//
-import DataModel
-import SwiftData
+import ComposableArchitecture
+import Dao
 import SwiftUI
 
+@Reducer
+public struct EditTrackeeFeature: Sendable {
+    @ObservableState
+    public struct State: Equatable {
+        var trackee: Trackees
+    }
+    
+    public enum Action: BindableAction {
+    }
+    
+    public init(id: Trackees.ID) {
+        
+    }
+    
+    public var body: some Reducer<State, Action> {
+        BindingReducer()
+    }
+    
+}
+
 struct EditTrackeeView: View {
-    @Environment(\.calendar) var calendar
-    @Environment(\.modelContext) var context
-    @Environment(\.dismiss) var dismiss
+    @Bindable var store: StoreOf<EditTrackeeFeature>
     
-    @Bindable var trackee: Trackee
-    
-    public init(trackee: Bindable<Trackee>) {
-        self._trackee = trackee        
+    public init(store: StoreOf<EditTrackeeFeature>) {
+        self.store = store
     }
     
     var body: some View {

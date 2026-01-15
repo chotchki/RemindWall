@@ -31,6 +31,9 @@ public struct PHFetchResultAssetCollection: RandomAccessCollection, Equatable {
     public var endIndex: Int { fetchResult.count }
     public var startIndex: Int { 0 }
     
+    public init() {
+        self.fetchResult = PHFetchResult()
+    }
     public init(fetchResult: PHFetchResult<PHAssetCollection>) {
         self.fetchResult = fetchResult
     }

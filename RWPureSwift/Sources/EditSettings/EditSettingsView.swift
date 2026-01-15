@@ -1,97 +1,83 @@
-import AppModel
-import DataModel
+import ComposableArchitecture
+import Dependencies
+import Dao
 import PhotosUI
 import PhotoKitAsync
-import SwiftData
+import SQLiteData
 import SwiftUI
 import Utility
 
-@MainActor
-public struct EditSettingsView: View {
-    @Environment(\.dismiss) var dismiss
-    @Environment(Settings.self) private var settings
+@Reducer
+public struct EditSettingsFeature: Sendable {
     
-    private static func baseFetchOptions() -> PHFetchOptions {
-        // From: https://stackoverflow.com/a/49495326/160208
-        // We don't sort because we'll be shuffling anyway
-        let pfo = PHFetchOptions()
-        pfo.includeHiddenAssets = false
-        return pfo
+    @Dependency(\.defaultDatabase) var db
+    
+    @ObservableState
+    public struct State: Equatable {
+        @FetchOne(Settings.where{$0.id == SETTINGS_SINGLETON})
+        var settings: Settings?
+        
+        var albumPickerState = AlbumPickerFeature.State()
+        
+        public init() {}
     }
     
-    let availibleAlbums = PHFetchResultAssetCollection(fetchResult: PHAssetCollection.fetchAssetCollections(
-        with: PHAssetCollectionType.album,
-        subtype: PHAssetCollectionSubtype.any,
-        options: baseFetchOptions()))
-    
-    let availibleCalendars = GlobalEventStore.shared.getCalendars()
-
-    @Binding var state: AppState
-    
-    public init(state: Binding<AppState>) {
-        self._state = state
+    public enum Action {
+        case albumPicker(AlbumPickerFeature.Action)
     }
     
-    public var body: some View {
-        NavigationStack {
-            Form{
-                @Bindable var settings = settings
-                Section {
-                    Picker("Albums", selection: $settings.selectedAlbumId){
-                        Text("Select Album").tag(nil as String?)
-                        ForEach(availibleAlbums, id: \.localIdentifier) { album in
-                            Text(album.localizedTitle ?? "Unknown Album").tag(Optional(album.localIdentifier))
-                        }
-                    }
-                } header: {
-                    Text("Select Album for Slideshow")
-                }
-                
-                Section {
-                    Picker("Calendars", selection: $settings.selectedCalendarId){
-                        Text("Select Calendar").tag(nil as String?)
-                        ForEach(
-                            availibleCalendars,
-                            id: \.calendarIdentifier
-                        ) { calendar in
-                            Text(calendar.title).tag(Optional(calendar.calendarIdentifier))
-                        }
-                    }
-                } header: {
-                    Text("Select Calendar for Event Reminders")
-                }
-                
-                Section {
-                    TrackeesView()
-                } header: {
-                    Text("Trackees")
-                }
-                
-                Section {
-                    Button {
-                        state = .dashboard
-                    } label: {
-                        Text("Start Slideshow")
-                    }
-                    
-                    #if targetEnvironment(macCatalyst)
-                    Button {
-                        exit(0)
-                    } label: {
-                        Text("Quit Application")
-                    }
-                    #endif
-                }
+    public init(){}
+    
+    public var body: some Reducer<State, Action> {
+        Reduce { state, action in
+            switch action {
+            case .albumPicker:
+                return .none
             }
         }
     }
 }
 
-#Preview {
-    @Previewable @State var state = AppState.editSettings
-    let container = Settings.preview
-
-    return NavigationStack {
-        EditSettingsView(state: $state)
-    }.modelContainer(container)
+public struct EditSettingsView: View {
+    var store: StoreOf<EditSettingsFeature>
+    
+    public var body: some View {
+        NavigationStack {
+            Form{
+                Section {
+                    ///AlbumPickerView(store: store.scope(state: \.albumPickerState, action: \.albumPickerState))
+                } header: {
+                    Text("Select Album for Slideshow")
+                }
+//                
+//                Section {
+//                    //Calendar Picker
+//                } header: {
+//                    Text("Select Calendar for Event Reminders")
+//                }
+//                
+//                Section {
+//                    TrackeesView()
+//                } header: {
+//                    Text("Trackees")
+//                }
+//                
+//                Section {
+//                    Button {
+//                        
+//                    } label: {
+//                        Text("Start Slideshow")
+//                    }
+//                    
+//                    #if targetEnvironment(macCatalyst)
+//                    Button {
+//                        exit(0)
+//                    } label: {
+//                        Text("Quit Application")
+//                    }
+//                    #endif
+//                }
+            }
+        }
+    }
 }

@@ -12,6 +12,10 @@
 		BF2973192C8667AD0029F361 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BF2973182C8667AD0029F361 /* Preview Assets.xcassets */; };
 		BF29731F2C86688C0029F361 /* AppNavigation in Frameworks */ = {isa = PBXBuildFile; productRef = BF29731E2C86688C0029F361 /* AppNavigation */; };
 		BF4E60BF2C44458200BAC4F2 /* EditSettings in Frameworks */ = {isa = PBXBuildFile; productRef = BF4E60BE2C44458200BAC4F2 /* EditSettings */; };
+		BF67F8D72ECAE7C3009D36B9 /* SQLiteData in Frameworks */ = {isa = PBXBuildFile; productRef = BF67F8D62ECAE7C3009D36B9 /* SQLiteData */; };
+		BF67F8D92ECAE7CF009D36B9 /* SQLiteData in Frameworks */ = {isa = PBXBuildFile; productRef = BF67F8D82ECAE7CF009D36B9 /* SQLiteData */; };
+		BF67F8DB2ECC0A57009D36B9 /* Dao in Frameworks */ = {isa = PBXBuildFile; productRef = BF67F8DA2ECC0A57009D36B9 /* Dao */; };
+		BF67F8DD2ECC0A5E009D36B9 /* Dao in Frameworks */ = {isa = PBXBuildFile; productRef = BF67F8DC2ECC0A5E009D36B9 /* Dao */; };
 		BFE60AD42C4418E200E8AB67 /* RemindWallApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFE60AD32C4418E200E8AB67 /* RemindWallApp.swift */; };
 		BFE60ADA2C4418E300E8AB67 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BFE60AD92C4418E300E8AB67 /* Assets.xcassets */; };
 		BFE60ADE2C4418E300E8AB67 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BFE60ADD2C4418E300E8AB67 /* Preview Assets.xcassets */; };
@@ -40,6 +44,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BF67F8DD2ECC0A5E009D36B9 /* Dao in Frameworks */,
+				BF67F8D92ECAE7CF009D36B9 /* SQLiteData in Frameworks */,
 				BF29731F2C86688C0029F361 /* AppNavigation in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -48,8 +54,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BF67F8D72ECAE7C3009D36B9 /* SQLiteData in Frameworks */,
 				BFE60AE92C441A0900E8AB67 /* AppNavigation in Frameworks */,
 				BF4E60BF2C44458200BAC4F2 /* EditSettings in Frameworks */,
+				BF67F8DB2ECC0A57009D36B9 /* Dao in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -150,6 +158,8 @@
 			name = RemindWalliOS;
 			packageProductDependencies = (
 				BF29731E2C86688C0029F361 /* AppNavigation */,
+				BF67F8D82ECAE7CF009D36B9 /* SQLiteData */,
+				BF67F8DC2ECC0A5E009D36B9 /* Dao */,
 			);
 			productName = RemindWalliOS;
 			productReference = BF29730D2C8667AC0029F361 /* RemindWalliOS.app */;
@@ -171,6 +181,8 @@
 			packageProductDependencies = (
 				BFE60AE82C441A0900E8AB67 /* AppNavigation */,
 				BF4E60BE2C44458200BAC4F2 /* EditSettings */,
+				BF67F8D62ECAE7C3009D36B9 /* SQLiteData */,
+				BF67F8DA2ECC0A57009D36B9 /* Dao */,
 			);
 			productName = RemindWall;
 			productReference = BFE60AD02C4418E200E8AB67 /* RemindWall.app */;
@@ -203,6 +215,9 @@
 				Base,
 			);
 			mainGroup = BFE60AC72C4418E200E8AB67;
+			packageReferences = (
+				BF67F8D52ECAE7C3009D36B9 /* XCRemoteSwiftPackageReference "sqlite-data" */,
+			);
 			productRefGroup = BFE60AD12C4418E200E8AB67 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -275,7 +290,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -287,6 +302,7 @@
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -314,7 +330,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -326,6 +342,7 @@
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -484,7 +501,7 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
@@ -529,7 +546,7 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
@@ -577,6 +594,17 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		BF67F8D52ECAE7C3009D36B9 /* XCRemoteSwiftPackageReference "sqlite-data" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/sqlite-data";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.3.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		BF29731E2C86688C0029F361 /* AppNavigation */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -585,6 +613,24 @@
 		BF4E60BE2C44458200BAC4F2 /* EditSettings */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = EditSettings;
+		};
+		BF67F8D62ECAE7C3009D36B9 /* SQLiteData */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BF67F8D52ECAE7C3009D36B9 /* XCRemoteSwiftPackageReference "sqlite-data" */;
+			productName = SQLiteData;
+		};
+		BF67F8D82ECAE7CF009D36B9 /* SQLiteData */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BF67F8D52ECAE7C3009D36B9 /* XCRemoteSwiftPackageReference "sqlite-data" */;
+			productName = SQLiteData;
+		};
+		BF67F8DA2ECC0A57009D36B9 /* Dao */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Dao;
+		};
+		BF67F8DC2ECC0A5E009D36B9 /* Dao */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Dao;
 		};
 		BFE60AE82C441A0900E8AB67 /* AppNavigation */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -1,5 +1,6 @@
 import AppModel
 import ComposableArchitecture
+import Dao
 import PhotosUI
 import PhotoKitAsync
 import SwiftUI
@@ -13,12 +14,12 @@ public struct SlideShowFeature: Sendable {
     
     @ObservableState
     public struct State: Equatable {
-        @Shared var selectedAlbum: AlbumLocalId?
+        @Shared var selectedAlbum: Settings.AlbumLocalId?
         
         var assetList: [PHAsset]?
         var assetLoader: AssetLoaderFeature.State?
 
-        public init(selectedAlbum: Shared<AlbumLocalId?>) {
+        public init(selectedAlbum: Shared<Settings.AlbumLocalId?>) {
             self._selectedAlbum = selectedAlbum
         }
     }

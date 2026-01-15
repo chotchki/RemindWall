@@ -65,7 +65,6 @@ public struct AssociateTagView: View {
 }
 
 #Preview("No Tag") {
-    @Previewable @State var associatedTag: String? = nil
     return AssociateTagView(associatedTag: $associatedTag)
 }
 

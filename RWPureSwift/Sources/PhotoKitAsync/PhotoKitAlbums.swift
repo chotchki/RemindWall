@@ -4,6 +4,8 @@
 //
 //  Created by Christopher Hotchkiss on 10/13/25.
 //
+import AppTypes
+import Dao
 import Dependencies
 import DependenciesMacros
 import Photos
@@ -11,8 +13,8 @@ import Photos
 @DependencyClient
 public struct PhotoKitAlbums: Sendable {
     public var libraryAccess: @Sendable () -> PHAuthorizationStatus = { .denied }
-    public var availibleAlbums: @Sendable () async -> PHFetchResultAssetCollection?
-    public var loadAlbumAssets: @Sendable (AlbumLocalId) async -> [PHAsset]?
+    public var availableAlbums: @Sendable () async -> PHFetchResultAssetCollection?
+    public var loadAlbumAssets: @Sendable (Setting.AlbumLocalId) async -> [PHAsset]?
 }
 
 extension PhotoKitAlbums: DependencyKey {
@@ -21,7 +23,7 @@ extension PhotoKitAlbums: DependencyKey {
             libraryAccess: {
                 return PHPhotoLibrary.authorizationStatus(for: .readWrite)
             },
-            availibleAlbums: {
+            availableAlbums: {
                 if PHPhotoLibrary.authorizationStatus(for: .readWrite) != .authorized {
                     return nil
                 }

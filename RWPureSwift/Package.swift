@@ -5,21 +5,28 @@ import PackageDescription
 
 let package = Package(
     name: "RWPureSwift",
-    platforms: [.iOS(.v18), .macCatalyst(.v18)],
+    platforms: [.iOS(.v26), .macCatalyst(.v26), .macOS(.v26)],
     products: [
         .library(name: "AppModel", targets: ["AppModel"]),
+        .library(name: "AppTypes", targets: ["AppTypes"]),
         .library(name: "AppNavigation", targets: ["AppNavigation"]),
         .library(name: "CheckPermissions", targets: ["CheckPermissions"]),
         .library(name: "Dashboard", targets: ["Dashboard"]),
         .library(name: "DataModel", targets: ["DataModel"]),
+        .library(name: "Dao", targets: ["Dao"]),
         .library(name: "EditSettings", targets: ["EditSettings"]),
+        
+        .library(name: "EditSettingsNew_Reminders", targets: ["EditSettingsNew_Reminders"]),
+        .library(name: "EditSettingsNew_Trackees", targets: ["EditSettingsNew_Trackees"]),
+        
         .library(name: "PhotoKitAsync", targets: ["PhotoKitAsync"]),
         .library(name: "Slideshow", targets: ["Slideshow"]),
-        .library(name: "TagScan", targets: ["TagScan"]),
+        .library(name: "TagScanner", targets: ["TagScanner"]),
+        .library(name: "TagTypes", targets: ["TagTypes"]),
         .library(name: "Utility", targets: ["Utility"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/pointfreeco/sqlite-data", from: "1.0.0"),
+        .package(url: "https://github.com/pointfreeco/sqlite-data", from: "1.0.0", traits: ["SQLiteDataTagged"]),
         .package(
               url: "https://github.com/pointfreeco/swift-composable-architecture",
               from: "1.22.0"
@@ -30,6 +37,13 @@ let package = Package(
     ],
     targets: [
         .target(name: "AppModel"),
+        .target(name: "AppTypes", dependencies: [
+            .product(name: "SQLiteData", package: "sqlite-data"),
+            .product(name:"Tagged", package: "swift-tagged"),
+        ]),
+        .testTarget(name: "AppTypesTests", dependencies: [
+            .target(name: "AppTypes"),
+        ]),
         .target(name: "AppNavigation", dependencies: [
             .target(name: "AppModel"),
             .target(name: "CheckPermissions"),
@@ -44,27 +58,69 @@ let package = Package(
         .target(name: "Dashboard", dependencies: [
             .target(name: "DataModel"),
             .target(name: "Slideshow"),
-            .target(name: "Utility"),
-            .target(name: "TagScan")
+            .target(name: "Utility")
         ]),
+        .target(name: "Dao", dependencies: [
+            .product(
+                name: "Dependencies",
+                package: "swift-dependencies"
+              ),
+            .product(name: "SQLiteData", package: "sqlite-data"),
+            .target(name: "AppTypes"),
+        ]),
+        .testTarget(name: "DaoTests", dependencies: ["Dao"]),
+        .target(name: "DataModel"),
+        .target(name: "EditSettings",dependencies: [
+            .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+            .product(
+                name: "Dependencies",
+                package: "swift-dependencies"
+              ),
+            .target(name: "Dao"),
+            .target(name: "PhotoKitAsync"),
+            .target(name: "TagScanner"),
+            .target(name: "Utility"),
+        ]),
+        
+        .target(name: "EditSettingsNew_Reminders",dependencies: [
+            .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+            .product(
+                name: "Dependencies",
+                package: "swift-dependencies"
+              ),
+            .target(name: "Dao"),
+        ], path: "Sources/EditSettingsNew/Reminders"),
+        .testTarget(name: "EditSettingsNew_RemindersTests",
+                    dependencies: [
+                        "EditSettingsNew_Reminders",
+                        .product(name: "DependenciesTestSupport", package: "swift-dependencies")
+                    ], path: "Tests/EditSettingsNewTests/Reminders"),
+        
+        .target(name: "EditSettingsNew_Trackees",dependencies: [
+            .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+            .product(
+                name: "Dependencies",
+                package: "swift-dependencies"
+              ),
+            .target(name: "Dao"),
+        ], path: "Sources/EditSettingsNew/Trackees"),
+        .testTarget(name: "EditSettingsNew_TrackeesTests",
+                    dependencies: [
+                        "EditSettingsNew_Trackees",
+                        .product(name: "DependenciesTestSupport", package: "swift-dependencies")
+                    ], path: "Tests/EditSettingsNewTests/Trackees"),
+        
         .target(name: "PhotoKitAsync", dependencies: [
             .product(
                 name: "Dependencies",
                 package: "swift-dependencies"
               ),
             .product(name: "DependenciesMacros", package: "swift-dependencies"),
-            .product(name:"Tagged", package: "swift-tagged")
+            .product(name:"Tagged", package: "swift-tagged"),
+            .target(name: "AppTypes"),
+            .target(name: "Dao"),
         ]),
         .testTarget(name: "PhotoKitAsyncTests", dependencies: ["PhotoKitAsync"]),
-        .target(name: "EditSettings",
-                dependencies: [
-                    .target(name: "AppModel"),
-                    .target(name: "DataModel"),
-                    .target(name: "PhotoKitAsync"),
-                    .target(name: "TagScan"),
-                    .target(name: "Utility"),
-                ]),
-        .target(name: "DataModel"),
         .target(name: "Slideshow",
                 dependencies: [
                     .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
@@ -74,12 +130,22 @@ let package = Package(
                     .target(name: "Utility"),
                 ], 
                 resources:[ .process("Widget/Resources/PreviewAssets.xcassets")]),
-        .target(name: "TagScan",
+        .target(name: "TagScanner",
                 dependencies: [
-                    .target(name: "DataModel"),
-                    .target(name: "Utility"),
-                    .product(name: "Deadline", package: "swift-concurrency-deadline")
+                    .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+                    .product(name: "Deadline", package: "swift-concurrency-deadline"),
+                    .product(
+                      name: "Dependencies",
+                      package: "swift-dependencies"
+                    ),
+                    .product(name: "DependenciesMacros", package: "swift-dependencies"),
+                    .target(name: "TagTypes")
                 ]),
+        .testTarget(name: "TagScannerTests", dependencies: [.target(name: "TagScanner")]),
+        .target(name: "TagTypes", dependencies: [
+            .product(name:"Tagged", package: "swift-tagged"),
+        ]),
+        .testTarget(name: "TagTypesTests", dependencies: [.target(name: "TagTypes")]),
         .target(name: "Utility"),
     ]
 )
