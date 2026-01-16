@@ -28,6 +28,12 @@ public struct AddReminderFeature {
         case timePicker(ReminderPartFeature.Action)
         case saveButtonTapped
         case cancelButtonTapped
+        
+        case delegate(Delegate)
+        @CasePathable
+        public enum Delegate: Equatable {
+            case saveReminder(ReminderPart)
+        }
     }
     
     public init() {}
@@ -36,39 +42,24 @@ public struct AddReminderFeature {
         Scope(state: \.timePickerState, action: \.timePicker) {
             ReminderPartFeature()
         }
-        Reduce { state, action in
+        Reduce<State, Action> { state, action in
             switch action {
             case .timePicker:
                 return .none
                 
             case .saveButtonTapped:
-                let weekDay = state.reminderPart.weekDay.rawValue
-                let hour = state.reminderPart.hour
-                let minute = state.reminderPart.minute
-                let trackeeId = state.trackee.id
-                
-                return .run { [defaultDatabase, dismiss] _ in
-                    await withErrorReporting {
-                        try await defaultDatabase.write { db in
-                            try ReminderTime.insert {
-                                ReminderTime.Draft(
-                                    weekDay: weekDay,
-                                    hour: hour,
-                                    minute: minute,
-                                    associatedTag: "", //TODO Add in tag scanning
-                                    lastScan: nil,
-                                    trackeeId: trackeeId
-                                );
-                            }.execute(db)
-                        }
-                    }
+                return .run { [dismiss, rp = state.reminderPart] send in
+                    await send(.delegate(.saveReminder(rp)))
                     await dismiss()
                 }
                 
             case .cancelButtonTapped:
-                return .run { [dismiss] _ in
+                return .run { [dismiss] send in
                     await dismiss()
                 }
+                
+            case .delegate:
+                return .none
             }
         }
     }

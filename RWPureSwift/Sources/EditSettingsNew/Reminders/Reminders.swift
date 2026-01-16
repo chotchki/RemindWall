@@ -34,7 +34,7 @@ public struct RemindersFeature: Sendable {
     }
     
     public var body: some ReducerOf<Self> {
-        Reduce { state, action in
+        Reduce<State, Action> { state, action in
             switch action {
             case .onAppear:
                 return .run { [t = state.trackee, rt = state.$reminderTimes] send in
@@ -58,8 +58,28 @@ public struct RemindersFeature: Sendable {
                         try await rt.load(ReminderTime.where{$0.trackeeId ==  t.id}.order(by: \.weekDay).order(by: \.hour).order(by: \.minute))
                     }
                 }
-            case .destination(.presented(.addReminder(.saveButtonTapped))):
-                return .send(.onAppear)
+            case let .destination(.presented(.addReminder(.delegate(.saveReminder(reminderPart))))):
+                let trackeeId = state.trackee.id
+                
+                return .run { [defaultDatabase, rt = state.$reminderTimes, reminderPart] _ in
+                    await withErrorReporting {
+                        try await defaultDatabase.write { db in
+                            try ReminderTime.insert {
+                                ReminderTime.Draft(
+                                    weekDay: reminderPart.weekDay.rawValue,
+                                    hour: reminderPart.hour,
+                                    minute: reminderPart.minute,
+                                    associatedTag: "", //TODO Add in tag scanning
+                                    lastScan: nil,
+                                    trackeeId: trackeeId
+                                );
+                            }.execute(db)
+                        }
+                        
+                        // Refresh the list
+                        try await rt.load(ReminderTime.where{$0.trackeeId ==  trackeeId}.order(by: \.weekDay).order(by: \.hour).order(by: \.minute))
+                    }
+                }
             case .destination:
                 return .none
             }
@@ -150,17 +170,36 @@ struct RemindersView: View {
 }
 
 #Preview {
-    let _ = try! prepareDependencies {
-        $0.defaultDatabase = try! $0.appDatabase()
+    let _ = prepareDependencies {
+        $0.defaultDatabase = try! $0.appDatabase();
     }
     
-    let trackee = Trackee(id: Trackee.ID(UUID()), name: "Alice")
-    
-    RemindersView(
-        store: Store(
-            initialState: RemindersFeature.State(trackee: trackee)
-        ) {
-            RemindersFeature()
+    struct AsyncTestView: View {
+        @Dependency(\.defaultDatabase) var defaultDatabase
+        
+        @State var trackee: Trackee? = nil
+        
+        var body: some View {
+            HStack{
+                if trackee != nil {
+                    RemindersView(
+                        store: Store(
+                            initialState: RemindersFeature.State(trackee: trackee!)
+                        ) {
+                            RemindersFeature()
+                        }
+                    )
+                } else {
+                    EmptyView()
+                }
+            }.task {
+                trackee = try! defaultDatabase.read { db in
+                    try? Trackee.all.fetchOne(db)
+                }
+            }
         }
-    )
+    }
+    
+    return AsyncTestView()
 }
+

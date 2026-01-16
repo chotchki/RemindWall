@@ -141,7 +141,7 @@ extension DependencyValues {
         
         try database.write { db in
             if context != .live {
-                try db.seedSampleData()
+                let _ = try db.seedSampleData()
             }
         }
         
@@ -153,7 +153,7 @@ private let logger = Logger(subsystem: "Reminders", category: "Database")
 
 #if DEBUG
 extension Database {
-    public func seedSampleData() throws {
+    public func seedSampleData() throws -> Self {
         @Dependency(\.date.now) var now
         @Dependency(\.uuid) var uuid
         
@@ -172,6 +172,8 @@ extension Database {
                 name: "Bob"
             )
         }
+        
+        return self
     }
 }
 #endif
