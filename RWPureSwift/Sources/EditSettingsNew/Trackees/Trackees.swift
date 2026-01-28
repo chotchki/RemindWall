@@ -138,7 +138,7 @@ struct TrackeesView: View {
 }
 
 #Preview {
-    let _ = try! prepareDependencies {
+    let _ = prepareDependencies {
         $0.defaultDatabase = try! $0.appDatabase()
       }
     

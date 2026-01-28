@@ -103,6 +103,7 @@ let package = Package(
                 package: "swift-dependencies"
               ),
             .target(name: "Dao"),
+            .target(name: "EditSettingsNew_Reminders")
         ], path: "Sources/EditSettingsNew/Trackees"),
         .testTarget(name: "EditSettingsNew_TrackeesTests",
                     dependencies: [

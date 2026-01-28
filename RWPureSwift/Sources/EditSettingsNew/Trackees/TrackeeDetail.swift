@@ -1,7 +1,7 @@
 import ComposableArchitecture
 import Dao
+import EditSettingsNew_Reminders
 import SwiftUI
-
 
 @Reducer
 public struct TrackeeDetailFeature {
@@ -9,12 +9,21 @@ public struct TrackeeDetailFeature {
     public struct State: Equatable {
         @Presents var alert: AlertState<Action.Alert>?
         let trackee: Trackee
+        
+        var reminders: RemindersFeature.State
+        
+        public init(trackee: Trackee) {
+            self.trackee = trackee
+            
+            reminders = RemindersFeature.State(trackee: trackee)
+        }
     }
     
     public enum Action {
         case alert(PresentationAction<Alert>)
         case delegate(Delegate)
         case deleteButtonTapped
+        case remindersFeature(RemindersFeature.Action)
         public enum Alert: Sendable {
             case confirmDeletion
         }
@@ -25,6 +34,9 @@ public struct TrackeeDetailFeature {
     
     @Dependency(\.dismiss) var dismiss
     public var body: some ReducerOf<Self> {
+        Scope(state: \.reminders, action: \.remindersFeature) {
+            RemindersFeature()
+        }
         Reduce { state, action in
           switch action {
           case .alert(.presented(.confirmDeletion)):
@@ -39,6 +51,8 @@ public struct TrackeeDetailFeature {
           case .deleteButtonTapped:
             state.alert = .confirmDeletion
             return .none
+          case .remindersFeature:
+              return .none
           }
         }.ifLet(\.$alert, action: \.alert)
     }
@@ -61,6 +75,10 @@ public struct TrackeeDetailView: View {
     
   public var body: some View {
       Form {
+          RemindersView(
+            store: store.scope(state: \.reminders, action: \.remindersFeature),
+            showNavigationStack: false
+          )
           Button("Delete", role: .destructive) {
             store.send(.deleteButtonTapped)
           }
@@ -72,16 +90,36 @@ public struct TrackeeDetailView: View {
 }
 
 #Preview {
-  @Previewable @State var trackee = Trackee(id: Trackee.ID(UUID()), name: "Bob")
-  NavigationStack {
-      TrackeeDetailView(
-      store: Store(
-        initialState: TrackeeDetailFeature.State(
-            trackee: trackee
-        )
-      ) {
-          TrackeeDetailFeature()
-      }
-    )
-  }
+    let _ = prepareDependencies {
+        $0.defaultDatabase = try! $0.appDatabase();
+    }
+    
+    struct AsyncTestView: View {
+        @Dependency(\.defaultDatabase) var defaultDatabase
+        
+        @State var trackee: Trackee? = nil
+        
+        var body: some View {
+            NavigationStack {
+                if trackee != nil {
+                    TrackeeDetailView(
+                    store: Store(
+                      initialState: TrackeeDetailFeature.State(
+                          trackee: trackee!
+                      )
+                    ) {
+                        TrackeeDetailFeature()
+                    })
+                } else {
+                    EmptyView()
+                }
+            }.task {
+                trackee = try! defaultDatabase.read { db in
+                    try? Trackee.all.fetchOne(db)
+                }
+            }
+        }
+    }
+    
+    return AsyncTestView()
 }
