@@ -39,6 +39,7 @@ public struct AssociateTagFeature : Sendable{
                     await send(.scanResult(scanResult))
                 }.cancellable(id: CancelID.scanTag, cancelInFlight: true)
             case .cancelScanningTapped:
+                state.scanning = false
                 return .cancel(id: CancelID.scanTag)
             case let .scanResult(newState):
                 if case .tagPresent(let ts) = newState {
