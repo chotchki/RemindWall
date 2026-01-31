@@ -22,18 +22,18 @@ let package = Package(
         .library(name: "PhotoKitAsync", targets: ["PhotoKitAsync"]),
         .library(name: "Slideshow", targets: ["Slideshow"]),
         .library(name: "TagScanner", targets: ["TagScanner"]),
-        .library(name: "TagTypes", targets: ["TagTypes"]),
         .library(name: "Utility", targets: ["Utility"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/pointfreeco/sqlite-data", from: "1.0.0", traits: ["SQLiteDataTagged"]),
+        .package(url: "https://github.com/pointfreeco/sqlite-data", from: "1.5.1", traits: ["SQLiteDataTagged"]),
+        .package(url: "https://github.com/pointfreeco/swift-structured-queries", from: "0.30.0", traits: ["StructuredQueriesTagged"]),
         .package(
               url: "https://github.com/pointfreeco/swift-composable-architecture",
-              from: "1.22.0"
+              from: "1.23.1"
             ),
         .package(url: "https://github.com/ph1ps/swift-concurrency-deadline.git", from: "1.0.0"),
         .package(url: "https://github.com/pointfreeco/swift-dependencies", from: "1.0.0"),
-        .package(url: "https://github.com/pointfreeco/swift-tagged", from: "0.6.0")
+        .package(url: "https://github.com/pointfreeco/swift-tagged", from: "0.10.0")
     ],
     targets: [
         .target(name: "AppModel"),
@@ -89,6 +89,7 @@ let package = Package(
                 package: "swift-dependencies"
               ),
             .target(name: "Dao"),
+            .target(name: "TagScanner")
         ], path: "Sources/EditSettingsNew/Reminders"),
         .testTarget(name: "EditSettingsNew_RemindersTests",
                     dependencies: [
@@ -140,13 +141,8 @@ let package = Package(
                       package: "swift-dependencies"
                     ),
                     .product(name: "DependenciesMacros", package: "swift-dependencies"),
-                    .target(name: "TagTypes")
                 ]),
         .testTarget(name: "TagScannerTests", dependencies: [.target(name: "TagScanner")]),
-        .target(name: "TagTypes", dependencies: [
-            .product(name:"Tagged", package: "swift-tagged"),
-        ]),
-        .testTarget(name: "TagTypesTests", dependencies: [.target(name: "TagTypes")]),
         .target(name: "Utility"),
     ]
 )

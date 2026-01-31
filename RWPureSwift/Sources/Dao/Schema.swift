@@ -12,7 +12,7 @@ import Tagged
 public let SETTINGS_SINGLETON: Setting.ID = Setting.ID(uuidString: "0D8698C8-B58A-42F3-AB32-AAB565C074A2")!
 
 @Table
-public struct Setting: Equatable, Identifiable, Sendable {
+public nonisolated struct Setting: Equatable, Identifiable, Sendable {
     public typealias ID = Tagged<Self, UUID>
     public typealias AlbumLocalId = Tagged<(Self, albumLocalId: ()), String>
     public typealias CalendarId = Tagged<(Self, calendarId: ()), String>
@@ -20,10 +20,11 @@ public struct Setting: Equatable, Identifiable, Sendable {
     public let id: ID
     public var selectedAlbumId: AlbumLocalId?
     public var selectedCalendarId: CalendarId?
+    public var selectedSlotName: SlotName?
 }
 
 @Table
-public struct Trackee: Equatable, Identifiable, Sendable {
+public nonisolated struct Trackee: Equatable, Identifiable, Sendable {
     public typealias ID = Tagged<Self, UUID>
     
     public let id: ID
@@ -38,7 +39,7 @@ public struct Trackee: Equatable, Identifiable, Sendable {
 }
 
 @Table
-public struct ReminderTime: Equatable, Identifiable, Sendable {
+public nonisolated struct ReminderTime: Equatable, Identifiable, Sendable {
     public typealias ID = Tagged<Self, UUID>
     
     public let id: ID
@@ -73,6 +74,7 @@ extension DependencyValues {
         var configuration = Configuration()
         configuration.foreignKeysEnabled = true
         configuration.prepareDatabase { db in
+            db.add(function: $uuid)
             //try db.attachMetadatabase()
 #if DEBUG
             db.trace(options: .profile) {
@@ -105,7 +107,8 @@ extension DependencyValues {
             CREATE TABLE "settings" (
               "id" TEXT PRIMARY KEY NOT NULL ON CONFLICT REPLACE DEFAULT '0D8698C8-B58A-42F3-AB32-AAB565C074A2',
               "selectedAlbumId" TEXT NULL,
-              "selectedCalendarId" TEXT NULL
+              "selectedCalendarId" TEXT NULL, 
+              "selectedSlotName" TEXT NULL
             )
             """
             )
@@ -177,3 +180,9 @@ extension Database {
     }
 }
 #endif
+
+@DatabaseFunction
+nonisolated var uuid: UUID {
+  @Dependency(\.uuid) var uuid
+  return uuid()
+}

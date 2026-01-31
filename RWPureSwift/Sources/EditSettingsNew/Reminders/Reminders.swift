@@ -38,7 +38,7 @@ public struct RemindersFeature: Sendable {
             switch action {
             case .onAppear:
                 return .run { [t = state.trackee, rt = state.$reminderTimes] send in
-                    await withErrorReporting {
+                    _ = await withErrorReporting {
                         try await rt.load(ReminderTime.where{$0.trackeeId ==  t.id}.order(by: \.weekDay).order(by: \.hour).order(by: \.minute))
                     }
                 }
@@ -49,7 +49,7 @@ public struct RemindersFeature: Sendable {
                 
             case let .deleteReminder(indexSet):
                 return .run { [t = state.trackee, rt = state.$reminderTimes] send in
-                    await withErrorReporting {
+                    _ = await withErrorReporting {
                         try await defaultDatabase.write { db in
                             try ReminderTime.find(indexSet.map { rt[$0].id })
                                 .delete().execute(db)
@@ -62,7 +62,7 @@ public struct RemindersFeature: Sendable {
                 let trackeeId = state.trackee.id
                 
                 return .run { [defaultDatabase, rt = state.$reminderTimes, reminderPart] _ in
-                    await withErrorReporting {
+                    _ = await withErrorReporting {
                         try await defaultDatabase.write { db in
                             try ReminderTime.insert {
                                 ReminderTime.Draft(

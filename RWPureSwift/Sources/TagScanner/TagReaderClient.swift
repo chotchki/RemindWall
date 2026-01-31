@@ -5,6 +5,7 @@
 //  Created by Christopher Hotchkiss on 10/6/25.
 //
 
+import AppTypes
 import Combine
 @preconcurrency import CryptoTokenKit
 import Deadline
@@ -18,8 +19,6 @@ import Tagged
 public struct TagReaderClient: Sendable {
     public var slotNames: @Sendable () -> [SlotName] = { [] }
     public var nextTagId: @Sendable (SlotName, Duration) async -> ReaderState = {_,_ in .noTag}
-    
-    public typealias SlotName = Tagged<TagReaderClient, String>
 }
 
 extension TagReaderClient: DependencyKey {

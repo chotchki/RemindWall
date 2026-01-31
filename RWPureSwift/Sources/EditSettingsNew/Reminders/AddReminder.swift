@@ -3,12 +3,14 @@ import ComposableArchitecture
 import Dao
 import SQLiteData
 import SwiftUI
+import TagScanner
 
 @Reducer
 public struct AddReminderFeature {
     @Dependency(\.defaultDatabase)  var defaultDatabase
-    @Dependency(\.uuid) var uuid
     @Dependency(\.dismiss) var dismiss
+    @Dependency(\.tagReaderClient) var tagReaderClient
+    @Dependency(\.uuid) var uuid
     
     @ObservableState
     public struct State: Equatable {
