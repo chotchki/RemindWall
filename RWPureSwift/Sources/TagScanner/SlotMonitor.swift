@@ -1,12 +1,6 @@
-//
-//  SlotMonitor.swift
-//  RW2
-//
-//  Created by Christopher Hotchkiss on 10/11/25.
-//
+import AppTypes
 import Combine
 import CryptoTokenKit
-import TagTypes
 
 let GET_ID_APDU: Data = Data([0xFF, 0xCA, 0x00, 0x00, 0x04])
 
