@@ -134,6 +134,7 @@ let package = Package(
                 resources:[ .process("Widget/Resources/PreviewAssets.xcassets")]),
         .target(name: "TagScanner",
                 dependencies: [
+                    .target(name: "AppTypes"),
                     .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
                     .product(name: "Deadline", package: "swift-concurrency-deadline"),
                     .product(
