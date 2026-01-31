@@ -6,15 +6,13 @@
 //
 
 import AppTypes
-import Combine
-@preconcurrency import CryptoTokenKit
 import Dependencies
 import DependenciesMacros
 
 
 @DependencyClient
 public struct TagReaderClient: Sendable {
-    public var nextTagId: () async -> ReaderState = {.noTag}
+    public var nextTagId: @Sendable () async -> ReaderState = {.noTag}
 }
 
 extension TagReaderClient: DependencyKey {
