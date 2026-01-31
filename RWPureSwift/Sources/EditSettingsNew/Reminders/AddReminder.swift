@@ -9,7 +9,6 @@ import TagScanner
 public struct AddReminderFeature {
     @Dependency(\.defaultDatabase)  var defaultDatabase
     @Dependency(\.dismiss) var dismiss
-    @Dependency(\.tagReaderClient) var tagReaderClient
     @Dependency(\.uuid) var uuid
     
     @ObservableState
@@ -18,23 +17,29 @@ public struct AddReminderFeature {
         
         @Shared var reminderPart: ReminderPart
         var timePickerState: ReminderPartFeature.State
+        @Shared var tag: TagSerial?
+        var associatedTagState: AssociateTagFeature.State
         
         public init(trackee: Trackee) {
             self.trackee = trackee
             self._reminderPart = Shared(value: ReminderPart())
             timePickerState = ReminderPartFeature.State(_reminderPart)
+            
+            self._tag = Shared(value: nil)
+            self.associatedTagState = AssociateTagFeature.State(associatedTag: _tag)
         }
     }
     
     public enum Action {
         case timePicker(ReminderPartFeature.Action)
+        case associateTag(AssociateTagFeature.Action)
         case saveButtonTapped
         case cancelButtonTapped
         
         case delegate(Delegate)
         @CasePathable
         public enum Delegate: Equatable {
-            case saveReminder(ReminderPart)
+            case saveReminder(ReminderTime.Draft)
         }
     }
     
@@ -44,14 +49,27 @@ public struct AddReminderFeature {
         Scope(state: \.timePickerState, action: \.timePicker) {
             ReminderPartFeature()
         }
+        Scope(state: \.associatedTagState, action: \.associateTag){
+            AssociateTagFeature()
+        }
         Reduce<State, Action> { state, action in
             switch action {
             case .timePicker:
                 return .none
+            case .associateTag:
+                return .none
                 
             case .saveButtonTapped:
-                return .run { [dismiss, rp = state.reminderPart] send in
-                    await send(.delegate(.saveReminder(rp)))
+                return .run { [dismiss, rp = state.reminderPart, tId = state.trackee.id, at = state.tag] send in
+                    let rt = ReminderTime.Draft(
+                        weekDay: rp.weekDay.rawValue,
+                        hour: rp.hour,
+                        minute: rp.minute,
+                        associatedTag: at,
+                        lastScan: nil,
+                        trackeeId: tId
+                        )
+                    await send(.delegate(.saveReminder(rt)))
                     await dismiss()
                 }
                 
@@ -86,8 +104,8 @@ public struct AddReminderView: View {
                     )
                 }
                 
-                Section("Tag (Optional)") {
-                    
+                Section("Tag") {
+                    AssociateTagView(store: store.scope(state: \.associatedTagState, action: \.associateTag))
                 }
             }
             .navigationTitle("Add Reminder")
@@ -110,10 +128,6 @@ public struct AddReminderView: View {
 }
 
 #Preview {
-    let _ = prepareDependencies {
-        $0.defaultDatabase = try! $0.appDatabase()
-    }
-    
     let trackee = Trackee(id: Trackee.ID(UUID()), name: "Alice")
     
     AddReminderView(

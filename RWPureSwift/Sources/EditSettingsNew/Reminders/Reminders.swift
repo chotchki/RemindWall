@@ -58,21 +58,14 @@ public struct RemindersFeature: Sendable {
                         try await rt.load(ReminderTime.where{$0.trackeeId ==  t.id}.order(by: \.weekDay).order(by: \.hour).order(by: \.minute))
                     }
                 }
-            case let .destination(.presented(.addReminder(.delegate(.saveReminder(reminderPart))))):
+            case let .destination(.presented(.addReminder(.delegate(.saveReminder(reminderTime))))):
                 let trackeeId = state.trackee.id
                 
-                return .run { [defaultDatabase, rt = state.$reminderTimes, reminderPart] _ in
+                return .run { [defaultDatabase, rt = state.$reminderTimes, reminderTime] _ in
                     _ = await withErrorReporting {
                         try await defaultDatabase.write { db in
                             try ReminderTime.insert {
-                                ReminderTime.Draft(
-                                    weekDay: reminderPart.weekDay.rawValue,
-                                    hour: reminderPart.hour,
-                                    minute: reminderPart.minute,
-                                    associatedTag: "", //TODO Add in tag scanning
-                                    lastScan: nil,
-                                    trackeeId: trackeeId
-                                );
+                                reminderTime
                             }.execute(db)
                         }
                         
@@ -133,7 +126,7 @@ public struct RemindersView: View {
                 ForEach(store.reminderTimes) { reminder in
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(String(describing:reminder.weekDay))
+                            Text(String(describing:DaysOfWeek(rawValue: reminder.weekDay)!))
                                 .font(.headline)
                             Text(formatTime(hour: reminder.hour, minute: reminder.minute))
                                 .font(.title2)
@@ -141,7 +134,7 @@ public struct RemindersView: View {
                                 .monospacedDigit()
                             
                             if let tag = reminder.associatedTag {
-                                Label(tag, systemImage: "sensor.tag.radiowaves.forward")
+                                Label(tag.hexa, systemImage: "sensor.tag.radiowaves.forward")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }

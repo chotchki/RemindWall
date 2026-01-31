@@ -9,11 +9,12 @@ public struct AssociateTagFeature : Sendable{
     
     @ObservableState
     public struct State: Equatable {
-        @Shared var associatedTag: String?
+        @Shared var associatedTag: AppTypes.TagSerial?
 
         var scanning: Bool = false
+        var errorMessage: String?
         
-        public init(associatedTag: Shared<String?>) {
+        public init(associatedTag: Shared<AppTypes.TagSerial?>) {
             self._associatedTag = associatedTag
         }
       }
@@ -22,6 +23,7 @@ public struct AssociateTagFeature : Sendable{
         case startScanningTapped
         case cancelScanningTapped
         case scanResult(AppTypes.ReaderState)
+        case dismissError
     }
     
     public init(){}
@@ -33,6 +35,7 @@ public struct AssociateTagFeature : Sendable{
             switch action {
             case .startScanningTapped:
                 state.scanning = true
+                state.errorMessage = nil
                 return .run { send in
                     let scanResult = await self.tagReaderClient.nextTagId()
                     await send(.scanResult(scanResult))
@@ -41,12 +44,21 @@ public struct AssociateTagFeature : Sendable{
                 state.scanning = false
                 return .cancel(id: CancelID.scanTag)
             case let .scanResult(newState):
-                if case .tagPresent(let ts) = newState {
-                    state.$associatedTag.withLock{
-                        $0 = ts.hexa
-                    }
-                }
                 state.scanning = false
+                switch newState {
+                case .tagPresent(let ts):
+                    state.$associatedTag.withLock {
+                        $0 = ts
+                    }
+                    state.errorMessage = nil
+                case .readerError(let message):
+                    state.errorMessage = message
+                case .noTag:
+                    state.errorMessage = "No tag detected. Please try again."
+                }
+                return .none
+            case .dismissError:
+                state.errorMessage = nil
                 return .none
             }
         }
@@ -61,21 +73,38 @@ public struct AssociateTagView: View {
     }
 
   public var body: some View {
-      VStack{
-          HStack{
+      VStack {
+          HStack {
               Image(systemName: "sensor.tag.radiowaves.forward")
               if let aT = store.associatedTag {
-                  Text("Tag ID: \(aT)")
+                  Text("Tag ID: \(aT.hexa)")
               } else {
                   Text("No Configured Tag")
               }
           }
+          
+          if let errorMessage = store.errorMessage {
+              HStack {
+                  Image(systemName: "exclamationmark.triangle.fill")
+                      .foregroundStyle(.red)
+                  Text(errorMessage)
+                      .foregroundStyle(.red)
+                      .font(.caption)
+              }
+              .padding(.vertical, 4)
+          }
+          
           Divider()
+          
           if store.scanning {
               Button {
                   store.send(.cancelScanningTapped)
               } label: {
-                  Text("Cancel Scanning")
+                  HStack {
+                      ProgressView()
+                          .padding(.trailing, 4)
+                      Text("Cancel Scanning")
+                  }
               }
           } else {
               Button {
@@ -84,25 +113,41 @@ public struct AssociateTagView: View {
                   Text("Start Scanning")
               }
           }
-      }.padding()
-          .background(.tertiary)
-          .cornerRadius(15)
+      }
+      .padding()
+      .background(.tertiary)
+      .cornerRadius(15)
   }
 }
 
 #Preview("No Tag - None Found"){
-    let aT = Shared(value:nil as String?);
+    let aT = Shared(value:nil as AppTypes.TagSerial?);
+    withDependencies {
+        $0.tagReaderClient.nextTagId = {
+            try? await Task.sleep(nanoseconds: 2 * 1_000_000_000);
+            return .noTag
+        }
+        } operation: {
+            AssociateTagView(store: Store(initialState: AssociateTagFeature.State(associatedTag: aT)){
+                AssociateTagFeature()
+            })
+        }
+}
+
+#Preview("No Tag - Found Tag"){
+    let aT = Shared(value:nil as AppTypes.TagSerial?);
+    
     AssociateTagView(store: Store(initialState: AssociateTagFeature.State(associatedTag: aT)){
         AssociateTagFeature()
     })
 }
 
-#Preview("No Tag - Found Tag"){
-    let aT = Shared(value:nil as String?);
+#Preview("Error Scan"){
+    let aT = Shared(value:nil as AppTypes.TagSerial?);
     withDependencies {
         $0.tagReaderClient.nextTagId = {
             try? await Task.sleep(nanoseconds: 2 * 1_000_000_000);
-                return .tagPresent(TagSerial([0x0, 0x1, 0x2]))
+            return .readerError("Oops")
         }
         } operation: {
             AssociateTagView(store: Store(initialState: AssociateTagFeature.State(associatedTag: aT)){

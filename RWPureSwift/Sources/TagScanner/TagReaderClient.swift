@@ -27,7 +27,8 @@ extension TagReaderClient: DependencyKey {
         }
     public static let previewValue = TagReaderClient(
         nextTagId: {
-                .noTag
+            try? await Task.sleep(nanoseconds: 2 * 1_000_000_000);
+            return .tagPresent(TagSerial([0x0, 0x1, 0x2]))
         }
     )
 }

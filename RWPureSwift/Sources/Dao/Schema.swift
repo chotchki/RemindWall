@@ -20,7 +20,6 @@ public nonisolated struct Setting: Equatable, Identifiable, Sendable {
     public let id: ID
     public var selectedAlbumId: AlbumLocalId?
     public var selectedCalendarId: CalendarId?
-    public var selectedSlotName: SlotName?
 }
 
 @Table
@@ -46,7 +45,7 @@ public nonisolated struct ReminderTime: Equatable, Identifiable, Sendable {
     public var weekDay: Int = 1
     public var hour: Int = 1
     public var minute: Int = 1
-    public var associatedTag: String?
+    public var associatedTag: TagSerial?
     public var lastScan: Date?
     public var trackeeId: Trackee.ID
     
@@ -64,6 +63,10 @@ public nonisolated struct ReminderTime: Equatable, Identifiable, Sendable {
     public func isScannable(date: Date, calendar: Calendar) -> Bool {
         return reminderPart.inScanWindow(asOf: date, calendar: calendar)
     }
+}
+
+extension ReminderTime.Draft: Equatable, Sendable {
+    
 }
 
 
@@ -107,8 +110,7 @@ extension DependencyValues {
             CREATE TABLE "settings" (
               "id" TEXT PRIMARY KEY NOT NULL ON CONFLICT REPLACE DEFAULT '0D8698C8-B58A-42F3-AB32-AAB565C074A2',
               "selectedAlbumId" TEXT NULL,
-              "selectedCalendarId" TEXT NULL, 
-              "selectedSlotName" TEXT NULL
+              "selectedCalendarId" TEXT NULL
             )
             """
             )
