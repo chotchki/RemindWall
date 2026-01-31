@@ -1,3 +1,4 @@
+import AppTypes
 import ComposableArchitecture
 import SwiftUI
 import TagTypes
@@ -20,7 +21,7 @@ public struct AssociateTagFeature : Sendable{
     public enum Action {
         case startScanningTapped
         case cancelScanningTapped
-        case scanResult(ReaderState)
+        case scanResult(AppTypes.ReaderState)
     }
     
     public init(){}
