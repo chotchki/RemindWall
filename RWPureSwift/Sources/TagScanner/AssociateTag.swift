@@ -34,9 +34,7 @@ public struct AssociateTagFeature : Sendable{
             case .startScanningTapped:
                 state.scanning = true
                 return .run { send in
-                    //TODO This really should use the slot name
-                    let firstSlot = self.tagReaderClient.slotNames().first!
-                    let scanResult = await self.tagReaderClient.nextTagId(firstSlot, .seconds(5))
+                    let scanResult = await self.tagReaderClient.nextTagId()
                     await send(.scanResult(scanResult))
                 }.cancellable(id: CancelID.scanTag, cancelInFlight: true)
             case .cancelScanningTapped:
@@ -103,7 +101,6 @@ public struct AssociateTagView: View {
     let aT = Shared(value:nil as String?);
     withDependencies {
         $0.tagReaderClient.nextTagId = {
-            _,_ in
             try? await Task.sleep(nanoseconds: 2 * 1_000_000_000);
                 return .tagPresent(TagSerial([0x0, 0x1, 0x2]))
         }

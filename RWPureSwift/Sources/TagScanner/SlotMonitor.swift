@@ -4,47 +4,67 @@ import CryptoTokenKit
 
 let GET_ID_APDU: Data = Data([0xFF, 0xCA, 0x00, 0x00, 0x04])
 
-extension TKSmartCardSlot {
-    typealias AsyncValues<T> = AsyncPublisher<AnyPublisher<T, Never>>
-    func observeKey<T>(at path: KeyPath<TKSmartCardSlot, T>) -> AsyncValues<T> {
-        return self.publisher(for: path, options: [.initial, .new])
-            .buffer(size: 1, prefetch: .byRequest, whenFull: .dropOldest)
-            .eraseToAnyPublisher()
-            .values
+// Merge multiple async sequences
+func observeMultipleSlots(_ slots: [TKSmartCardSlot]) -> AsyncStream<SlotName> {
+    AsyncStream { continuation in
+        let observations = slots.map { slot in
+            slot.observe(\.state, options: [.new]) { slot, change in
+                if change.newValue == .validCard {
+                    continuation.yield(SlotName(slot.name))
+                }
+            }
+        }
+        
+        continuation.onTermination = { _ in
+            observations.forEach { $0.invalidate() }
+        }
     }
 }
 
 public actor SlotMonitor {
-    private var slot: TKSmartCardSlot
-    public init(slot: TKSmartCardSlot) {
-        self.slot = slot
-    }
-    
+    private let slotManager = TKSmartCardSlotManager.default
+
     public func getNextTag() async -> ReaderState {
-        for await newState in slot.observeKey(at: \.state) {
-            if newState != TKSmartCardSlot.State.validCard {
+        guard let slotManager = slotManager else {
+            return .readerError("Unable to get the slot manager")
+        }
+        
+        var slots: [TKSmartCardSlot] = []
+        for slotName in slotManager.slotNames {
+            guard let slot = await slotManager.getSlot(withName: slotName) else {
+                return .readerError("Slot disappeared during setup")
+            }
+            slots.append(slot)
+        }
+        
+        guard !slots.isEmpty else {
+            return .readerError("No slots available")
+        }
+        
+        for await slotName in observeMultipleSlots(slots) {
+            // Found a valid card, now get the slot again to access it
+            guard let activeSlot = await slotManager.getSlot(withName: slotName.rawValue) else {
                 continue
             }
             
-            guard let card = slot.makeSmartCard() else {
+            guard let card = activeSlot.makeSmartCard() else {
                 return .noTag
             }
-                
-            let session = try? await card.beginSession();
-            guard let session else {
-                return .readerError("Could not start session")
+            
+            do {
+                try await card.beginSession()
+            } catch {
+                return .readerError("Could not start session: \(error)")
             }
-            if !session {
-                return .readerError("Could not start session")
+            
+            defer {
+                card.endSession()
             }
-                    
+            
             guard let response = try? await card.transmit(GET_ID_APDU) else {
-                card.endSession();
                 return .readerError("Unable to query tag")
             }
-                
-            card.endSession();
-                
+            
             if response.count < 2 {
                 return .readerError("Response too short \(response)")
             }
@@ -60,9 +80,9 @@ public actor SlotMonitor {
             if response_data.isEmpty {
                 return .readerError("No Tag ID found")
             }
-                
+            
             return .tagPresent(TagSerial([UInt8](response_data)))
         }
-        return .readerError("State didn't change")
+        return .noTag
     }
 }
