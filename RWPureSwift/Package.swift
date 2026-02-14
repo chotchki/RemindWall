@@ -14,9 +14,9 @@ let package = Package(
         .library(name: "Dashboard", targets: ["Dashboard"]),
         .library(name: "DataModel", targets: ["DataModel"]),
         .library(name: "Dao", targets: ["Dao"]),
-        .library(name: "EditSettings", targets: ["EditSettings"]),
         
         .library(name: "EditSettingsNew_Reminders", targets: ["EditSettingsNew_Reminders"]),
+        .library(name: "EditSettingsNew_TopLevel", targets: ["EditSettingsNew_TopLevel"]),
         .library(name: "EditSettingsNew_Trackees", targets: ["EditSettingsNew_Trackees"]),
         
         .library(name: "PhotoKitAsync", targets: ["PhotoKitAsync"]),
@@ -96,6 +96,22 @@ let package = Package(
                         "EditSettingsNew_Reminders",
                         .product(name: "DependenciesTestSupport", package: "swift-dependencies")
                     ], path: "Tests/EditSettingsNewTests/Reminders"),
+        
+        .target(name: "EditSettingsNew_TopLevel",dependencies: [
+            .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+            .product(
+                name: "Dependencies",
+                package: "swift-dependencies"
+              ),
+            .target(name: "Dao"),
+            .target(name: "EditSettingsNew_Trackees"),
+            .target(name: "PhotoKitAsync"),
+        ], path: "Sources/EditSettingsNew/TopLevel"),
+        .testTarget(name: "EditSettingsNew_TopLevelTests",
+                    dependencies: [
+                        "EditSettingsNew_TopLevel",
+                        .product(name: "DependenciesTestSupport", package: "swift-dependencies")
+                    ], path: "Tests/EditSettingsNewTests/TopLevel"),
         
         .target(name: "EditSettingsNew_Trackees",dependencies: [
             .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),

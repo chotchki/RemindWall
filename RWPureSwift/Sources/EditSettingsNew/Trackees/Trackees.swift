@@ -15,6 +15,8 @@ public struct TrackeesFeature: Sendable {
         
         @FetchAll(Trackee.none)
         var trackees: [Trackee]
+        
+        public init(){}
     }
     
     public enum Action {
@@ -89,14 +91,14 @@ extension TrackeesFeature {
 extension TrackeesFeature.Destination.State: Equatable {}
     
 
-struct TrackeesView: View {
+public struct TrackeesView: View {
     @Bindable var store: StoreOf<TrackeesFeature>
     
     public init(store: StoreOf<TrackeesFeature>) {
         self.store = store
     }
     
-    var body: some View {
+    public var body: some View {
         NavigationStack(path: $store.scope(state: \.path, action: \.path)) {
             List {
                 if store.trackees.isEmpty {

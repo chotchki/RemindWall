@@ -6,21 +6,25 @@ import PhotoKitAsync
 import SwiftUI
 
 @Reducer
-public struct AlbumPickerFeature: Sendable {
+public struct AlbumPickerFeature {
     @Dependency(\.photoKitAlbums) var photoKitAlbums
     
     @ObservableState
     public struct State: Equatable {
-        var selectedAlbum: AlbumLocalId?
+        @Shared var selectedAlbum: AlbumLocalId?
         var photoStatus: PHAuthorizationStatus = .notDetermined
         var availibleAlbums: PHFetchResultAssetCollection = PHFetchResultAssetCollection()
         
-        public init() {}
+        public init(selectedAlbum: Shared<AlbumLocalId?>) {
+            self._selectedAlbum = selectedAlbum
+        }
     }
     
     public enum Action: BindableAction {
         case binding(BindingAction<State>)
         case onAppear
+        case tapOpenSettings
+        case tapAuthorizeAccess
     }
     
     public init(){}
@@ -34,6 +38,13 @@ public struct AlbumPickerFeature: Sendable {
             case .onAppear:
                 state.photoStatus = photoKitAlbums.libraryAccess();
                 return .none
+            case .tapOpenSettings:
+                photoKitAlbums.openPhotoSettings()
+                return .none
+            case .tapAuthorizeAccess:
+                return .run{ [photoKitAlbums] send in
+                    await photoKitAlbums.requestAuthorization()
+                }
             }
         }
     }
@@ -46,37 +57,21 @@ public struct AlbumPickerView: View {
         self.store = store
     }
     
-    private func openPhotoSettings(){
-        #if targetEnvironment(macCatalyst)
-        Task{ @MainActor in
-            let url = "x-apple.systempreferences:com.apple.preference.security?Privacy_Photos"
-            await UIApplication.shared.open(URL(string: url)!)
-        }
-        #else
-        Task{ @MainActor in
-            let url = UIApplication.openSettingsURLString
-            UIApplication.shared.open(URL(string: url)!)
-        }
-        #endif
-    }
-    
     public var body: some View {
         HStack {
             if store.photoStatus == .denied {
                 Text("In order to use this application you will need to allow full photo access in the Settings App.")
                 Button("Open Settings Application"){
-                    openPhotoSettings()
+                    store.send(.tapOpenSettings)
                 }
             } else if store.photoStatus == .restricted {
                 Text("In order to use this application you will need to allow full photo access from Screen Time.")
                 Button("Open Settings Application"){
-                    openPhotoSettings()
+                    store.send(.tapOpenSettings)
                 }
             } else if store.photoStatus != .authorized {
                 Button("Authorize Photo Access"){
-                    Task.detached(operation: {
-                        await PHPhotoLibrary.requestAuthorization(for: .readWrite)
-                    })
+                    store.send(.tapAuthorizeAccess)
                 }
             } else {
                 Picker("Albums", selection: $store.selectedAlbum){
@@ -90,3 +85,21 @@ public struct AlbumPickerView: View {
         })
     }
 }
+
+#Preview {
+    let _ = prepareDependencies {
+        $0.defaultDatabase = try! $0.appDatabase()
+      }
+    
+    let ali: Shared<AlbumLocalId?> = Shared(value: nil)
+    
+    AlbumPickerView(
+    store: Store(
+      initialState: AlbumPickerFeature.State(selectedAlbum: ali)
+    ) {
+        AlbumPickerFeature()
+    }
+  )
+}
+
+

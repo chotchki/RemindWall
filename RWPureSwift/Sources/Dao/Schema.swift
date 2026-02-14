@@ -14,12 +14,15 @@ public let SETTINGS_SINGLETON: Setting.ID = Setting.ID(uuidString: "0D8698C8-B58
 @Table
 public nonisolated struct Setting: Equatable, Identifiable, Sendable {
     public typealias ID = Tagged<Self, UUID>
-    public typealias AlbumLocalId = Tagged<(Self, albumLocalId: ()), String>
     public typealias CalendarId = Tagged<(Self, calendarId: ()), String>
     
     public let id: ID
     public var selectedAlbumId: AlbumLocalId?
     public var selectedCalendarId: CalendarId?
+    
+    public init(){
+        self.id = SETTINGS_SINGLETON
+    }
 }
 
 @Table

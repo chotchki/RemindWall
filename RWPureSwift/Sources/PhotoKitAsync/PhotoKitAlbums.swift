@@ -9,12 +9,15 @@ import Dao
 import Dependencies
 import DependenciesMacros
 import Photos
+import UIKit
 
 @DependencyClient
 public struct PhotoKitAlbums: Sendable {
     public var libraryAccess: @Sendable () -> PHAuthorizationStatus = { .denied }
+    public var openPhotoSettings: @Sendable () -> ()
+    public var requestAuthorization: @Sendable () async -> ()
     public var availableAlbums: @Sendable () async -> PHFetchResultAssetCollection?
-    public var loadAlbumAssets: @Sendable (Setting.AlbumLocalId) async -> [PHAsset]?
+    public var loadAlbumAssets: @Sendable (AlbumLocalId) async -> [PHAsset]?
 }
 
 extension PhotoKitAlbums: DependencyKey {
@@ -22,6 +25,22 @@ extension PhotoKitAlbums: DependencyKey {
         return Self(
             libraryAccess: {
                 return PHPhotoLibrary.authorizationStatus(for: .readWrite)
+            },
+            openPhotoSettings: {
+                #if targetEnvironment(macCatalyst)
+                Task{ @MainActor in
+                    let url = "x-apple.systempreferences:com.apple.preference.security?Privacy_Photos"
+                    await UIApplication.shared.open(URL(string: url)!)
+                }
+                #else
+                Task{ @MainActor in
+                    let url = UIApplication.openSettingsURLString
+                    UIApplication.shared.open(URL(string: url)!)
+                }
+                #endif
+            },
+            requestAuthorization: {
+                await PHPhotoLibrary.requestAuthorization(for: .readWrite)
             },
             availableAlbums: {
                 if PHPhotoLibrary.authorizationStatus(for: .readWrite) != .authorized {
