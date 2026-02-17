@@ -46,12 +46,6 @@ public struct AddReminderFeature {
     public init() {}
     
     public var body: some ReducerOf<Self> {
-        Scope(state: \.timePickerState, action: \.timePicker) {
-            ReminderPartFeature()
-        }
-        Scope(state: \.associatedTagState, action: \.associateTag){
-            AssociateTagFeature()
-        }
         Reduce<State, Action> { state, action in
             switch action {
             case .timePicker:
@@ -81,6 +75,14 @@ public struct AddReminderFeature {
             case .delegate:
                 return .none
             }
+        }
+        
+        Scope(state: \.timePickerState, action: \.timePicker) {
+            ReminderPartFeature()
+        }
+        
+        Scope(state: \.associatedTagState, action: \.associateTag){
+            AssociateTagFeature()
         }
     }
 }

@@ -34,9 +34,6 @@ public struct TrackeeDetailFeature {
     
     @Dependency(\.dismiss) var dismiss
     public var body: some ReducerOf<Self> {
-        Scope(state: \.reminders, action: \.remindersFeature) {
-            RemindersFeature()
-        }
         Reduce { state, action in
           switch action {
           case .alert(.presented(.confirmDeletion)):
@@ -54,7 +51,13 @@ public struct TrackeeDetailFeature {
           case .remindersFeature:
               return .none
           }
-        }.ifLet(\.$alert, action: \.alert)
+        }
+        
+        .ifLet(\.$alert, action: \.alert)
+        
+        Scope(state: \.reminders, action: \.remindersFeature) {
+            RemindersFeature()
+        }
     }
     
     public init(){}
@@ -72,6 +75,10 @@ extension AlertState where Action == TrackeeDetailFeature.Action.Alert {
 
 public struct TrackeeDetailView: View {
     @Bindable var store: StoreOf<TrackeeDetailFeature>
+    
+    public init(store: StoreOf<TrackeeDetailFeature>) {
+        self.store = store
+    }
     
   public var body: some View {
       Form {

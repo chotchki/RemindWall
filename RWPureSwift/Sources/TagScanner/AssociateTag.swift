@@ -1,7 +1,6 @@
 import AppTypes
 import ComposableArchitecture
 import SwiftUI
-import TagTypes
 
 @Reducer
 public struct AssociateTagFeature : Sendable{

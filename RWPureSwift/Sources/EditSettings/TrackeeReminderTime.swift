@@ -30,6 +30,14 @@ public struct TrackeeReminderTimeFeature: Sendable {
     
     public var body: some Reducer<State, Action> {
         BindingReducer()
+        
+        Scope(state: \.timePickerState, action: \.timePicker) {
+            TimePickerFeature()
+        }
+        
+        Scope(state: \.associatedTag, action: \.associateTag) {
+            AssociateTagFeature()
+        }
     }
 }
 

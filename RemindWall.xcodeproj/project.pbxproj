@@ -10,16 +10,15 @@
 		BF2973102C8667AC0029F361 /* RemindWalliOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF29730F2C8667AC0029F361 /* RemindWalliOSApp.swift */; };
 		BF2973162C8667AD0029F361 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BF2973152C8667AD0029F361 /* Assets.xcassets */; };
 		BF2973192C8667AD0029F361 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BF2973182C8667AD0029F361 /* Preview Assets.xcassets */; };
-		BF29731F2C86688C0029F361 /* AppNavigation in Frameworks */ = {isa = PBXBuildFile; productRef = BF29731E2C86688C0029F361 /* AppNavigation */; };
-		BF4E60BF2C44458200BAC4F2 /* EditSettings in Frameworks */ = {isa = PBXBuildFile; productRef = BF4E60BE2C44458200BAC4F2 /* EditSettings */; };
 		BF67F8D72ECAE7C3009D36B9 /* SQLiteData in Frameworks */ = {isa = PBXBuildFile; productRef = BF67F8D62ECAE7C3009D36B9 /* SQLiteData */; };
 		BF67F8D92ECAE7CF009D36B9 /* SQLiteData in Frameworks */ = {isa = PBXBuildFile; productRef = BF67F8D82ECAE7CF009D36B9 /* SQLiteData */; };
 		BF67F8DB2ECC0A57009D36B9 /* Dao in Frameworks */ = {isa = PBXBuildFile; productRef = BF67F8DA2ECC0A57009D36B9 /* Dao */; };
 		BF67F8DD2ECC0A5E009D36B9 /* Dao in Frameworks */ = {isa = PBXBuildFile; productRef = BF67F8DC2ECC0A5E009D36B9 /* Dao */; };
+		BF7123E72F4233F700B9FBCD /* EditSettingsNew_TopLevel in Frameworks */ = {isa = PBXBuildFile; productRef = BF7123E62F4233F700B9FBCD /* EditSettingsNew_TopLevel */; };
+		BF7123E92F42352F00B9FBCD /* EditSettingsNew_TopLevel in Frameworks */ = {isa = PBXBuildFile; productRef = BF7123E82F42352F00B9FBCD /* EditSettingsNew_TopLevel */; };
 		BFE60AD42C4418E200E8AB67 /* RemindWallApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFE60AD32C4418E200E8AB67 /* RemindWallApp.swift */; };
 		BFE60ADA2C4418E300E8AB67 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BFE60AD92C4418E300E8AB67 /* Assets.xcassets */; };
 		BFE60ADE2C4418E300E8AB67 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BFE60ADD2C4418E300E8AB67 /* Preview Assets.xcassets */; };
-		BFE60AE92C441A0900E8AB67 /* AppNavigation in Frameworks */ = {isa = PBXBuildFile; productRef = BFE60AE82C441A0900E8AB67 /* AppNavigation */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -46,7 +45,7 @@
 			files = (
 				BF67F8DD2ECC0A5E009D36B9 /* Dao in Frameworks */,
 				BF67F8D92ECAE7CF009D36B9 /* SQLiteData in Frameworks */,
-				BF29731F2C86688C0029F361 /* AppNavigation in Frameworks */,
+				BF7123E92F42352F00B9FBCD /* EditSettingsNew_TopLevel in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -55,9 +54,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				BF67F8D72ECAE7C3009D36B9 /* SQLiteData in Frameworks */,
-				BFE60AE92C441A0900E8AB67 /* AppNavigation in Frameworks */,
-				BF4E60BF2C44458200BAC4F2 /* EditSettings in Frameworks */,
 				BF67F8DB2ECC0A57009D36B9 /* Dao in Frameworks */,
+				BF7123E72F4233F700B9FBCD /* EditSettingsNew_TopLevel in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -157,9 +155,9 @@
 			);
 			name = RemindWalliOS;
 			packageProductDependencies = (
-				BF29731E2C86688C0029F361 /* AppNavigation */,
 				BF67F8D82ECAE7CF009D36B9 /* SQLiteData */,
 				BF67F8DC2ECC0A5E009D36B9 /* Dao */,
+				BF7123E82F42352F00B9FBCD /* EditSettingsNew_TopLevel */,
 			);
 			productName = RemindWalliOS;
 			productReference = BF29730D2C8667AC0029F361 /* RemindWalliOS.app */;
@@ -179,10 +177,9 @@
 			);
 			name = RemindWall;
 			packageProductDependencies = (
-				BFE60AE82C441A0900E8AB67 /* AppNavigation */,
-				BF4E60BE2C44458200BAC4F2 /* EditSettings */,
 				BF67F8D62ECAE7C3009D36B9 /* SQLiteData */,
 				BF67F8DA2ECC0A57009D36B9 /* Dao */,
+				BF7123E62F4233F700B9FBCD /* EditSettingsNew_TopLevel */,
 			);
 			productName = RemindWall;
 			productReference = BFE60AD02C4418E200E8AB67 /* RemindWall.app */;
@@ -489,7 +486,9 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = RemindWall/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = RemindWall;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "The application shows the list of upcoming events for the household";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "The application idles by showing a slideshow";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -534,7 +533,9 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = RemindWall/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = RemindWall;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "The application shows the list of upcoming events for the household";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "The application idles by showing a slideshow";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -606,14 +607,6 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		BF29731E2C86688C0029F361 /* AppNavigation */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = AppNavigation;
-		};
-		BF4E60BE2C44458200BAC4F2 /* EditSettings */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = EditSettings;
-		};
 		BF67F8D62ECAE7C3009D36B9 /* SQLiteData */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = BF67F8D52ECAE7C3009D36B9 /* XCRemoteSwiftPackageReference "sqlite-data" */;
@@ -632,9 +625,13 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = Dao;
 		};
-		BFE60AE82C441A0900E8AB67 /* AppNavigation */ = {
+		BF7123E62F4233F700B9FBCD /* EditSettingsNew_TopLevel */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = AppNavigation;
+			productName = EditSettingsNew_TopLevel;
+		};
+		BF7123E82F42352F00B9FBCD /* EditSettingsNew_TopLevel */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = EditSettingsNew_TopLevel;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

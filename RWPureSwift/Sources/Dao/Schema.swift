@@ -8,23 +8,6 @@ import OSLog
 import SQLiteData
 import Tagged
 
-/// To support synchronizing the settings, we use a static UUID so there is a single row to deal with
-public let SETTINGS_SINGLETON: Setting.ID = Setting.ID(uuidString: "0D8698C8-B58A-42F3-AB32-AAB565C074A2")!
-
-@Table
-public nonisolated struct Setting: Equatable, Identifiable, Sendable {
-    public typealias ID = Tagged<Self, UUID>
-    public typealias CalendarId = Tagged<(Self, calendarId: ()), String>
-    
-    public let id: ID
-    public var selectedAlbumId: AlbumLocalId?
-    public var selectedCalendarId: CalendarId?
-    
-    public init(){
-        self.id = SETTINGS_SINGLETON
-    }
-}
-
 @Table
 public nonisolated struct Trackee: Equatable, Identifiable, Sendable {
     public typealias ID = Tagged<Self, UUID>
@@ -108,17 +91,6 @@ extension DependencyValues {
         migrator.eraseDatabaseOnSchemaChange = true
 #endif
         migrator.registerMigration("Create initial tables") { db in
-            try #sql(
-            """
-            CREATE TABLE "settings" (
-              "id" TEXT PRIMARY KEY NOT NULL ON CONFLICT REPLACE DEFAULT '0D8698C8-B58A-42F3-AB32-AAB565C074A2',
-              "selectedAlbumId" TEXT NULL,
-              "selectedCalendarId" TEXT NULL
-            )
-            """
-            )
-            .execute(db)
-            
             try #sql(
             """
             CREATE TABLE "trackees" (

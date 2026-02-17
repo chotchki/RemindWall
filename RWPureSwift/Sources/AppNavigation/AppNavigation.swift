@@ -2,7 +2,6 @@ import AppModel
 import CheckPermissions
 import Dashboard
 import DataModel
-import EditSettings
 import PhotosUI
 @preconcurrency import SwiftData
 import SwiftUI
@@ -24,8 +23,6 @@ public struct AppNavigation: View {
             switch state {
             case .checkPermissions:
                 CheckPermissionsView(state: $state)
-            case .editSettings:
-                EditSettingsView(state: $state)
             case .dashboard:
                 DashboardView(state: $state)
             }

@@ -93,12 +93,48 @@ extension TrackeesFeature.Destination.State: Equatable {}
 
 public struct TrackeesView: View {
     @Bindable var store: StoreOf<TrackeesFeature>
+    public let isEmbedded: Bool
     
-    public init(store: StoreOf<TrackeesFeature>) {
+    public init(store: StoreOf<TrackeesFeature>, isEmbedded: Bool = false) {
         self.store = store
+        self.isEmbedded = isEmbedded
     }
     
     public var body: some View {
+        if isEmbedded {
+            embeddedContent
+        } else {
+            standaloneContent
+        }
+    }
+    
+    @ViewBuilder
+    private var embeddedContent: some View {
+        Group {
+            if store.trackees.isEmpty {
+                Text("No trackees configured")
+            } else {
+                ForEach(store.trackees){ trackee in
+                    NavigationLink(state: TrackeeDetailFeature.State(trackee: trackee)) {
+                        Text(trackee.name)
+                    }
+                }
+            }
+        }
+        .onAppear {
+            store.send(.onAppear)
+        }
+        .sheet(
+            item: $store.scope(state: \.destination?.addTrackee, action: \.destination.addTrackee)
+          ) { addTrackeeStore in
+            NavigationStack {
+              AddTrackeeView(store: addTrackeeStore)
+            }
+          }
+    }
+    
+    @ViewBuilder
+    private var standaloneContent: some View {
         NavigationStack(path: $store.scope(state: \.path, action: \.path)) {
             List {
                 if store.trackees.isEmpty {

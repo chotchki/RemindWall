@@ -11,13 +11,11 @@ public struct AlbumPickerFeature {
     
     @ObservableState
     public struct State: Equatable {
-        @Shared var selectedAlbum: AlbumLocalId?
+        @Shared(.appStorage(ALBUM_SETTING_KEY)) var selectedAlbum: AlbumLocalId?
         var photoStatus: PHAuthorizationStatus = .notDetermined
         var availibleAlbums: PHFetchResultAssetCollection = PHFetchResultAssetCollection()
         
-        public init(selectedAlbum: Shared<AlbumLocalId?>) {
-            self._selectedAlbum = selectedAlbum
-        }
+        public init(){}
     }
     
     public enum Action: BindableAction {
@@ -91,11 +89,9 @@ public struct AlbumPickerView: View {
         $0.defaultDatabase = try! $0.appDatabase()
       }
     
-    let ali: Shared<AlbumLocalId?> = Shared(value: nil)
-    
     AlbumPickerView(
     store: Store(
-      initialState: AlbumPickerFeature.State(selectedAlbum: ali)
+      initialState: AlbumPickerFeature.State()
     ) {
         AlbumPickerFeature()
     }

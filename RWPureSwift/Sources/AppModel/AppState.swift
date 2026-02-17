@@ -9,6 +9,6 @@ import Foundation
 
 public enum AppState {
     case checkPermissions
-    case editSettings
+    //case editSettings
     case dashboard
 }

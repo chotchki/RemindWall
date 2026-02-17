@@ -9,8 +9,8 @@ let package = Package(
     products: [
         .library(name: "AppModel", targets: ["AppModel"]),
         .library(name: "AppTypes", targets: ["AppTypes"]),
-        .library(name: "AppNavigation", targets: ["AppNavigation"]),
-        .library(name: "CheckPermissions", targets: ["CheckPermissions"]),
+        //.library(name: "AppNavigation", targets: ["AppNavigation"]),
+        //.library(name: "CheckPermissions", targets: ["CheckPermissions"]),
         .library(name: "Dashboard", targets: ["Dashboard"]),
         .library(name: "DataModel", targets: ["DataModel"]),
         .library(name: "Dao", targets: ["Dao"]),
@@ -44,17 +44,16 @@ let package = Package(
         .testTarget(name: "AppTypesTests", dependencies: [
             .target(name: "AppTypes"),
         ]),
-        .target(name: "AppNavigation", dependencies: [
-            .target(name: "AppModel"),
-            .target(name: "CheckPermissions"),
-            .target(name: "Dashboard"),
-            .target(name: "EditSettings")
-        ]),
-        .target(name: "CheckPermissions", dependencies: [
-            .target(name: "AppModel"),
-            .target(name: "DataModel"),
-            .target(name: "Utility")
-        ]),
+//        .target(name: "AppNavigation", dependencies: [
+//            .target(name: "AppModel"),
+//            //.target(name: "CheckPermissions"),
+//            .target(name: "Dashboard"),
+//        ]),
+//        .target(name: "CheckPermissions", dependencies: [
+//            .target(name: "AppModel"),
+//            .target(name: "DataModel"),
+//            .target(name: "Utility")
+//        ]),
         .target(name: "Dashboard", dependencies: [
             .target(name: "DataModel"),
             .target(name: "Slideshow"),
@@ -70,18 +69,6 @@ let package = Package(
         ]),
         .testTarget(name: "DaoTests", dependencies: ["Dao"]),
         .target(name: "DataModel"),
-        .target(name: "EditSettings",dependencies: [
-            .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
-            .product(
-                name: "Dependencies",
-                package: "swift-dependencies"
-              ),
-            .target(name: "Dao"),
-            .target(name: "PhotoKitAsync"),
-            .target(name: "TagScanner"),
-            .target(name: "Utility"),
-        ]),
-        
         .target(name: "EditSettingsNew_Reminders",dependencies: [
             .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
             .product(
