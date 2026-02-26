@@ -13,7 +13,7 @@ public struct AlbumPickerFeature {
     public struct State: Equatable {
         @Shared(.appStorage(ALBUM_SETTING_KEY)) var selectedAlbum: AlbumLocalId?
         var photoStatus: PHAuthorizationStatus = .notDetermined
-        var availibleAlbums: PHFetchResultAssetCollection = PHFetchResultAssetCollection()
+        var availibleAlbums: PHFetchResultCollection<PHAssetCollection>?
         
         public init(){}
     }
@@ -23,6 +23,7 @@ public struct AlbumPickerFeature {
         case onAppear
         case tapOpenSettings
         case tapAuthorizeAccess
+        case loadListComplete(PHFetchResultCollection<PHAssetCollection>?)
     }
     
     public init(){}
@@ -35,15 +36,30 @@ public struct AlbumPickerFeature {
                 return .none
             case .onAppear:
                 state.photoStatus = photoKitAlbums.libraryAccess();
-                return .none
+                return loadList(state: &state)
             case .tapOpenSettings:
                 photoKitAlbums.openPhotoSettings()
-                return .none
+                return loadList(state: &state)
             case .tapAuthorizeAccess:
                 return .run{ [photoKitAlbums] send in
                     await photoKitAlbums.requestAuthorization()
                 }
+            case let .loadListComplete(list):
+                state.availibleAlbums = list
+                return .none
             }
+        }
+    }
+    
+    func loadList(state: inout State) -> Effect<Action> {
+        if state.photoStatus != .authorized && state.photoStatus != .restricted {
+            state.availibleAlbums = nil
+            return .none
+        }
+        
+        return .run { [pA = self.photoKitAlbums] send in
+            let availibleAlbums = await pA.availableAlbums()
+            await send(.loadListComplete(availibleAlbums))
         }
     }
 }
@@ -71,9 +87,11 @@ public struct AlbumPickerView: View {
                 Button("Authorize Photo Access"){
                     store.send(.tapAuthorizeAccess)
                 }
+            } else if store.availibleAlbums == nil {
+                ContentUnavailableView("No Albums Found", image: "photo")
             } else {
                 Picker("Albums", selection: $store.selectedAlbum){
-                    ForEach(store.availibleAlbums, id: \.localIdentifier) { album in
+                    ForEach(store.availibleAlbums!, id: \.localIdentifier) { album in
                         Text(album.localizedTitle ?? "Unknown Album").tag(AlbumLocalId(album.localIdentifier))
                     }
                 }

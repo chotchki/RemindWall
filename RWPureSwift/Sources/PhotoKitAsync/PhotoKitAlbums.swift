@@ -13,14 +13,18 @@ import UIKit
 
 @DependencyClient
 public struct PhotoKitAlbums: Sendable {
+    
+    
     public var libraryAccess: @Sendable () -> PHAuthorizationStatus = { .denied }
     public var openPhotoSettings: @Sendable () -> ()
     public var requestAuthorization: @Sendable () async -> ()
-    public var availableAlbums: @Sendable () async -> PHFetchResultAssetCollection?
+    public var availableAlbums: @Sendable () async -> PHFetchResultCollection<PHAssetCollection>?
     public var loadAlbumAssets: @Sendable (AlbumLocalId) async -> [PHAsset]?
 }
 
 extension PhotoKitAlbums: DependencyKey {
+    
+    
     public static var liveValue: Self {
         return Self(
             libraryAccess: {
@@ -51,7 +55,7 @@ extension PhotoKitAlbums: DependencyKey {
                     with: PHAssetCollectionType.album,
                     subtype: PHAssetCollectionSubtype.any,
                     options: baseFetchOptions())
-                return PHFetchResultAssetCollection(fetchResult: albums)
+                return PHFetchResultCollection(fetchResult: albums)
             },
             loadAlbumAssets: {albumId in
                 if PHPhotoLibrary.authorizationStatus(for: .readWrite) != .authorized {
@@ -84,6 +88,25 @@ extension PhotoKitAlbums: DependencyKey {
 
 extension PhotoKitAlbums: TestDependencyKey {
     public static let testValue = Self()
+    
+    public static var previewValue: Self {
+        return Self(
+            libraryAccess: {
+                return .authorized
+            },
+            openPhotoSettings: {},
+            requestAuthorization: {},
+            availableAlbums: {
+                let albums = [
+                    PHAssetCollectionMock(title: "Day at Park")
+                ]
+                return PHFetchResultCollectionMock<PHAssetCollection>(albums)
+            },
+            loadAlbumAssets: { _ in
+                return nil
+            }
+        )
+    }
 }
 
 extension DependencyValues {
