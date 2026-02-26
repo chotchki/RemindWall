@@ -98,12 +98,15 @@ extension PhotoKitAlbums: TestDependencyKey {
             requestAuthorization: {},
             availableAlbums: {
                 let albums = [
-                    PHAssetCollectionMock(title: "Day at Park")
+                    PHAssetCollectionMock(title: "Day at Park"),
+                    PHAssetCollectionMock(title: "Cats")
                 ]
                 return PHFetchResultCollectionMock<PHAssetCollection>(albums)
             },
             loadAlbumAssets: { _ in
-                return nil
+                return [
+                    //TODO Add some placeholders
+                ]
             }
         )
     }

@@ -94,7 +94,7 @@ public struct AlbumPickerView: View {
                     ForEach(store.availibleAlbums!, id: \.localIdentifier) { album in
                         Text(album.localizedTitle ?? "Unknown Album").tag(AlbumLocalId(album.localIdentifier))
                     }
-                }
+                }.pickerStyle(.navigationLink)
             }
         }.onAppear(perform:{
             store.send(.onAppear)
@@ -107,13 +107,15 @@ public struct AlbumPickerView: View {
         $0.defaultDatabase = try! $0.appDatabase()
       }
     
-    AlbumPickerView(
-    store: Store(
-      initialState: AlbumPickerFeature.State()
-    ) {
-        AlbumPickerFeature()
+    NavigationStack{
+        AlbumPickerView(
+            store: Store(
+                initialState: AlbumPickerFeature.State()
+            ) {
+                AlbumPickerFeature()
+            }
+        )
     }
-  )
 }
 
 
