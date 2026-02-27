@@ -11,6 +11,7 @@ let package = Package(
         .library(name: "AppTypes", targets: ["AppTypes"]),
         //.library(name: "AppNavigation", targets: ["AppNavigation"]),
         //.library(name: "CheckPermissions", targets: ["CheckPermissions"]),
+        .library(name: "CalendarAsync", targets: ["CalendarAsync"]),
         .library(name: "Dashboard", targets: ["Dashboard"]),
         .library(name: "DataModel", targets: ["DataModel"]),
         .library(name: "Dao", targets: ["Dao"]),
@@ -54,6 +55,14 @@ let package = Package(
 //            .target(name: "DataModel"),
 //            .target(name: "Utility")
 //        ]),
+        .target(name: "CalendarAsync", dependencies: [
+            .product(
+              name: "Dependencies",
+              package: "swift-dependencies"
+            ),
+            .product(name: "DependenciesMacros", package: "swift-dependencies"),
+            .target(name: "AppTypes"),
+        ]),
         .target(name: "Dashboard", dependencies: [
             .target(name: "DataModel"),
             .target(name: "Slideshow"),

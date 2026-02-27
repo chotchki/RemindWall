@@ -108,13 +108,15 @@ public struct AlbumPickerView: View {
       }
     
     NavigationStack{
-        AlbumPickerView(
-            store: Store(
-                initialState: AlbumPickerFeature.State()
-            ) {
-                AlbumPickerFeature()
-            }
-        )
+        Form {
+            AlbumPickerView(
+                store: Store(
+                    initialState: AlbumPickerFeature.State()
+                ) {
+                    AlbumPickerFeature()
+                }
+            )
+        }
     }
 }
 
