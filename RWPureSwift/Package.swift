@@ -18,7 +18,7 @@ let package = Package(
         .library(name: "EditSettingsNew_Trackees", targets: ["EditSettingsNew_Trackees"]),
         
         .library(name: "PhotoKitAsync", targets: ["PhotoKitAsync"]),
-        .library(name: "Slideshow", targets: ["Slideshow"]),
+        //.library(name: "Slideshow", targets: ["Slideshow"]),
         .library(name: "TagScanner", targets: ["TagScanner"]),
         .library(name: "Utility", targets: ["Utility"]),
     ],
@@ -122,15 +122,15 @@ let package = Package(
             .target(name: "Dao"),
         ]),
         .testTarget(name: "PhotoKitAsyncTests", dependencies: ["PhotoKitAsync"]),
-        .target(name: "Slideshow",
-                dependencies: [
-                    .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
-                    .target(name: "AppModel"),
-                    .target(name: "DataModel"),
-                    .target(name: "PhotoKitAsync"),
-                    .target(name: "Utility"),
-                ], 
-                resources:[ .process("Widget/Resources/PreviewAssets.xcassets")]),
+//        .target(name: "Slideshow",
+//                dependencies: [
+//                    .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+//                    .target(name: "AppModel"),
+//                    .target(name: "DataModel"),
+//                    .target(name: "PhotoKitAsync"),
+//                    .target(name: "Utility"),
+//                ], 
+//                resources:[ .process("Widget/Resources/PreviewAssets.xcassets")]),
         .target(name: "TagScanner",
                 dependencies: [
                     .target(name: "AppTypes"),
