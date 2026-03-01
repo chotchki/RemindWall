@@ -10,8 +10,7 @@ let package = Package(
         .library(name: "AppModel", targets: ["AppModel"]),
         .library(name: "AppTypes", targets: ["AppTypes"]),
         .library(name: "CalendarAsync", targets: ["CalendarAsync"]),
-        .library(name: "Dashboard", targets: ["Dashboard"]),
-        .library(name: "DataModel", targets: ["DataModel"]),
+        //.library(name: "Dashboard", targets: ["Dashboard"]),
         .library(name: "Dao", targets: ["Dao"]),
         
         .library(name: "EditSettingsNew_Reminders", targets: ["EditSettingsNew_Reminders"]),
@@ -43,16 +42,6 @@ let package = Package(
         .testTarget(name: "AppTypesTests", dependencies: [
             .target(name: "AppTypes"),
         ]),
-//        .target(name: "AppNavigation", dependencies: [
-//            .target(name: "AppModel"),
-//            //.target(name: "CheckPermissions"),
-//            .target(name: "Dashboard"),
-//        ]),
-//        .target(name: "CheckPermissions", dependencies: [
-//            .target(name: "AppModel"),
-//            .target(name: "DataModel"),
-//            .target(name: "Utility")
-//        ]),
         .target(name: "CalendarAsync", dependencies: [
             .product(
               name: "Dependencies",
@@ -61,11 +50,11 @@ let package = Package(
             .product(name: "DependenciesMacros", package: "swift-dependencies"),
             .target(name: "AppTypes"),
         ]),
-        .target(name: "Dashboard", dependencies: [
-            .target(name: "DataModel"),
-            .target(name: "Slideshow"),
-            .target(name: "Utility")
-        ]),
+        //.target(name: "Dashboard", dependencies: [
+        //    .target(name: "DataModel"),
+        //    .target(name: "Slideshow"),
+        //    .target(name: "Utility")
+        //]),
         .target(name: "Dao", dependencies: [
             .product(
                 name: "Dependencies",
@@ -75,7 +64,6 @@ let package = Package(
             .target(name: "AppTypes"),
         ]),
         .testTarget(name: "DaoTests", dependencies: ["Dao"]),
-        .target(name: "DataModel"),
         .target(name: "EditSettingsNew_Reminders",dependencies: [
             .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
             .product(
