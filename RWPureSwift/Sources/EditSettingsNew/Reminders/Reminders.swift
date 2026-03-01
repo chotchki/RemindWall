@@ -39,7 +39,7 @@ public struct RemindersFeature: Sendable {
             case .onAppear:
                 return .run { [t = state.trackee, rt = state.$reminderTimes] send in
                     _ = await withErrorReporting {
-                        try await rt.load(ReminderTime.where{$0.trackeeId ==  t.id}.order(by: \.weekDay).order(by: \.hour).order(by: \.minute))
+                        try await rt.load(ReminderTime.where{$0.trackeeId.eq(t.id)}.order(by: \.weekDay).order(by: \.hour).order(by: \.minute))
                     }
                 }
                 
@@ -55,7 +55,7 @@ public struct RemindersFeature: Sendable {
                                 .delete().execute(db)
                         }
                         // Refresh the list
-                        try await rt.load(ReminderTime.where{$0.trackeeId ==  t.id}.order(by: \.weekDay).order(by: \.hour).order(by: \.minute))
+                        try await rt.load(ReminderTime.where{$0.trackeeId.eq(t.id)}.order(by: \.weekDay).order(by: \.hour).order(by: \.minute))
                     }
                 }
             case let .destination(.presented(.addReminder(.delegate(.saveReminder(reminderTime))))):
@@ -70,7 +70,7 @@ public struct RemindersFeature: Sendable {
                         }
                         
                         // Refresh the list
-                        try await rt.load(ReminderTime.where{$0.trackeeId ==  trackeeId}.order(by: \.weekDay).order(by: \.hour).order(by: \.minute))
+                        try await rt.load(ReminderTime.where{$0.trackeeId.eq(trackeeId)}.order(by: \.weekDay).order(by: \.hour).order(by: \.minute))
                     }
                 }
             case .destination:
@@ -149,7 +149,9 @@ public struct RemindersView: View {
             }
         }
         .navigationTitle("Reminders for \(store.trackee.name)")
+        #if !os(macOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {

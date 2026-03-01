@@ -111,7 +111,10 @@ public struct CalendarPickerView: View {
                     ForEach(store.availableCalendars!, id: \.calendarIdentifier) { calendar in
                         Text(calendar.title).tag(CalendarId(calendar.calendarIdentifier) as CalendarId?)
                     }
-                }.pickerStyle(.navigationLink)
+                }
+                #if !os(macOS)
+                .pickerStyle(.navigationLink)
+                #endif
             }
         }.onAppear {
             store.send(.onAppear)

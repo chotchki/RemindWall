@@ -11,15 +11,13 @@ import Testing
 
 @Test("Tag Scan Valid Result")
 func valid_result() async throws {
-    let aT = Shared(value: nil as String?);
+    let aT = Shared(value: nil as TagSerial?);
     let testSerial = TagSerial([0x0, 0x1, 0x2]);
     
     let store = await TestStore(initialState: AssociateTagFeature.State(associatedTag: aT)) {
         AssociateTagFeature()
     } withDependencies: {
-        $0.tagReaderClient.slotNames = {["Test Slot"]}
         $0.tagReaderClient.nextTagId = {
-            _,_ in
                 .tagPresent(testSerial)
         }
     }
@@ -29,21 +27,19 @@ func valid_result() async throws {
     };
     
     await store.receive(\.scanResult){state in
-        state.$associatedTag.withLock{ $0 = testSerial.hexa}
+        state.$associatedTag.withLock{ $0 = testSerial}
         state.scanning = false
     };
 }
 
 @Test("Tag Scan No Tag")
 func no_tag() async throws {
-    let aT = Shared(value: nil as String?);
+    let aT = Shared(value: nil as TagSerial?);
     
     let store = await TestStore(initialState: AssociateTagFeature.State(associatedTag: aT)) {
         AssociateTagFeature()
     } withDependencies: {
-        $0.tagReaderClient.slotNames = {["Test Slot"]}
         $0.tagReaderClient.nextTagId = {
-            _,_ in
                 .noTag
         }
     }

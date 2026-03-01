@@ -95,7 +95,10 @@ public struct AlbumPickerView: View {
                     ForEach(store.availibleAlbums!, id: \.localIdentifier) { album in
                         Text(album.localizedTitle ?? "Unknown Album").tag(AlbumLocalId(album.localIdentifier))
                     }
-                }.pickerStyle(.navigationLink)
+                }
+                #if !os(macOS)
+                .pickerStyle(.navigationLink)
+                #endif
             }
         }.onAppear(perform:{
             store.send(.onAppear)

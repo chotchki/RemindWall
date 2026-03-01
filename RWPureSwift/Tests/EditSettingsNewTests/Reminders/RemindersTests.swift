@@ -56,7 +56,7 @@ struct RemindersFeatureTests {
         
         // Get what was saved
         let savedReminders = try! await defaultDatabase.read { db in
-            try! ReminderTime.where { $0.trackeeId == trackee.id }.fetchAll(db)
+            try! ReminderTime.where { $0.trackeeId.eq( trackee.id) }.fetchAll(db)
         }
         
         #expect(savedReminders.count == 1)
@@ -66,7 +66,7 @@ struct RemindersFeatureTests {
             #expect(savedReminder.weekDay == DaysOfWeek.Sunday.rawValue)
             #expect(savedReminder.hour == 2) // Started at 1, incremented by 1
             #expect(savedReminder.minute == 0)
-            #expect(savedReminder.associatedTag == "")
+            #expect(savedReminder.associatedTag == nil)
             #expect(savedReminder.lastScan == nil)
         }
     }

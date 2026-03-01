@@ -9,7 +9,9 @@ import Dao
 import Dependencies
 import DependenciesMacros
 import Photos
+#if canImport(UIKit)
 import UIKit
+#endif
 
 @DependencyClient
 public struct PhotoKitAlbums: Sendable {
@@ -36,7 +38,7 @@ extension PhotoKitAlbums: DependencyKey {
                     #if targetEnvironment(macCatalyst)
                     let url = "x-apple.systempreferences:com.apple.preference.security?Privacy_Photos"
                     await UIApplication.shared.open(URL(string: url)!)
-                    #else
+                    #elseif canImport(UIKit)
                     let url = UIApplication.openSettingsURLString
                     UIApplication.shared.open(URL(string: url)!)
                     #endif

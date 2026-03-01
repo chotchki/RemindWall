@@ -111,7 +111,9 @@ public struct AddReminderView: View {
                 }
             }
             .navigationTitle("Add Reminder")
+            #if !os(macOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
