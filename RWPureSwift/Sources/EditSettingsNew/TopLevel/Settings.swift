@@ -14,13 +14,15 @@ public struct SettingsFeature {
     public struct State: Equatable {
         var trackeesState = TrackeesFeature.State()
         var albumPickerState = AlbumPickerFeature.State()
+        var calendarPickerState = CalendarPickerFeature.State()
         var path = StackState<TrackeeDetailFeature.State>()
-        
+
         public init(){}
     }
     
     public enum Action {
         case albumPicker(AlbumPickerFeature.Action)
+        case calendarPicker(CalendarPickerFeature.Action)
         case trackees(TrackeesFeature.Action)
         case path(StackActionOf<TrackeeDetailFeature>)
         case startSlideshow
@@ -32,7 +34,11 @@ public struct SettingsFeature {
         Scope(state: \.albumPickerState, action: \.albumPicker) {
             AlbumPickerFeature()
         }
-        
+
+        Scope(state: \.calendarPickerState, action: \.calendarPicker) {
+            CalendarPickerFeature()
+        }
+
         Scope(state: \.trackeesState, action: \.trackees) {
             TrackeesFeature()
         }
@@ -40,7 +46,7 @@ public struct SettingsFeature {
             switch action {
             case .startSlideshow:
                 return .none
-            case .trackees, .albumPicker, .path:
+            case .trackees, .albumPicker, .calendarPicker, .path:
                 return .none
             }
         }.forEach(\.path, action: \.path) {
@@ -66,7 +72,7 @@ public struct SettingsView: View {
                 }
                 
                 Section {
-                    //Calendar Picker
+                    CalendarPickerView(store: store.scope(state: \.calendarPickerState, action: \.calendarPicker))
                 } header: {
                     Text("Select Calendar for Event Reminders")
                 }

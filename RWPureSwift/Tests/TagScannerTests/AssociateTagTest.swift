@@ -6,7 +6,7 @@
 //
 import ComposableArchitecture
 @testable import TagScanner
-import TagTypes
+import AppTypes
 import Testing
 
 @Test("Tag Scan Valid Result")

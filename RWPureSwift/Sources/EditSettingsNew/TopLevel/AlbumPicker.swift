@@ -38,8 +38,9 @@ public struct AlbumPickerFeature {
                 state.photoStatus = photoKitAlbums.libraryAccess();
                 return loadList(state: &state)
             case .tapOpenSettings:
-                photoKitAlbums.openPhotoSettings()
-                return loadList(state: &state)
+                return .run { [photoKitAlbums] send in
+                    await photoKitAlbums.openPhotoSettings()
+                }
             case .tapAuthorizeAccess:
                 return .run{ [photoKitAlbums] send in
                     await photoKitAlbums.requestAuthorization()

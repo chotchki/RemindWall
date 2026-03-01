@@ -9,10 +9,15 @@ import AppTypes
 @preconcurrency import EventKit
 import Dependencies
 import DependenciesMacros
+#if canImport(UIKit)
+import UIKit
+#endif
 
 
 @DependencyClient
 public struct CalendarAsync: Sendable {
+    public var calendarAccess: @Sendable () -> EKAuthorizationStatus = { .notDetermined }
+    public var openCalendarSettings: @Sendable () async -> () = {}
     public var requestAccess: @Sendable () async throws -> Bool = { false }
     public var getCalendars: @Sendable () -> [EKCalendar] = { [] }
     public var getActiveEvent: @Sendable (CalendarId, Date) -> EKEvent?
@@ -23,6 +28,23 @@ extension CalendarAsync: DependencyKey {
     public static var liveValue: Self {
         nonisolated(unsafe) let store = EKEventStore()
         return Self(
+            calendarAccess: {
+                return EKEventStore.authorizationStatus(for: .event)
+            },
+            openCalendarSettings: {
+                @Dependency(\.fireAndForget) var fireAndForget
+                await fireAndForget { @MainActor in
+                    #if canImport(UIKit)
+                    #if targetEnvironment(macCatalyst)
+                    let url = "x-apple.systempreferences:com.apple.preference.security?Privacy_Calendars"
+                    await UIApplication.shared.open(URL(string: url)!)
+                    #else
+                    let url = UIApplication.openSettingsURLString
+                    UIApplication.shared.open(URL(string: url)!)
+                    #endif
+                    #endif
+                }
+            },
             requestAccess: {
                 return try await store.requestFullAccessToEvents()
             }, getCalendars: {
@@ -82,6 +104,26 @@ extension CalendarAsync: DependencyKey {
 
 extension CalendarAsync: TestDependencyKey {
     public static let testValue = Self()
+
+    public static var previewValue: Self {
+        return Self(
+            calendarAccess: {
+                return .fullAccess
+            },
+            openCalendarSettings: {},
+            requestAccess: {
+                return true
+            }, getCalendars: {
+                return []
+            }, getActiveEvent: {
+                cal, date in
+                return nil
+            }, getNextEvent: {
+                cal, date in
+                return nil
+            }
+        )
+    }
 }
 
 extension DependencyValues {

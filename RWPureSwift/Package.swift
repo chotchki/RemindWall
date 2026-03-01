@@ -9,8 +9,6 @@ let package = Package(
     products: [
         .library(name: "AppModel", targets: ["AppModel"]),
         .library(name: "AppTypes", targets: ["AppTypes"]),
-        //.library(name: "AppNavigation", targets: ["AppNavigation"]),
-        //.library(name: "CheckPermissions", targets: ["CheckPermissions"]),
         .library(name: "CalendarAsync", targets: ["CalendarAsync"]),
         .library(name: "Dashboard", targets: ["Dashboard"]),
         .library(name: "DataModel", targets: ["DataModel"]),
@@ -99,6 +97,7 @@ let package = Package(
                 name: "Dependencies",
                 package: "swift-dependencies"
               ),
+            .target(name: "CalendarAsync"),
             .target(name: "Dao"),
             .target(name: "EditSettingsNew_Trackees"),
             .target(name: "PhotoKitAsync"),

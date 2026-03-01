@@ -16,7 +16,7 @@ public struct PhotoKitAlbums: Sendable {
     
     
     public var libraryAccess: @Sendable () -> PHAuthorizationStatus = { .denied }
-    public var openPhotoSettings: @Sendable () -> ()
+    public var openPhotoSettings: @Sendable () async -> ()
     public var requestAuthorization: @Sendable () async -> ()
     public var availableAlbums: @Sendable () async -> PHFetchResultCollection<PHAssetCollection>?
     public var loadAlbumAssets: @Sendable (AlbumLocalId) async -> [PHAsset]?
@@ -31,17 +31,16 @@ extension PhotoKitAlbums: DependencyKey {
                 return PHPhotoLibrary.authorizationStatus(for: .readWrite)
             },
             openPhotoSettings: {
-                #if targetEnvironment(macCatalyst)
-                Task{ @MainActor in
+                @Dependency(\.fireAndForget) var fireAndForget
+                await fireAndForget { @MainActor in
+                    #if targetEnvironment(macCatalyst)
                     let url = "x-apple.systempreferences:com.apple.preference.security?Privacy_Photos"
                     await UIApplication.shared.open(URL(string: url)!)
-                }
-                #else
-                Task{ @MainActor in
+                    #else
                     let url = UIApplication.openSettingsURLString
                     UIApplication.shared.open(URL(string: url)!)
+                    #endif
                 }
-                #endif
             },
             requestAuthorization: {
                 await PHPhotoLibrary.requestAuthorization(for: .readWrite)
