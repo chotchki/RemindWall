@@ -1,0 +1,113 @@
+import ComposableArchitecture
+import DependenciesTestSupport
+import Photos
+import PhotoKitAsync
+import Testing
+
+@testable import EditSettingsNew_TopLevel
+
+@MainActor
+@Suite("AlbumPicker Feature Tests")
+struct AlbumPickerTests {
+
+    @Test("onAppear when not authorized shows authorize button state")
+    func onAppearNotAuthorized() async {
+        let store = TestStore(initialState: AlbumPickerFeature.State()) {
+            AlbumPickerFeature()
+        } withDependencies: {
+            $0.photoKitAlbums.libraryAccess = { .notDetermined }
+        }
+
+        await store.send(.onAppear)
+    }
+
+    @Test("onAppear when denied shows denied state")
+    func onAppearDenied() async {
+        let store = TestStore(initialState: AlbumPickerFeature.State()) {
+            AlbumPickerFeature()
+        } withDependencies: {
+            $0.photoKitAlbums.libraryAccess = { .denied }
+        }
+
+        await store.send(.onAppear) {
+            $0.photoStatus = .denied
+        }
+    }
+
+    @Test("onAppear when authorized loads album list")
+    func onAppearAuthorized() async {
+        let store = TestStore(initialState: AlbumPickerFeature.State()) {
+            AlbumPickerFeature()
+        } withDependencies: {
+            $0.photoKitAlbums.libraryAccess = { .authorized }
+            $0.photoKitAlbums.availableAlbums = { nil }
+        }
+
+        await store.send(.onAppear) {
+            $0.photoStatus = .authorized
+        }
+
+        await store.receive(\.loadListComplete)
+    }
+
+    @Test("onAppear when restricted loads album list")
+    func onAppearRestricted() async {
+        let store = TestStore(initialState: AlbumPickerFeature.State()) {
+            AlbumPickerFeature()
+        } withDependencies: {
+            $0.photoKitAlbums.libraryAccess = { .restricted }
+            $0.photoKitAlbums.availableAlbums = { nil }
+        }
+
+        await store.send(.onAppear) {
+            $0.photoStatus = .restricted
+        }
+
+        await store.receive(\.loadListComplete)
+    }
+
+    @Test("tapOpenSettings triggers openPhotoSettings")
+    func tapOpenSettings() async {
+        let store = TestStore(initialState: AlbumPickerFeature.State()) {
+            AlbumPickerFeature()
+        } withDependencies: {
+            $0.photoKitAlbums.openPhotoSettings = {}
+        }
+
+        await store.send(.tapOpenSettings)
+    }
+
+    @Test("tapAuthorizeAccess requests authorization")
+    func tapAuthorizeAccess() async {
+        let store = TestStore(initialState: AlbumPickerFeature.State()) {
+            AlbumPickerFeature()
+        } withDependencies: {
+            $0.photoKitAlbums.requestAuthorization = {}
+        }
+
+        await store.send(.tapAuthorizeAccess)
+    }
+
+    @Test("loadListComplete sets available albums")
+    func loadListComplete() async {
+        var state = AlbumPickerFeature.State()
+        state.photoStatus = .authorized
+
+        let store = TestStore(initialState: state) {
+            AlbumPickerFeature()
+        }
+
+        await store.send(.loadListComplete(nil))
+    }
+
+    @Test("binding action does not cause side effects")
+    func bindingNoSideEffects() async {
+        let store = TestStore(initialState: AlbumPickerFeature.State()) {
+            AlbumPickerFeature()
+        }
+
+        await store.send(.binding(.set(\.photoStatus, .authorized))) {
+            $0.photoStatus = .authorized
+        }
+    }
+}
