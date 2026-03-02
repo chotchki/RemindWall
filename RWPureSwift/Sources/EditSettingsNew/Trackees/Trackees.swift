@@ -34,7 +34,7 @@ public struct TrackeesFeature: Sendable {
             switch action {
             case .onAppear:
                 return .run { [t = state.$trackees] send in
-                    await withErrorReporting {
+                    _ = await withErrorReporting {
                         try await t.load(Trackee.all.order(by: \.name))
                     }
                 }

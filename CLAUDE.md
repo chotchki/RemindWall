@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-RemindWall is a cross-platform iOS/macOS SwiftUI application for managing photo slideshows with reminder tracking for multiple people ("trackees"). It combines photo library management with reminder scheduling and NFC tag scanning functionality.
+RemindWall is a cross-platform iOS/macOS Catalyst SwiftUI application for managing photo slideshows with reminder tracking for multiple people ("trackees"). It combines photo library management with reminder scheduling and NFC tag scanning functionality.
 
 **Platforms:** iOS 26+, macCatalyst 26+
 **Swift Version:** 6.2
@@ -21,7 +21,6 @@ Both targets depend on `RWPureSwift`, a local Swift Package containing all share
 
 Tests are in `RWPureSwift/Tests/`. Run via Xcode's test navigator or:
 - Build/test the full package from the RWPureSwift scheme
-- Individual test targets: `AppTypesTests`, `DaoTests`, `EditSettingsNew_RemindersTests`, `EditSettingsNew_TrackeesTests`, `EditSettingsNew_TopLevelTests`, `PhotoKitAsyncTests`, `TagScannerTests`
 
 ### CI Setup
 
@@ -74,6 +73,8 @@ SettingsFeature (TopLevel)
 ```
 
 ## Testing Conventions
+
+All code changes should be tested using the "swift test" before any git commits are entered.
 
 Tests use Swift's native `Testing` framework with `@Test` and `@Suite` macros. TCA features are tested with `TestStore`:
 
