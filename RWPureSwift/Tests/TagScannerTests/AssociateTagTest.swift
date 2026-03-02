@@ -51,5 +51,6 @@ func no_tag() async throws {
     await store.receive(\.scanResult){state in
         state.$associatedTag.withLock{ $0 = nil}
         state.scanning = false
+        state.errorMessage = "No tag detected. Please try again."
     };
 }

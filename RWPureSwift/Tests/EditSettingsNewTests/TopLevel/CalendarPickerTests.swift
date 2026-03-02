@@ -20,9 +20,7 @@ struct CalendarPickerTests {
             $0.calendarAsync.getCalendars = { [] }
         }
 
-        await store.send(.onAppear) {
-            $0.calendarStatus = .notDetermined
-        }
+        await store.send(.onAppear)
     }
 
     @Test("onAppear when denied shows denied state")
@@ -52,9 +50,7 @@ struct CalendarPickerTests {
             $0.calendarStatus = .fullAccess
         }
 
-        await store.receive(\.loadListComplete) {
-            $0.availableCalendars = nil
-        }
+        await store.receive(\.loadListComplete)
     }
 
     @Test("tapAuthorizeAccess requests access and loads calendars on success")
@@ -73,9 +69,7 @@ struct CalendarPickerTests {
             $0.calendarStatus = .fullAccess
         }
 
-        await store.receive(\.loadListComplete) {
-            $0.availableCalendars = nil
-        }
+        await store.receive(\.loadListComplete)
     }
 
     @Test("tapAuthorizeAccess does not load calendars when denied")
@@ -103,9 +97,7 @@ struct CalendarPickerTests {
             CalendarPickerFeature()
         }
 
-        await store.send(.loadListComplete(nil)) {
-            $0.availableCalendars = nil
-        }
+        await store.send(.loadListComplete(nil))
     }
 
     @Test("tapOpenSettings does not change state")
