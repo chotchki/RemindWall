@@ -121,7 +121,7 @@ let package = Package(
             .target(name: "AppTypes"),
             .target(name: "Dao"),
         ]),
-        .testTarget(name: "PhotoKitAsyncTests", dependencies: ["PhotoKitAsync"]),
+        .testTarget(name: "PhotoKitAsyncTests", dependencies: ["PhotoKitAsync", .product(name: "DependenciesTestSupport", package: "swift-dependencies")]),
 //        .target(name: "Slideshow",
 //                dependencies: [
 //                    .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
