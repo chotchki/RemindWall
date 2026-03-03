@@ -1,0 +1,66 @@
+{
+  "configurations" : [
+    {
+      "id" : "4625B7EE-C1D0-4ADC-A68C-8FD9AF0E411A",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "testTimeoutsEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:RWPureSwift",
+        "identifier" : "DaoTests",
+        "name" : "DaoTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:RWPureSwift",
+        "identifier" : "EditSettingsNew_TopLevelTests",
+        "name" : "EditSettingsNew_TopLevelTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:RWPureSwift",
+        "identifier" : "EditSettingsNew_TrackeesTests",
+        "name" : "EditSettingsNew_TrackeesTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:RWPureSwift",
+        "identifier" : "EditSettingsNew_RemindersTests",
+        "name" : "EditSettingsNew_RemindersTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:RWPureSwift",
+        "identifier" : "PhotoKitAsyncTests",
+        "name" : "PhotoKitAsyncTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:RWPureSwift",
+        "identifier" : "TagScannerTests",
+        "name" : "TagScannerTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:RWPureSwift",
+        "identifier" : "AppTypesTests",
+        "name" : "AppTypesTests"
+      }
+    }
+  ],
+  "version" : 1
+}

@@ -22,6 +22,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		BF1F00B92F565E130065801C /* RemindWall.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = RemindWall.xctestplan; sourceTree = "<group>"; };
 		BF29730D2C8667AC0029F361 /* RemindWalliOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RemindWalliOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BF29730F2C8667AC0029F361 /* RemindWalliOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindWalliOSApp.swift; sourceTree = "<group>"; };
 		BF2973152C8667AD0029F361 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -85,6 +86,7 @@
 		BFE60AC72C4418E200E8AB67 = {
 			isa = PBXGroup;
 			children = (
+				BF1F00B92F565E130065801C /* RemindWall.xctestplan */,
 				BFE60AE62C44194F00E8AB67 /* ci_scripts */,
 				BFE60AE42C44191F00E8AB67 /* RWPureSwift */,
 				BFE60AD22C4418E200E8AB67 /* RemindWall */,
