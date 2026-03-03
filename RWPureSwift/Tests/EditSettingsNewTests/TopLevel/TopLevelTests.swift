@@ -53,6 +53,23 @@ struct SettingsFeatureTests {
         await store.send(.calendarPicker(.onAppear))
     }
 
+    @Test("addButtonTapped via trackees presents add trackee sheet")
+    func addTrackeeFromSettings() async {
+        let store = TestStore(initialState: SettingsFeature.State()) {
+            SettingsFeature()
+        }
+
+        store.exhaustivity = .off
+
+        await store.send(.trackees(.addButtonTapped)) {
+            $0.trackeesState.$destination.wrappedValue = .addTrackee(
+                AddTrackeeFeature.State(
+                    trackee: Trackee(id: Trackee.ID(UUID(0)), name: "")
+                )
+            )
+        }
+    }
+
     @Test("initial state has empty path")
     func initialState() async {
         let state = SettingsFeature.State()
