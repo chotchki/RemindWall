@@ -52,16 +52,22 @@ struct AddTrackeeView: View {
 
   var body: some View {
     Form {
-      TextField("Name", text: $store.trackee.name.sending(\.setName))
-      Button("Save") {
-        store.send(.saveButtonTapped)
+      Section {
+        TextField("Name", text: $store.trackee.name.sending(\.setName))
       }
     }
+    .navigationTitle("Add Trackee")
     .toolbar {
-      ToolbarItem {
+      ToolbarItem(placement: .cancellationAction) {
         Button("Cancel") {
           store.send(.cancelButtonTapped)
         }
+      }
+      ToolbarItem(placement: .confirmationAction) {
+        Button("Save") {
+          store.send(.saveButtonTapped)
+        }
+        .disabled(store.trackee.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
       }
     }
   }
