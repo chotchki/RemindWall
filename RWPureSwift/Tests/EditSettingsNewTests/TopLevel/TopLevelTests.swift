@@ -1,8 +1,10 @@
 import ComposableArchitecture
 import Dao
 import DependenciesTestSupport
+import Foundation
 import Testing
 
+@testable import EditSettingsNew_Trackees
 @testable import EditSettingsNew_TopLevel
 
 @MainActor

@@ -46,17 +46,6 @@ public struct SettingsFeature {
             switch action {
             case .startSlideshow:
                 return .none
-            case let .path(.element(id: id, action: .delegate(.confirmDeletion))):
-                guard let detailState = state.path[id: id]
-                else { return .none }
-                return .run { [trackeeId = detailState.trackee.id, dd = self.defaultDatabase] send in
-                    await withErrorReporting {
-                        try await dd.write { db in
-                            try Trackee.find(trackeeId).delete().execute(db)
-                        }
-                    }
-                    await send(.trackees(.onAppear))
-                }
             case .trackees, .albumPicker, .calendarPicker, .path:
                 return .none
             }

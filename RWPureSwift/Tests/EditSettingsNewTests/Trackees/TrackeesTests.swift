@@ -96,4 +96,37 @@ struct TrackeesFeatureTests {
         #expect(state.destination == nil)
         #expect(state.path.count == 0)
     }
+
+    @Test("confirmDeletion delegate deletes trackee from database")
+    func confirmDeletionDeletesTrackee() async {
+        @Dependency(\.defaultDatabase) var defaultDatabase
+
+        // Get a trackee from the seeded data
+        let trackee = try! await defaultDatabase.read { db in
+            try! Trackee.all.fetchOne(db)!
+        }
+
+        // Set up state with the trackee detail pushed onto the path
+        var state = TrackeesFeature.State()
+        state.path.append(TrackeeDetailFeature.State(trackee: trackee))
+
+        let store = TestStore(initialState: state) {
+            TrackeesFeature()
+        }
+
+        store.exhaustivity = .off
+
+        // Send the delegate action as if the detail confirmed deletion
+        await store.send(
+            .path(.element(id: 0, action: .delegate(.confirmDeletion)))
+        )
+
+        await store.finish()
+
+        // Verify the trackee was deleted from the database
+        let deleted = try! await defaultDatabase.read { db in
+            try! Trackee.find(trackee.id).fetchOne(db)
+        }
+        #expect(deleted == nil, "Trackee should be deleted from database")
+    }
 }
