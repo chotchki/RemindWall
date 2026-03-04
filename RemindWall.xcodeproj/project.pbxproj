@@ -3,10 +3,11 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
+		BF1F00D92F56656A0065801C /* EditSettingsNew_TopLevel in Frameworks */ = {isa = PBXBuildFile; productRef = BF1F00D82F56656A0065801C /* EditSettingsNew_TopLevel */; };
 		BF2973102C8667AC0029F361 /* RemindWalliOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF29730F2C8667AC0029F361 /* RemindWalliOSApp.swift */; };
 		BF2973162C8667AD0029F361 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BF2973152C8667AD0029F361 /* Assets.xcassets */; };
 		BF2973192C8667AD0029F361 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BF2973182C8667AD0029F361 /* Preview Assets.xcassets */; };
@@ -15,14 +16,32 @@
 		BF67F8DB2ECC0A57009D36B9 /* Dao in Frameworks */ = {isa = PBXBuildFile; productRef = BF67F8DA2ECC0A57009D36B9 /* Dao */; };
 		BF67F8DD2ECC0A5E009D36B9 /* Dao in Frameworks */ = {isa = PBXBuildFile; productRef = BF67F8DC2ECC0A5E009D36B9 /* Dao */; };
 		BF7123E72F4233F700B9FBCD /* EditSettingsNew_TopLevel in Frameworks */ = {isa = PBXBuildFile; productRef = BF7123E62F4233F700B9FBCD /* EditSettingsNew_TopLevel */; };
-		BF7123E92F42352F00B9FBCD /* EditSettingsNew_TopLevel in Frameworks */ = {isa = PBXBuildFile; productRef = BF7123E82F42352F00B9FBCD /* EditSettingsNew_TopLevel */; };
 		BFE60AD42C4418E200E8AB67 /* RemindWallApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFE60AD32C4418E200E8AB67 /* RemindWallApp.swift */; };
 		BFE60ADA2C4418E300E8AB67 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BFE60AD92C4418E300E8AB67 /* Assets.xcassets */; };
 		BFE60ADE2C4418E300E8AB67 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BFE60ADD2C4418E300E8AB67 /* Preview Assets.xcassets */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		BF1F00C72F56638F0065801C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = BFE60AC82C4418E200E8AB67 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = BFE60ACF2C4418E200E8AB67;
+			remoteInfo = RemindWall;
+		};
+		BF1F00D32F5663B80065801C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = BFE60AC82C4418E200E8AB67 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = BF29730C2C8667AC0029F361;
+			remoteInfo = RemindWalliOS;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		BF1F00B92F565E130065801C /* RemindWall.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = RemindWall.xctestplan; sourceTree = "<group>"; };
+		BF1F00BE2F56638B0065801C /* RemindWallUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RemindWallUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		BF1F00CD2F5663B80065801C /* RemindWalliOSUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RemindWalliOSUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		BF29730D2C8667AC0029F361 /* RemindWalliOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RemindWalliOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BF29730F2C8667AC0029F361 /* RemindWalliOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindWalliOSApp.swift; sourceTree = "<group>"; };
 		BF2973152C8667AD0029F361 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -39,14 +58,33 @@
 		BFE60AE52C44194F00E8AB67 /* ci_post_clone.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = ci_post_clone.sh; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		BF1F00BF2F56638B0065801C /* RemindWallUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = RemindWallUITests; sourceTree = "<group>"; };
+		BF1F00CE2F5663B80065801C /* RemindWalliOSUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = RemindWalliOSUITests; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
+
 /* Begin PBXFrameworksBuildPhase section */
+		BF1F00BB2F56638B0065801C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BF1F00CA2F5663B80065801C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		BF29730A2C8667AC0029F361 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BF1F00D92F56656A0065801C /* EditSettingsNew_TopLevel in Frameworks */,
 				BF67F8DD2ECC0A5E009D36B9 /* Dao in Frameworks */,
 				BF67F8D92ECAE7CF009D36B9 /* SQLiteData in Frameworks */,
-				BF7123E92F42352F00B9FBCD /* EditSettingsNew_TopLevel in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -91,6 +129,8 @@
 				BFE60AE42C44191F00E8AB67 /* RWPureSwift */,
 				BFE60AD22C4418E200E8AB67 /* RemindWall */,
 				BF29730E2C8667AC0029F361 /* RemindWalliOS */,
+				BF1F00BF2F56638B0065801C /* RemindWallUITests */,
+				BF1F00CE2F5663B80065801C /* RemindWalliOSUITests */,
 				BFE60AD12C4418E200E8AB67 /* Products */,
 				BFE60AE72C441A0900E8AB67 /* Frameworks */,
 			);
@@ -101,6 +141,8 @@
 			children = (
 				BFE60AD02C4418E200E8AB67 /* RemindWall.app */,
 				BF29730D2C8667AC0029F361 /* RemindWalliOS.app */,
+				BF1F00BE2F56638B0065801C /* RemindWallUITests.xctest */,
+				BF1F00CD2F5663B80065801C /* RemindWalliOSUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -143,6 +185,52 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		BF1F00BD2F56638B0065801C /* RemindWallUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BF1F00C42F56638B0065801C /* Build configuration list for PBXNativeTarget "RemindWallUITests" */;
+			buildPhases = (
+				BF1F00BA2F56638B0065801C /* Sources */,
+				BF1F00BB2F56638B0065801C /* Frameworks */,
+				BF1F00BC2F56638B0065801C /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				BF1F00C82F56638F0065801C /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				BF1F00BF2F56638B0065801C /* RemindWallUITests */,
+			);
+			name = RemindWallUITests;
+			packageProductDependencies = (
+			);
+			productName = RemindWallUITests;
+			productReference = BF1F00BE2F56638B0065801C /* RemindWallUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		BF1F00CC2F5663B80065801C /* RemindWalliOSUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BF1F00D52F5663B80065801C /* Build configuration list for PBXNativeTarget "RemindWalliOSUITests" */;
+			buildPhases = (
+				BF1F00C92F5663B80065801C /* Sources */,
+				BF1F00CA2F5663B80065801C /* Frameworks */,
+				BF1F00CB2F5663B80065801C /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				BF1F00D42F5663B80065801C /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				BF1F00CE2F5663B80065801C /* RemindWalliOSUITests */,
+			);
+			name = RemindWalliOSUITests;
+			packageProductDependencies = (
+			);
+			productName = RemindWalliOSUITests;
+			productReference = BF1F00CD2F5663B80065801C /* RemindWalliOSUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		BF29730C2C8667AC0029F361 /* RemindWalliOS */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = BF29731C2C8667AD0029F361 /* Build configuration list for PBXNativeTarget "RemindWalliOS" */;
@@ -159,7 +247,7 @@
 			packageProductDependencies = (
 				BF67F8D82ECAE7CF009D36B9 /* SQLiteData */,
 				BF67F8DC2ECC0A5E009D36B9 /* Dao */,
-				BF7123E82F42352F00B9FBCD /* EditSettingsNew_TopLevel */,
+				BF1F00D82F56656A0065801C /* EditSettingsNew_TopLevel */,
 			);
 			productName = RemindWalliOS;
 			productReference = BF29730D2C8667AC0029F361 /* RemindWalliOS.app */;
@@ -194,9 +282,17 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1540;
+				LastSwiftUpdateCheck = 2630;
 				LastUpgradeCheck = 1610;
 				TargetAttributes = {
+					BF1F00BD2F56638B0065801C = {
+						CreatedOnToolsVersion = 26.3;
+						TestTargetID = BFE60ACF2C4418E200E8AB67;
+					};
+					BF1F00CC2F5663B80065801C = {
+						CreatedOnToolsVersion = 26.3;
+						TestTargetID = BF29730C2C8667AC0029F361;
+					};
 					BF29730C2C8667AC0029F361 = {
 						CreatedOnToolsVersion = 15.4;
 					};
@@ -223,11 +319,27 @@
 			targets = (
 				BFE60ACF2C4418E200E8AB67 /* RemindWall */,
 				BF29730C2C8667AC0029F361 /* RemindWalliOS */,
+				BF1F00BD2F56638B0065801C /* RemindWallUITests */,
+				BF1F00CC2F5663B80065801C /* RemindWalliOSUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		BF1F00BC2F56638B0065801C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BF1F00CB2F5663B80065801C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		BF29730B2C8667AC0029F361 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -249,6 +361,20 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		BF1F00BA2F56638B0065801C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BF1F00C92F5663B80065801C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		BF2973092C8667AC0029F361 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -267,7 +393,113 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		BF1F00C82F56638F0065801C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = BFE60ACF2C4418E200E8AB67 /* RemindWall */;
+			targetProxy = BF1F00C72F56638F0065801C /* PBXContainerItemProxy */;
+		};
+		BF1F00D42F5663B80065801C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = BF29730C2C8667AC0029F361 /* RemindWalliOS */;
+			targetProxy = BF1F00D32F5663B80065801C /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		BF1F00C52F56638B0065801C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = G53N9PU948;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.hotchkiss.RemindWallUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 2;
+				TEST_TARGET_NAME = RemindWall;
+			};
+			name = Debug;
+		};
+		BF1F00C62F56638B0065801C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = G53N9PU948;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.hotchkiss.RemindWallUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 2;
+				TEST_TARGET_NAME = RemindWall;
+			};
+			name = Release;
+		};
+		BF1F00D62F5663B80065801C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = G53N9PU948;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.hotchkiss.RemindWalliOSUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = RemindWalliOS;
+			};
+			name = Debug;
+		};
+		BF1F00D72F5663B80065801C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = G53N9PU948;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = io.hotchkiss.RemindWalliOSUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = RemindWalliOS;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 		BF29731A2C8667AD0029F361 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -568,6 +800,24 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		BF1F00C42F56638B0065801C /* Build configuration list for PBXNativeTarget "RemindWallUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BF1F00C52F56638B0065801C /* Debug */,
+				BF1F00C62F56638B0065801C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BF1F00D52F5663B80065801C /* Build configuration list for PBXNativeTarget "RemindWalliOSUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BF1F00D62F5663B80065801C /* Debug */,
+				BF1F00D72F5663B80065801C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		BF29731C2C8667AD0029F361 /* Build configuration list for PBXNativeTarget "RemindWalliOS" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -609,6 +859,10 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		BF1F00D82F56656A0065801C /* EditSettingsNew_TopLevel */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = EditSettingsNew_TopLevel;
+		};
 		BF67F8D62ECAE7C3009D36B9 /* SQLiteData */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = BF67F8D52ECAE7C3009D36B9 /* XCRemoteSwiftPackageReference "sqlite-data" */;
@@ -628,10 +882,6 @@
 			productName = Dao;
 		};
 		BF7123E62F4233F700B9FBCD /* EditSettingsNew_TopLevel */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = EditSettingsNew_TopLevel;
-		};
-		BF7123E82F42352F00B9FBCD /* EditSettingsNew_TopLevel */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = EditSettingsNew_TopLevel;
 		};

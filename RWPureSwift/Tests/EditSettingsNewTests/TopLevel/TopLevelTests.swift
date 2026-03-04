@@ -1,3 +1,4 @@
+import AppTypes
 import ComposableArchitecture
 import Dao
 import DependenciesTestSupport
@@ -69,6 +70,31 @@ struct SettingsFeatureTests {
                     trackee: Trackee(id: Trackee.ID(UUID(0)), name: "")
                 )
             )
+        }
+    }
+
+    @Test("slideshowToggled off clears selected album")
+    func slideshowToggledOff() async {
+        var state = SettingsFeature.State()
+        state.albumPickerState.$selectedAlbum.withLock { $0 = AlbumLocalId("test-album") }
+
+        let store = TestStore(initialState: state) {
+            SettingsFeature()
+        }
+
+        await store.send(.slideshowToggled(false)) {
+            $0.albumPickerState.$selectedAlbum.withLock { $0 = nil }
+        }
+    }
+
+    @Test("slideshowToggled on sets selected album to empty placeholder")
+    func slideshowToggledOn() async {
+        let store = TestStore(initialState: SettingsFeature.State()) {
+            SettingsFeature()
+        }
+
+        await store.send(.slideshowToggled(true)) {
+            $0.albumPickerState.$selectedAlbum.withLock { $0 = AlbumLocalId("") }
         }
     }
 

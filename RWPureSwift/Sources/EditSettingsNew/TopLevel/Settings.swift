@@ -25,6 +25,7 @@ public struct SettingsFeature {
         case calendarPicker(CalendarPickerFeature.Action)
         case trackees(TrackeesFeature.Action)
         case path(StackActionOf<TrackeeDetailFeature>)
+        case slideshowToggled(Bool)
         case startSlideshow
     }
     
@@ -44,6 +45,13 @@ public struct SettingsFeature {
         }
         Reduce { state, action in
             switch action {
+            case let .slideshowToggled(isOn):
+                if isOn {
+                    state.albumPickerState.$selectedAlbum.withLock { $0 = AlbumLocalId("") }
+                } else {
+                    state.albumPickerState.$selectedAlbum.withLock { $0 = nil }
+                }
+                return .none
             case .startSlideshow:
                 return .none
             case .trackees, .albumPicker, .calendarPicker, .path:
@@ -66,9 +74,14 @@ public struct SettingsView: View {
         NavigationStack(path: $store.scope(state: \.path, action: \.path)) {
             Form{
                 Section {
-                    AlbumPickerView(store: store.scope(state: \.albumPickerState, action: \.albumPicker))
+                    if store.albumPickerState.selectedAlbum != nil {
+                        AlbumPickerView(store: store.scope(state: \.albumPickerState, action: \.albumPicker))
+                    }
                 } header: {
-                    Text("Select Album for Slideshow")
+                    Toggle("Slideshow", isOn: Binding(
+                        get: { store.albumPickerState.selectedAlbum != nil },
+                        set: { store.send(.slideshowToggled($0)) }
+                    ))
                 }
                 
                 Section {

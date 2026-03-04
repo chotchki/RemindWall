@@ -1,14 +1,15 @@
 import SwiftUI
 import SQLiteData
 import Dao
-import EditSettings_TopLevel
+import EditSettingsNew_TopLevel
+import ComposableArchitecture
 
 @main
 @MainActor
 struct RemindWalliOSApp: App {
     // NB: This is static to avoid interference with Xcode previews, which create this entry
     //     point each time they are run.
-    static let store = Store(initialState: .State()) {
+    static let store = Store(initialState: SettingsFeature.State()) {
         SettingsFeature()
         ._printChanges()
     } withDependencies: {
@@ -19,7 +20,7 @@ struct RemindWalliOSApp: App {
     
     init() {
         prepareDependencies {
-          $0.defaultDatabase = try! appDatabase()
+          $0.defaultDatabase = try! $0.appDatabase()
         }
     }
     

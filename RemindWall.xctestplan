@@ -15,8 +15,8 @@
     {
       "target" : {
         "containerPath" : "container:RWPureSwift",
-        "identifier" : "DaoTests",
-        "name" : "DaoTests"
+        "identifier" : "PhotoKitAsyncTests",
+        "name" : "PhotoKitAsyncTests"
       }
     },
     {
@@ -43,8 +43,8 @@
     {
       "target" : {
         "containerPath" : "container:RWPureSwift",
-        "identifier" : "PhotoKitAsyncTests",
-        "name" : "PhotoKitAsyncTests"
+        "identifier" : "AppTypesTests",
+        "name" : "AppTypesTests"
       }
     },
     {
@@ -56,9 +56,23 @@
     },
     {
       "target" : {
+        "containerPath" : "container:RemindWall.xcodeproj",
+        "identifier" : "BF1F00CC2F5663B80065801C",
+        "name" : "RemindWalliOSUITests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:RemindWall.xcodeproj",
+        "identifier" : "BF1F00BD2F56638B0065801C",
+        "name" : "RemindWallUITests"
+      }
+    },
+    {
+      "target" : {
         "containerPath" : "container:RWPureSwift",
-        "identifier" : "AppTypesTests",
-        "name" : "AppTypesTests"
+        "identifier" : "DaoTests",
+        "name" : "DaoTests"
       }
     }
   ],
