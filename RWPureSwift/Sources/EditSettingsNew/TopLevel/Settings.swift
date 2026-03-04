@@ -25,6 +25,7 @@ public struct SettingsFeature {
         case calendarPicker(CalendarPickerFeature.Action)
         case trackees(TrackeesFeature.Action)
         case path(StackActionOf<TrackeeDetailFeature>)
+        case calendarToggled(Bool)
         case slideshowToggled(Bool)
         case startSlideshow
     }
@@ -45,6 +46,13 @@ public struct SettingsFeature {
         }
         Reduce { state, action in
             switch action {
+            case let .calendarToggled(isOn):
+                if isOn {
+                    state.calendarPickerState.$selectedCalendar.withLock { $0 = CalendarId("") }
+                } else {
+                    state.calendarPickerState.$selectedCalendar.withLock { $0 = nil }
+                }
+                return .none
             case let .slideshowToggled(isOn):
                 if isOn {
                     state.albumPickerState.$selectedAlbum.withLock { $0 = AlbumLocalId("") }
@@ -85,9 +93,14 @@ public struct SettingsView: View {
                 }
                 
                 Section {
-                    CalendarPickerView(store: store.scope(state: \.calendarPickerState, action: \.calendarPicker))
+                    if store.calendarPickerState.selectedCalendar != nil {
+                        CalendarPickerView(store: store.scope(state: \.calendarPickerState, action: \.calendarPicker))
+                    }
                 } header: {
-                    Text("Select Calendar for Event Reminders")
+                    Toggle("Calendar Reminders", isOn: Binding(
+                        get: { store.calendarPickerState.selectedCalendar != nil },
+                        set: { store.send(.calendarToggled($0)) }
+                    ))
                 }
                 
                 Section {

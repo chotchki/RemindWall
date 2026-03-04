@@ -98,6 +98,31 @@ struct SettingsFeatureTests {
         }
     }
 
+    @Test("calendarToggled on sets selected calendar to empty placeholder")
+    func calendarToggledOn() async {
+        let store = TestStore(initialState: SettingsFeature.State()) {
+            SettingsFeature()
+        }
+
+        await store.send(.calendarToggled(true)) {
+            $0.calendarPickerState.$selectedCalendar.withLock { $0 = CalendarId("") }
+        }
+    }
+
+    @Test("calendarToggled off clears selected calendar")
+    func calendarToggledOff() async {
+        var state = SettingsFeature.State()
+        state.calendarPickerState.$selectedCalendar.withLock { $0 = CalendarId("test-calendar") }
+
+        let store = TestStore(initialState: state) {
+            SettingsFeature()
+        }
+
+        await store.send(.calendarToggled(false)) {
+            $0.calendarPickerState.$selectedCalendar.withLock { $0 = nil }
+        }
+    }
+
     @Test("initial state has empty path")
     func initialState() async {
         let state = SettingsFeature.State()

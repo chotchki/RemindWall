@@ -27,7 +27,7 @@ struct TrackeeDetailTests {
         }
 
         await store.send(.deleteButtonTapped) {
-            $0.alert = .confirmDeletion
+            $0.alert = .confirmDeletion(name: trackee.name)
         }
     }
 
@@ -51,7 +51,7 @@ struct TrackeeDetailTests {
         store.exhaustivity = .off
 
         await store.send(.deleteButtonTapped) {
-            $0.alert = .confirmDeletion
+            $0.alert = .confirmDeletion(name: trackee.name)
         }
 
         await store.send(.alert(.presented(.confirmDeletion))) {
@@ -75,7 +75,7 @@ struct TrackeeDetailTests {
         }
 
         await store.send(.deleteButtonTapped) {
-            $0.alert = .confirmDeletion
+            $0.alert = .confirmDeletion(name: trackee.name)
         }
 
         await store.send(.alert(.dismiss)) {

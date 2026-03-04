@@ -46,7 +46,7 @@ public struct TrackeeDetailFeature {
           case .delegate:
             return .none
           case .deleteButtonTapped:
-            state.alert = .confirmDeletion
+            state.alert = .confirmDeletion(name: state.trackee.name)
             return .none
           case .remindersFeature:
               return .none
@@ -64,11 +64,15 @@ public struct TrackeeDetailFeature {
 }
 
 extension AlertState where Action == TrackeeDetailFeature.Action.Alert {
-  static let confirmDeletion = Self {
-    TextState("Are you sure?")
-  } actions: {
-    ButtonState(role: .destructive, action: .confirmDeletion) {
-      TextState("Delete")
+  static func confirmDeletion(name: String) -> Self {
+    Self {
+      TextState("Delete \(name)?")
+    } actions: {
+      ButtonState(role: .destructive, action: .confirmDeletion) {
+        TextState("Delete")
+      }
+    } message: {
+      TextState("This trackee and all of its reminders will be permanently deleted.")
     }
   }
 }
@@ -82,16 +86,24 @@ public struct TrackeeDetailView: View {
     
   public var body: some View {
       Form {
-          RemindersView(
-            store: store.scope(state: \.reminders, action: \.remindersFeature),
-            showNavigationStack: false
-          )
-          Button("Delete", role: .destructive) {
-            store.send(.deleteButtonTapped)
+          Section {
+              RemindersView(
+                store: store.scope(state: \.reminders, action: \.remindersFeature),
+                showNavigationStack: false
+              )
+          } header: {
+              Text("Reminders")
+          }
+          Section {
+              Button("Delete \(store.trackee.name)", role: .destructive) {
+                store.send(.deleteButtonTapped)
+              }
           }
       }
-          
-      .navigationTitle(Text("Trackee: \(store.trackee.name)"))
+      .navigationTitle(store.trackee.name)
+      #if !os(macOS)
+      .navigationBarTitleDisplayMode(.inline)
+      #endif
       .alert($store.scope(state: \.alert, action: \.alert))
   }
 }
