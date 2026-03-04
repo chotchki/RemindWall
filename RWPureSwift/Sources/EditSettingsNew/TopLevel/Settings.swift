@@ -15,6 +15,7 @@ public struct SettingsFeature {
         var trackeesState = TrackeesFeature.State()
         var albumPickerState = AlbumPickerFeature.State()
         var calendarPickerState = CalendarPickerFeature.State()
+        var screenOffSettingState = ScreenOffSettingFeature.State()
         var path = StackState<TrackeeDetailFeature.State>()
 
         public init(){}
@@ -23,9 +24,11 @@ public struct SettingsFeature {
     public enum Action {
         case albumPicker(AlbumPickerFeature.Action)
         case calendarPicker(CalendarPickerFeature.Action)
+        case screenOffSetting(ScreenOffSettingFeature.Action)
         case trackees(TrackeesFeature.Action)
         case path(StackActionOf<TrackeeDetailFeature>)
         case calendarToggled(Bool)
+        case screenOffToggled(Bool)
         case slideshowToggled(Bool)
         case startSlideshow
     }
@@ -41,6 +44,10 @@ public struct SettingsFeature {
             CalendarPickerFeature()
         }
 
+        Scope(state: \.screenOffSettingState, action: \.screenOffSetting) {
+            ScreenOffSettingFeature()
+        }
+
         Scope(state: \.trackeesState, action: \.trackees) {
             TrackeesFeature()
         }
@@ -53,6 +60,13 @@ public struct SettingsFeature {
                     state.calendarPickerState.$selectedCalendar.withLock { $0 = nil }
                 }
                 return .none
+            case let .screenOffToggled(isOn):
+                if isOn {
+                    state.screenOffSettingState.$schedule.withLock { $0 = .default }
+                } else {
+                    state.screenOffSettingState.$schedule.withLock { $0 = nil }
+                }
+                return .none
             case let .slideshowToggled(isOn):
                 if isOn {
                     state.albumPickerState.$selectedAlbum.withLock { $0 = AlbumLocalId("") }
@@ -62,7 +76,7 @@ public struct SettingsFeature {
                 return .none
             case .startSlideshow:
                 return .none
-            case .trackees, .albumPicker, .calendarPicker, .path:
+            case .trackees, .albumPicker, .calendarPicker, .screenOffSetting, .path:
                 return .none
             }
         }.forEach(\.path, action: \.path) {
@@ -103,6 +117,19 @@ public struct SettingsView: View {
                     ))
                 }
                 
+                Section {
+                    if store.screenOffSettingState.schedule != nil {
+                        ScreenOffSettingView(
+                            store: store.scope(state: \.screenOffSettingState, action: \.screenOffSetting)
+                        )
+                    }
+                } header: {
+                    Toggle("Screen Off", isOn: Binding(
+                        get: { store.screenOffSettingState.schedule != nil },
+                        set: { store.send(.screenOffToggled($0)) }
+                    ))
+                }
+
                 Section {
                     TrackeesView(store: store.scope(state: \.trackeesState, action: \.trackees), isEmbedded: true)
                 } header: {
