@@ -1,12 +1,19 @@
 import AppTypes
-import Combine
+@preconcurrency import Combine
 import CryptoTokenKit
+
+//Using Combine due to bug https://github.com/swiftlang/swift-corelibs-foundation/issues/3807
+// Apple Feedback FB22134295
+
+final class CancellableHolder: @unchecked Sendable {
+    var cancellables = Set<AnyCancellable>()
+}
 
 let GET_ID_APDU: Data = Data([0xFF, 0xCA, 0x00, 0x00, 0x04])
 
 // Merge multiple async sequences
 func observeMultipleSlots(_ slots: [TKSmartCardSlot]) -> AsyncStream<SlotName> {
-    AsyncStream { continuation in
+    AsyncStream<SlotName> { continuation in
         // Check current state of each slot before observing changes,
         // so tags already on the reader are detected immediately.
         for slot in slots {
@@ -15,16 +22,21 @@ func observeMultipleSlots(_ slots: [TKSmartCardSlot]) -> AsyncStream<SlotName> {
             }
         }
 
-        let observations = slots.map { slot in
-            slot.observe(\.state, options: [.new]) { slot, change in
-                if change.newValue == .validCard {
-                    continuation.yield(SlotName(slot.name))
+        let holder = CancellableHolder()
+        for slot in slots {
+            slot.publisher(for: \.state, options: [.new])
+                .sink { state in
+                    if state == .validCard {
+                        continuation.yield(SlotName(slot.name))
+                    } else {
+                        print("change of \(state)")
+                    }
                 }
-            }
+                .store(in: &holder.cancellables)
         }
-        
+
         continuation.onTermination = { _ in
-            observations.forEach { $0.invalidate() }
+            holder.cancellables.removeAll()
         }
     }
 }
