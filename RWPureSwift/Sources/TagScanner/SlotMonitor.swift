@@ -7,6 +7,14 @@ let GET_ID_APDU: Data = Data([0xFF, 0xCA, 0x00, 0x00, 0x04])
 // Merge multiple async sequences
 func observeMultipleSlots(_ slots: [TKSmartCardSlot]) -> AsyncStream<SlotName> {
     AsyncStream { continuation in
+        // Check current state of each slot before observing changes,
+        // so tags already on the reader are detected immediately.
+        for slot in slots {
+            if slot.state == .validCard {
+                continuation.yield(SlotName(slot.name))
+            }
+        }
+
         let observations = slots.map { slot in
             slot.observe(\.state, options: [.new]) { slot, change in
                 if change.newValue == .validCard {

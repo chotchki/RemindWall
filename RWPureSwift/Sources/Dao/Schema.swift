@@ -120,7 +120,7 @@ extension DependencyValues {
         try migrator.migrate(database)
         
         try database.write { db in
-            if context != .live {
+            if context != .live || ProcessInfo.processInfo.environment["UITesting"] == "true" {
                 let _ = try db.seedSampleData()
             }
         }

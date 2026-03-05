@@ -8,7 +8,7 @@ public struct TrackeeDetailFeature {
     @ObservableState
     public struct State: Equatable {
         @Presents var alert: AlertState<Action.Alert>?
-        let trackee: Trackee
+        public let trackee: Trackee
         
         var reminders: RemindersFeature.State
         

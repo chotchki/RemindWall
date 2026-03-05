@@ -20,11 +20,16 @@ public struct RemindersFeature: Sendable {
         
         public init(trackee: Trackee) {
             self.trackee = trackee
+            self._reminderTimes = FetchAll(
+                ReminderTime.where { $0.trackeeId.eq(trackee.id) }
+                    .order(by: \.weekDay)
+                    .order(by: \.hour)
+                    .order(by: \.minute)
+            )
         }
     }
     
     public enum Action {
-        case onAppear
         case addReminderButtonTapped
         case deleteReminder(IndexSet)
         case destination(PresentationAction<Destination.Action>)
@@ -36,13 +41,6 @@ public struct RemindersFeature: Sendable {
     public var body: some ReducerOf<Self> {
         Reduce<State, Action> { state, action in
             switch action {
-            case .onAppear:
-                return .run { [t = state.trackee, rt = state.$reminderTimes] send in
-                    _ = await withErrorReporting {
-                        try await rt.load(ReminderTime.where{$0.trackeeId.eq(t.id)}.order(by: \.weekDay).order(by: \.hour).order(by: \.minute))
-                    }
-                }
-                
             case .addReminderButtonTapped:
                 state.destination = .addReminder(AddReminderFeature.State(trackee: state.trackee))
                 return .none
@@ -160,9 +158,6 @@ public struct RemindersView: View {
                     Image(systemName: "plus")
                 }
             }
-        }
-        .onAppear {
-            store.send(.onAppear)
         }
         .sheet(item: $store.scope(state: \.destination?.addReminder, action: \.destination.addReminder)) { store in
             AddReminderView(store: store)

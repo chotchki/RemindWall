@@ -78,4 +78,38 @@ final class RemindWalliOSUITests: XCTestCase {
         let screenOffLabel = app.staticTexts["SCREEN OFF"]
         XCTAssertFalse(screenOffLabel.exists, "SCREEN OFF label should not appear when disabled")
     }
+
+    @MainActor
+    func testAddReminderSheetStaysOpen() throws {
+        let app = launchApp()
+
+        // Wait for Settings to load
+        let settingsNav = app.navigationBars["Settings"]
+        XCTAssertTrue(settingsNav.waitForExistence(timeout: 5), "Settings should load")
+
+        // Navigate to a trackee detail (seed data provides "Alice")
+        let aliceCell = app.cells.containing(.staticText, identifier: "Alice").firstMatch
+        XCTAssertTrue(aliceCell.waitForExistence(timeout: 10), "Alice trackee should appear")
+        aliceCell.tap()
+
+        // Wait for the trackee detail to load — check for content that appears on the detail screen
+        let deleteButton = app.buttons["Delete Alice"]
+        XCTAssertTrue(deleteButton.waitForExistence(timeout: 10), "Alice detail screen should appear with Delete button")
+
+        // Tap the add reminder button (the "+" toolbar button)
+        let addButton = app.buttons["Add"]
+        XCTAssertTrue(addButton.waitForExistence(timeout: 5), "Add button should appear in toolbar")
+        addButton.tap()
+
+        // Verify the Add Reminder sheet stays visible and doesn't immediately dismiss
+        let addReminderNav = app.navigationBars["Add Reminder"]
+        XCTAssertTrue(addReminderNav.waitForExistence(timeout: 5), "Add Reminder sheet should stay open after tapping add button")
+
+        // Verify key content is visible on the sheet
+        let saveButton = app.buttons["Save"]
+        XCTAssertTrue(saveButton.exists, "Save button should be visible on the Add Reminder sheet")
+
+        let cancelButton = app.buttons["Cancel"]
+        XCTAssertTrue(cancelButton.exists, "Cancel button should be visible on the Add Reminder sheet")
+    }
 }

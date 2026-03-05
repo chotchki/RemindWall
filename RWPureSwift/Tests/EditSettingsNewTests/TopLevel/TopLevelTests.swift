@@ -175,4 +175,33 @@ struct SettingsFeatureTests {
         let state = SettingsFeature.State()
         #expect(state.path.count == 0)
     }
+
+    @Test("confirmDeletion via path deletes trackee from database")
+    func confirmDeletionDeletesTrackee() async {
+        @Dependency(\.defaultDatabase) var defaultDatabase
+
+        let trackee = try! await defaultDatabase.read { db in
+            try! Trackee.all.fetchOne(db)!
+        }
+
+        var state = SettingsFeature.State()
+        state.path.append(TrackeeDetailFeature.State(trackee: trackee))
+
+        let store = TestStore(initialState: state) {
+            SettingsFeature()
+        }
+
+        store.exhaustivity = .off
+
+        await store.send(
+            .path(.element(id: 0, action: .delegate(.confirmDeletion)))
+        )
+
+        await store.finish()
+
+        let deleted = try! await defaultDatabase.read { db in
+            try! Trackee.find(trackee.id).fetchOne(db)
+        }
+        #expect(deleted == nil, "Trackee should be deleted from database")
+    }
 }
