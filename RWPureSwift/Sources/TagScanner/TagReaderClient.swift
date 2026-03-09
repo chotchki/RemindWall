@@ -17,12 +17,11 @@ public struct TagReaderClient: Sendable {
 
 extension TagReaderClient: DependencyKey {
     public static var liveValue: Self {
-        
+        let smartCardMonitor = SmartCardMonitor.shared
+
         return Self(
             nextTagId: {
-                let slotMonitor = SlotMonitor()
-
-                return await slotMonitor.getNextTag()
+                return await smartCardMonitor.nextValidCard()
             })
         }
     public static let previewValue = TagReaderClient(

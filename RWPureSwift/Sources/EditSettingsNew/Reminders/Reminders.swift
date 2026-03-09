@@ -106,7 +106,45 @@ public struct RemindersView: View {
                     remindersList
                 }
             } else {
-                remindersList
+                remindersContent
+            }
+        }
+        .sheet(item: $store.scope(state: \.destination?.addReminder, action: \.destination.addReminder)) { store in
+            AddReminderView(store: store)
+        }
+    }
+    
+    @ViewBuilder
+    private var remindersContent: some View {
+        if store.reminderTimes.isEmpty {
+            ContentUnavailableView(
+                "No Reminders",
+                systemImage: "bell.slash",
+                description: Text("Add a reminder to get started")
+            )
+        } else {
+            ForEach(store.reminderTimes) { reminder in
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(String(describing:DaysOfWeek(rawValue: reminder.weekDay)!))
+                            .font(.headline)
+                        Text(formatTime(hour: reminder.hour, minute: reminder.minute))
+                            .font(.title2)
+                            .fontWeight(.semibold)
+                            .monospacedDigit()
+                        
+                        if let tag = reminder.associatedTag {
+                            Label(tag.hexa, systemImage: "sensor.tag.radiowaves.forward")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    Spacer()
+                }
+                .padding(.vertical, 8)
+            }
+            .onDelete { indexSet in
+                store.send(.deleteReminder(indexSet))
             }
         }
     }
@@ -114,37 +152,7 @@ public struct RemindersView: View {
     @ViewBuilder
     private var remindersList: some View {
         List {
-            if store.reminderTimes.isEmpty {
-                ContentUnavailableView(
-                    "No Reminders",
-                    systemImage: "bell.slash",
-                    description: Text("Add a reminder to get started")
-                )
-            } else {
-                ForEach(store.reminderTimes) { reminder in
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(String(describing:DaysOfWeek(rawValue: reminder.weekDay)!))
-                                .font(.headline)
-                            Text(formatTime(hour: reminder.hour, minute: reminder.minute))
-                                .font(.title2)
-                                .fontWeight(.semibold)
-                                .monospacedDigit()
-                            
-                            if let tag = reminder.associatedTag {
-                                Label(tag.hexa, systemImage: "sensor.tag.radiowaves.forward")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        Spacer()
-                    }
-                    .padding(.vertical, 8)
-                }
-                .onDelete { indexSet in
-                    store.send(.deleteReminder(indexSet))
-                }
-            }
+            remindersContent
         }
         .navigationTitle("Reminders for \(store.trackee.name)")
         #if !os(macOS)
@@ -158,9 +166,6 @@ public struct RemindersView: View {
                     Image(systemName: "plus")
                 }
             }
-        }
-        .sheet(item: $store.scope(state: \.destination?.addReminder, action: \.destination.addReminder)) { store in
-            AddReminderView(store: store)
         }
     }
     

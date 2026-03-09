@@ -1,108 +1,153 @@
+/// The following code is littered with dragons in my mind.
+///
+/// It all stems from this bug: https://github.com/swiftlang/swift-corelibs-foundation/issues/3807
+///  Which stops me from being able to use Swift 6 Observation to watch for tag scans.
+///  I have filed Apple Feedback FB22134295 in an attempt to get Apple to fix it. I'm not holding out hope since the bug has existed
+///  since at least 2018.
+///
+/// As a result, this code attempts to approach the problem by using Combine, which I can't find any effective help for. Which really
+/// means I've leveraged Claude Code several times, I've rewritten chunks and then pointed Claude back it again. Call it advanced slop
+/// but it might work.
+///
+
+
 import AppTypes
 @preconcurrency import Combine
 import CryptoTokenKit
+import Foundation
 
-//Using Combine due to bug https://github.com/swiftlang/swift-corelibs-foundation/issues/3807
-// Apple Feedback FB22134295
+private let GET_ID_APDU: Data = Data([0xFF, 0xCA, 0x00, 0x00, 0x04])
 
-final class CancellableHolder: @unchecked Sendable {
+/// Holds Combine subscriptions outside the actor so the nonisolated init can
+/// store into it without accessing actor-isolated state.
+private final class CancellableStorage: @unchecked Sendable {
     var cancellables = Set<AnyCancellable>()
 }
 
-let GET_ID_APDU: Data = Data([0xFF, 0xCA, 0x00, 0x00, 0x04])
+/// Wrapper to shuttle a non-Sendable TKSmartCardSlot across isolation boundaries.
+/// Safe because the slot is only read on the receiving side and not shared.
+private struct SlotBox: @unchecked Sendable {
+    let slot: TKSmartCardSlot
+}
 
-// Merge multiple async sequences
-func observeMultipleSlots(_ slots: [TKSmartCardSlot]) -> AsyncStream<SlotName> {
-    AsyncStream<SlotName> { continuation in
-        // Check current state of each slot before observing changes,
-        // so tags already on the reader are detected immediately.
-        for slot in slots {
-            if slot.state == .validCard {
-                continuation.yield(SlotName(slot.name))
-            }
+@globalActor
+actor SmartCardMonitor {
+    public static let shared = SmartCardMonitor()
+
+    //So we can notify on failures
+    private let initSuccess: Bool
+
+    private let storage = CancellableStorage()
+    private var pendingContinuation: CheckedContinuation<ReaderState, Never>?
+
+    // MARK: - Init
+
+    private init() {
+        guard let slotManager = TKSmartCardSlotManager.default else {
+            initSuccess = false
+            return
         }
+        initSuccess = true
 
-        let holder = CancellableHolder()
-        for slot in slots {
-            slot.publisher(for: \.state, options: [.new])
-                .sink { state in
-                    if state == .validCard {
-                        continuation.yield(SlotName(slot.name))
-                    } else {
-                        print("change of \(state)")
-                    }
+        slotManager.publisher(for: \.slotNames)
+            .map { [weak slotManager] names -> AnyPublisher<TKSmartCardSlot, Never> in
+                guard let slotManager else { return Empty().eraseToAnyPublisher() }
+
+                let slotPublishers: [AnyPublisher<TKSmartCardSlot, Never>] = names.compactMap { name in
+                    guard let slot = slotManager.slotNamed(name) else { return nil }
+
+                    return slot.publisher(for: \.state)
+                        .filter { $0 == .validCard }
+                        .map { _ in slot }
+                        .eraseToAnyPublisher()
                 }
-                .store(in: &holder.cancellables)
+
+                guard !slotPublishers.isEmpty else { return Empty().eraseToAnyPublisher() }
+                return Publishers.MergeMany(slotPublishers).eraseToAnyPublisher()
+            }
+            .switchToLatest()
+            .sink { slot in
+                let box = SlotBox(slot: slot)
+                Task.detached {
+                    let state = await SmartCardMonitor.decodeCard(box.slot)
+                    await SmartCardMonitor.shared.deliver(state)
+                }
+            }
+            .store(in: &storage.cancellables)
+    }
+
+    // MARK: - Public API
+
+    /// Suspends until the next time any slot transitions to `.validCard`.
+    /// Events that arrive when no caller is waiting are silently dropped.
+    /// Throws `CancellationError` if the calling task is cancelled while waiting.
+    public func nextValidCard() async -> ReaderState {
+        // One waiter at a time. Two concurrent callers is a programming error.
+        precondition(pendingContinuation == nil, "Concurrent calls to nextValidCard() are not supported")
+        
+        guard initSuccess else {
+            return .readerError("The slot monitor failed in start up")
         }
 
-        continuation.onTermination = { _ in
-            holder.cancellables.removeAll()
+        return await withCheckedContinuation { continuation in
+            // Immediately check cancellation — the task may have already been
+            // cancelled before we reached this point.
+            if Task.isCancelled {
+                continuation.resume(returning: .readerError("Task Cancelled"))
+            } else {
+                self.pendingContinuation = continuation
+            }
         }
+    }
+
+    // MARK: - Private
+
+    /// Called when a valid card event arrives from the pipeline.
+    private func deliver(_ state: ReaderState) {
+        guard let continuation = pendingContinuation else {
+            // Nobody waiting — drop the event.
+            return
+        }
+        pendingContinuation = nil
+        continuation.resume(returning: state)
+    }
+
+    private static func decodeCard(_ slot: TKSmartCardSlot) async -> ReaderState {
+        guard let card = slot.makeSmartCard() else {
+            return .noTag
+        }
+
+        do {
+            try await card.beginSession()
+        } catch {
+            return .readerError("Could not start session: \(error)")
+        }
+
+        defer {
+            card.endSession()
+        }
+
+        guard let response = try? await card.transmit(GET_ID_APDU) else {
+            return .readerError("Unable to query tag")
+        }
+
+        if response.count < 2 {
+            return .readerError("Response too short \(response)")
+        }
+
+        let response_status = response.suffix(2)
+
+        if response_status != Data([0x90, 0x00]) {
+            return .readerError("Response status \(response_status) error")
+        }
+
+        let response_data = response.dropLast(2)
+
+        if response_data.isEmpty {
+            return .readerError("No Tag ID found")
+        }
+
+        return .tagPresent(TagSerial([UInt8](response_data)))
     }
 }
 
-public actor SlotMonitor {
-    private let slotManager = TKSmartCardSlotManager.default
-
-    public func getNextTag() async -> ReaderState {
-        guard let slotManager = slotManager else {
-            return .readerError("Unable to get the slot manager")
-        }
-        
-        var slots: [TKSmartCardSlot] = []
-        for slotName in slotManager.slotNames {
-            guard let slot = await slotManager.getSlot(withName: slotName) else {
-                return .readerError("Slot disappeared during setup")
-            }
-            slots.append(slot)
-        }
-        
-        guard !slots.isEmpty else {
-            return .readerError("No slots available")
-        }
-        
-        for await slotName in observeMultipleSlots(slots) {
-            // Found a valid card, now get the slot again to access it
-            guard let activeSlot = await slotManager.getSlot(withName: slotName.rawValue) else {
-                continue
-            }
-            
-            guard let card = activeSlot.makeSmartCard() else {
-                return .noTag
-            }
-            
-            do {
-                try await card.beginSession()
-            } catch {
-                return .readerError("Could not start session: \(error)")
-            }
-            
-            defer {
-                card.endSession()
-            }
-            
-            guard let response = try? await card.transmit(GET_ID_APDU) else {
-                return .readerError("Unable to query tag")
-            }
-            
-            if response.count < 2 {
-                return .readerError("Response too short \(response)")
-            }
-            
-            let response_status = response.suffix(2)
-            
-            if response_status != Data([0x90, 0x00]) {
-                return .readerError("Response status \(response_status) error")
-            }
-            
-            let response_data = response.dropLast(2)
-            
-            if response_data.isEmpty {
-                return .readerError("No Tag ID found")
-            }
-            
-            return .tagPresent(TagSerial([UInt8](response_data)))
-        }
-        return .noTag
-    }
-}

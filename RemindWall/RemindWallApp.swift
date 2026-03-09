@@ -15,6 +15,7 @@ struct RemindWallApp: App {
     } withDependencies: {
       if ProcessInfo.processInfo.environment["UITesting"] == "true" {
         $0.defaultFileStorage = .inMemory
+        print("In UI Tests")
       }
     }
     

@@ -104,6 +104,15 @@ public struct TrackeeDetailView: View {
       #if !os(macOS)
       .navigationBarTitleDisplayMode(.inline)
       #endif
+      .toolbar {
+          ToolbarItem(placement: .primaryAction) {
+              Button {
+                  store.send(.remindersFeature(.addReminderButtonTapped))
+              } label: {
+                  Image(systemName: "plus")
+              }
+          }
+      }
       .alert($store.scope(state: \.alert, action: \.alert))
   }
 }

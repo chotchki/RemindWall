@@ -78,13 +78,21 @@ extension DependencyValues {
             }
 #endif
         }
-        let database = try SQLiteData.defaultDatabase(configuration: configuration)
-        logger.debug(
-      """
-      App database:
-      open "\(database.path)"
-      """
-        )
+        let isUITesting = ProcessInfo.processInfo.environment["UITesting"] == "true"
+        let database: any DatabaseWriter
+        if context != .live || isUITesting {
+            database = try DatabaseQueue(configuration: configuration)
+            logger.debug("App database: in-memory")
+        } else {
+            let onDisk = try SQLiteData.defaultDatabase(configuration: configuration)
+            logger.debug(
+          """
+          App database:
+          open "\(onDisk.path)"
+          """
+            )
+            database = onDisk
+        }
         
         var migrator = DatabaseMigrator()
 #if DEBUG
@@ -120,7 +128,7 @@ extension DependencyValues {
         try migrator.migrate(database)
         
         try database.write { db in
-            if context != .live || ProcessInfo.processInfo.environment["UITesting"] == "true" {
+            if context != .live || isUITesting {
                 let _ = try db.seedSampleData()
             }
         }
