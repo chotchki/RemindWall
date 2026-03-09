@@ -92,80 +92,38 @@ extension RemindersFeature.Destination.State: Equatable {}
 
 public struct RemindersView: View {
     @Bindable var store: StoreOf<RemindersFeature>
-    var showNavigationStack: Bool = true
     
-    public init(store: StoreOf<RemindersFeature>, showNavigationStack: Bool = true) {
+    public init(store: StoreOf<RemindersFeature>) {
         self.store = store
-        self.showNavigationStack = showNavigationStack
     }
         
+    @ViewBuilder
     public var body: some View {
-        Group {
-            if showNavigationStack {
-                NavigationStack {
-                    remindersList
+        ForEach(store.reminderTimes) { reminder in
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(String(describing:DaysOfWeek(rawValue: reminder.weekDay)!))
+                        .font(.headline)
+                    Text(formatTime(hour: reminder.hour, minute: reminder.minute))
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .monospacedDigit()
+                    
+                    if let tag = reminder.associatedTag {
+                        Label(tag.hexa, systemImage: "sensor.tag.radiowaves.forward")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
-            } else {
-                remindersContent
+                Spacer()
             }
+            .padding(.vertical, 8)
+        }
+        .onDelete { indexSet in
+            store.send(.deleteReminder(indexSet))
         }
         .sheet(item: $store.scope(state: \.destination?.addReminder, action: \.destination.addReminder)) { store in
             AddReminderView(store: store)
-        }
-    }
-    
-    @ViewBuilder
-    private var remindersContent: some View {
-        if store.reminderTimes.isEmpty {
-            ContentUnavailableView(
-                "No Reminders",
-                systemImage: "bell.slash",
-                description: Text("Add a reminder to get started")
-            )
-        } else {
-            ForEach(store.reminderTimes) { reminder in
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(String(describing:DaysOfWeek(rawValue: reminder.weekDay)!))
-                            .font(.headline)
-                        Text(formatTime(hour: reminder.hour, minute: reminder.minute))
-                            .font(.title2)
-                            .fontWeight(.semibold)
-                            .monospacedDigit()
-                        
-                        if let tag = reminder.associatedTag {
-                            Label(tag.hexa, systemImage: "sensor.tag.radiowaves.forward")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    Spacer()
-                }
-                .padding(.vertical, 8)
-            }
-            .onDelete { indexSet in
-                store.send(.deleteReminder(indexSet))
-            }
-        }
-    }
-    
-    @ViewBuilder
-    private var remindersList: some View {
-        List {
-            remindersContent
-        }
-        .navigationTitle("Reminders for \(store.trackee.name)")
-        #if !os(macOS)
-        .navigationBarTitleDisplayMode(.inline)
-        #endif
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    store.send(.addReminderButtonTapped)
-                } label: {
-                    Image(systemName: "plus")
-                }
-            }
         }
     }
     
@@ -190,13 +148,15 @@ public struct RemindersView: View {
         var body: some View {
             HStack{
                 if trackee != nil {
-                    RemindersView(
-                        store: Store(
-                            initialState: RemindersFeature.State(trackee: trackee!)
-                        ) {
-                            RemindersFeature()
-                        }
-                    )
+                    List {
+                        RemindersView(
+                            store: Store(
+                                initialState: RemindersFeature.State(trackee: trackee!)
+                            ) {
+                                RemindersFeature()
+                            }
+                        )
+                    }
                 } else {
                     EmptyView()
                 }

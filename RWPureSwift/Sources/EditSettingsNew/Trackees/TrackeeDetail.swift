@@ -88,8 +88,7 @@ public struct TrackeeDetailView: View {
       Form {
           Section {
               RemindersView(
-                store: store.scope(state: \.reminders, action: \.remindersFeature),
-                showNavigationStack: false
+                store: store.scope(state: \.reminders, action: \.remindersFeature)
               )
           } header: {
               Text("Reminders")
