@@ -34,36 +34,6 @@
             endingLineNumber = "140"
             landmarkName = "decodeCard(_:)"
             landmarkType = "7">
-            <Locations>
-               <Location
-                  uuid = "D5CBC342-4522-4EBD-89F0-89265425B980 - 5af9e575e6568775"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "(5) suspend resume partial function for static TagScanner.SmartCardMonitor.decodeCard(__C.TKSmartCardSlot) async -&gt; AppTypes.ReaderState"
-                  moduleName = "RemindWall.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/chotchki/workspace/RemindWall/RWPureSwift/Sources/TagScanner/SlotMonitor.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "140"
-                  endingLineNumber = "140">
-               </Location>
-               <Location
-                  uuid = "D5CBC342-4522-4EBD-89F0-89265425B980 - cc34c4f766b5c90b"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "(7) suspend resume partial function for static TagScanner.SmartCardMonitor.decodeCard(__C.TKSmartCardSlot) async -&gt; AppTypes.ReaderState"
-                  moduleName = "RemindWall.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/chotchki/workspace/RemindWall/RWPureSwift/Sources/TagScanner/SlotMonitor.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "140"
-                  endingLineNumber = "140">
-               </Location>
-            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
    </Breakpoints>

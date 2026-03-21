@@ -16,14 +16,16 @@ public struct TrackeesFeature: Sendable {
         @FetchAll(Trackee.none)
         var trackees: [Trackee]
         
-        public init(){}
+        public init(){
+            self._trackees = FetchAll(Trackee.all.order(by: \.name))
+        }
     }
     
     public enum Action {
-        case onAppear
         case addButtonTapped
         case destination(PresentationAction<Destination.Action>)
         case path(StackActionOf<TrackeeDetailFeature>)
+        case reloadTrackees
     }
     
     public init() {
@@ -32,12 +34,6 @@ public struct TrackeesFeature: Sendable {
     public var body: some ReducerOf<Self> {
         Reduce { state, action in
             switch action {
-            case .onAppear:
-                return .run { [t = state.$trackees] send in
-                    _ = await withErrorReporting {
-                        try await t.load(Trackee.all.order(by: \.name))
-                    }
-                }
             case .addButtonTapped:
                 state.destination = .addTrackee(
                     AddTrackeeFeature.State(
@@ -68,6 +64,12 @@ public struct TrackeesFeature: Sendable {
                     }
                 }
                 
+            case .reloadTrackees:
+                return .run { [t = state.$trackees] send in
+                    _ = await withErrorReporting {
+                        try await t.load(Trackee.all.order(by: \.name))
+                    }
+                }
             case .destination:
                 return .none
             case .path:
@@ -110,27 +112,27 @@ public struct TrackeesView: View {
     
     @ViewBuilder
     private var embeddedContent: some View {
-        Group {
-            if store.trackees.isEmpty {
-                Text("No trackees configured")
-            } else {
-                ForEach(store.trackees){ trackee in
-                    NavigationLink(state: TrackeeDetailFeature.State(trackee: trackee)) {
-                        Text(trackee.name)
-                    }
+        if store.trackees.isEmpty {
+            Text("No trackees configured")
+        } else {
+            ForEach(store.trackees){ trackee in
+                NavigationLink(state: TrackeeDetailFeature.State(trackee: trackee)) {
+                    Text(trackee.name)
                 }
             }
         }
-        .onAppear {
-            store.send(.onAppear)
-        }
-        .sheet(
-            item: $store.scope(state: \.destination?.addTrackee, action: \.destination.addTrackee)
-          ) { addTrackeeStore in
-            NavigationStack {
-              AddTrackeeView(store: addTrackeeStore)
+        
+        Color.clear
+            .frame(height: 0)
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+            .sheet(
+                item: $store.scope(state: \.destination?.addTrackee, action: \.destination.addTrackee)
+            ) { addTrackeeStore in
+                NavigationStack {
+                    AddTrackeeView(store: addTrackeeStore)
+                }
             }
-          }
     }
     
     @ViewBuilder
@@ -150,8 +152,6 @@ public struct TrackeesView: View {
                         .buttonStyle(.borderless)
                     }
                 }
-            }.onAppear {
-                store.send(.onAppear)
             }.navigationTitle("Trackees")
                 .toolbar {
                     ToolbarItem {

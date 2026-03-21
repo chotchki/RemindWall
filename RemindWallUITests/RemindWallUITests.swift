@@ -80,6 +80,51 @@ final class RemindWallUITests: XCTestCase {
     }
 
     @MainActor
+    func testDeleteReminderWithButton() throws {
+        let app = launchApp()
+
+        // Wait for Settings to load
+        let settingsNav = app.navigationBars["Settings"]
+        XCTAssertTrue(settingsNav.waitForExistence(timeout: 5), "Settings should load")
+
+        // Navigate to a trackee detail (seed data provides "Alice")
+        let aliceCell = app.cells.containing(.staticText, identifier: "Alice").firstMatch
+        XCTAssertTrue(aliceCell.waitForExistence(timeout: 10), "Alice trackee should appear")
+        aliceCell.tap()
+
+        // Wait for the trackee detail to load
+        let deleteAliceButton = app.buttons["Delete Alice"]
+        XCTAssertTrue(deleteAliceButton.waitForExistence(timeout: 10), "Alice detail screen should load")
+
+        // Tap the add reminder button
+        let addButton = app.buttons["Add"]
+        XCTAssertTrue(addButton.waitForExistence(timeout: 5), "Add button should appear")
+        addButton.tap()
+
+        // Verify Add Reminder sheet appears
+        let addReminderNav = app.navigationBars["Add Reminder"]
+        XCTAssertTrue(addReminderNav.waitForExistence(timeout: 5), "Add Reminder sheet should appear")
+
+        // Save the default reminder (Sunday)
+        let saveButton = app.buttons["Save"]
+        XCTAssertTrue(saveButton.waitForExistence(timeout: 5), "Save button should appear")
+        saveButton.tap()
+
+        // Wait for the reminder row to appear
+        let sundayText = app.staticTexts["Sunday"]
+        XCTAssertTrue(sundayText.waitForExistence(timeout: 10), "Reminder row should appear after saving")
+
+        // Tap the trash button to delete the reminder
+        let trashButton = app.buttons["Delete Reminder"]
+        XCTAssertTrue(trashButton.waitForExistence(timeout: 5), "Per-row delete button should appear")
+        trashButton.tap()
+
+        // Verify the reminder is gone
+        let reminderGone = sundayText.waitForNonExistence(timeout: 5)
+        XCTAssertTrue(reminderGone, "Reminder should be deleted after tapping delete button")
+    }
+
+    @MainActor
     func testAddReminderSheetStaysOpen() throws {
         let app = launchApp()
 

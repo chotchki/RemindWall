@@ -85,7 +85,7 @@ public struct SettingsFeature {
                             try Trackee.find(trackeeId).delete().execute(db)
                         }
                     }
-                    await send(.trackees(.onAppear))
+                    await send(.trackees(.reloadTrackees))
                 }
             case .trackees, .albumPicker, .calendarPicker, .screenOffSetting, .path:
                 return .none

@@ -63,7 +63,7 @@ let package = Package(
             .product(name: "SQLiteData", package: "sqlite-data"),
             .target(name: "AppTypes"),
         ]),
-        .testTarget(name: "DaoTests", dependencies: ["Dao"]),
+        .testTarget(name: "DaoTests", dependencies: ["Dao", .product(name: "DependenciesTestSupport", package: "swift-dependencies")]),
         .target(name: "EditSettingsNew_Reminders",dependencies: [
             .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
             .product(

@@ -31,7 +31,7 @@ public struct RemindersFeature: Sendable {
     
     public enum Action {
         case addReminderButtonTapped
-        case deleteReminder(IndexSet)
+        case deleteReminder(ReminderTime.ID)
         case destination(PresentationAction<Destination.Action>)
     }
     
@@ -45,11 +45,11 @@ public struct RemindersFeature: Sendable {
                 state.destination = .addReminder(AddReminderFeature.State(trackee: state.trackee))
                 return .none
                 
-            case let .deleteReminder(indexSet):
+            case let .deleteReminder(id):
                 return .run { [t = state.trackee, rt = state.$reminderTimes] send in
                     _ = await withErrorReporting {
                         try await defaultDatabase.write { db in
-                            try ReminderTime.find(indexSet.map { rt[$0].id })
+                            try ReminderTime.find(id)
                                 .delete().execute(db)
                         }
                         // Refresh the list
@@ -116,15 +116,24 @@ public struct RemindersView: View {
                     }
                 }
                 Spacer()
+                Button(role: .destructive) {
+                    store.send(.deleteReminder(reminder.id))
+                } label: {
+                    Image(systemName: "trash")
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel("Delete Reminder")
             }
             .padding(.vertical, 8)
         }
-        .onDelete { indexSet in
-            store.send(.deleteReminder(indexSet))
-        }
-        .sheet(item: $store.scope(state: \.destination?.addReminder, action: \.destination.addReminder)) { store in
-            AddReminderView(store: store)
-        }
+        
+        Color.clear
+            .frame(height: 0)
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+            .sheet(item: $store.scope(state: \.destination?.addReminder, action: \.destination.addReminder)) { store in
+                AddReminderView(store: store)
+            }
     }
     
     private func formatTime(hour: Int, minute: Int) -> String {

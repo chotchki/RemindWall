@@ -30,7 +30,9 @@ struct SettingsFeatureTests {
             SettingsFeature()
         }
 
-        await store.send(.trackees(.onAppear))
+        store.exhaustivity = .off
+
+        await store.send(.trackees(.reloadTrackees))
         await store.finish()
     }
 
