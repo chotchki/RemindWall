@@ -1,14 +1,10 @@
 import AppTypes
 import ComposableArchitecture
-import Dao
-import SQLiteData
 import SwiftUI
 import EditSettingsNew_Trackees
 
 @Reducer
 public struct SettingsFeature {
-    @Dependency(\.defaultDatabase) var defaultDatabase
-    @Dependency(\.uuid) var uuid
     
     @ObservableState
     public struct State: Equatable {
@@ -79,14 +75,7 @@ public struct SettingsFeature {
             case let .path(.element(id: id, action: .delegate(.confirmDeletion))):
                 guard let detailState = state.path[id: id]
                 else { return .none }
-                return .run { [trackeeId = detailState.trackee.id, dd = self.defaultDatabase] send in
-                    await withErrorReporting {
-                        try await dd.write { db in
-                            try Trackee.find(trackeeId).delete().execute(db)
-                        }
-                    }
-                    await send(.trackees(.reloadTrackees))
-                }
+                return .send(.trackees(.deleteTrackee(detailState.trackee.id)))
             case .trackees, .albumPicker, .calendarPicker, .screenOffSetting, .path:
                 return .none
             }

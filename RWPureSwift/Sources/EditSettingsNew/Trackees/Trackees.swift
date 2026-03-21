@@ -23,6 +23,7 @@ public struct TrackeesFeature: Sendable {
     
     public enum Action {
         case addButtonTapped
+        case deleteTrackee(Trackee.ID)
         case destination(PresentationAction<Destination.Action>)
         case path(StackActionOf<TrackeeDetailFeature>)
         case reloadTrackees
@@ -42,6 +43,16 @@ public struct TrackeesFeature: Sendable {
                 )
                 return .none
                 
+            case let .deleteTrackee(trackeeId):
+                return .run { [t = state.$trackees, dd = self.defaultDatabase] send in
+                    await withErrorReporting {
+                        try await dd.write { db in
+                            try Trackee.find(trackeeId).delete().execute(db)
+                        }
+                        try await t.load(Trackee.all.order(by: \.name))
+                    }
+                }
+                
             case let .destination(.presented(.addTrackee(.delegate(.saveTrackee(trackee))))):
                 return .run { [t = state.$trackees, dd = self.defaultDatabase] send in
                     await withErrorReporting {
@@ -55,14 +66,7 @@ public struct TrackeesFeature: Sendable {
             case let .path(.element(id: id, action: .delegate(.confirmDeletion))):
               guard let detailState = state.path[id: id]
               else { return .none }
-                return .run { [t = state.$trackees, id = detailState.trackee.id, dd = self.defaultDatabase] send in
-                    await withErrorReporting {
-                        try await dd.write { db in
-                            try Trackee.find(id).delete().execute(db)
-                        }
-                        try await t.load(Trackee.all.order(by: \.name))
-                    }
-                }
+                return .send(.deleteTrackee(detailState.trackee.id))
                 
             case .reloadTrackees:
                 return .run { [t = state.$trackees] send in
