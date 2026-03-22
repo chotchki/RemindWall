@@ -69,6 +69,26 @@ extension ScreenOffSchedule {
         endHour * 60 + endMinute
     }
 
+    /// Returns `true` when the given time (total minutes from midnight, 0-1439)
+    /// falls within the screen-off window.
+    ///
+    /// Handles overnight schedules where start > end (e.g., 22:00 to 06:00).
+    public func isInOffWindow(currentTotalMinutes: Int) -> Bool {
+        let start = startTotalMinutes
+        let end = endTotalMinutes
+
+        if start == end {
+            // Degenerate case: 0-length window, never off
+            return false
+        } else if start < end {
+            // Same-day window (e.g., 02:00 to 14:00)
+            return currentTotalMinutes >= start && currentTotalMinutes < end
+        } else {
+            // Overnight window (e.g., 22:00 to 06:00)
+            return currentTotalMinutes >= start || currentTotalMinutes < end
+        }
+    }
+
     private func formatTime(hour: Int, minute: Int) -> String {
         let hour12 = hour % 12
         let displayHour = hour12 == 0 ? 12 : hour12

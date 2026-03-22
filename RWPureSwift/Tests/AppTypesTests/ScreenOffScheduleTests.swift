@@ -82,4 +82,60 @@ struct ScreenOffScheduleTests {
         let schedule = ScreenOffSchedule(startHour: 22, startMinute: 0, endHour: 6, endMinute: 15)
         #expect(schedule.endTotalMinutes == 375)
     }
+
+    // MARK: - isInOffWindow tests
+
+    @Test("overnight window: 22:00-06:00, time 23:00 is in window")
+    func overnightInWindow() {
+        let schedule = ScreenOffSchedule(startHour: 22, startMinute: 0, endHour: 6, endMinute: 0)
+        #expect(schedule.isInOffWindow(currentTotalMinutes: 23 * 60) == true)
+    }
+
+    @Test("overnight window: 22:00-06:00, time 05:59 is in window")
+    func overnightEndBoundary() {
+        let schedule = ScreenOffSchedule(startHour: 22, startMinute: 0, endHour: 6, endMinute: 0)
+        #expect(schedule.isInOffWindow(currentTotalMinutes: 5 * 60 + 59) == true)
+    }
+
+    @Test("overnight window: 22:00-06:00, time 06:00 is NOT in window")
+    func overnightExactEnd() {
+        let schedule = ScreenOffSchedule(startHour: 22, startMinute: 0, endHour: 6, endMinute: 0)
+        #expect(schedule.isInOffWindow(currentTotalMinutes: 6 * 60) == false)
+    }
+
+    @Test("overnight window: 22:00-06:00, time 12:00 is NOT in window")
+    func overnightMidday() {
+        let schedule = ScreenOffSchedule(startHour: 22, startMinute: 0, endHour: 6, endMinute: 0)
+        #expect(schedule.isInOffWindow(currentTotalMinutes: 12 * 60) == false)
+    }
+
+    @Test("same-day window: 02:00-14:00, time 10:00 is in window")
+    func sameDayInWindow() {
+        let schedule = ScreenOffSchedule(startHour: 2, startMinute: 0, endHour: 14, endMinute: 0)
+        #expect(schedule.isInOffWindow(currentTotalMinutes: 10 * 60) == true)
+    }
+
+    @Test("same-day window: 02:00-14:00, time 01:00 is NOT in window")
+    func sameDayBeforeStart() {
+        let schedule = ScreenOffSchedule(startHour: 2, startMinute: 0, endHour: 14, endMinute: 0)
+        #expect(schedule.isInOffWindow(currentTotalMinutes: 1 * 60) == false)
+    }
+
+    @Test("degenerate window: start == end, always returns false")
+    func degenerateWindow() {
+        let schedule = ScreenOffSchedule(startHour: 10, startMinute: 0, endHour: 10, endMinute: 0)
+        #expect(schedule.isInOffWindow(currentTotalMinutes: 10 * 60) == false)
+    }
+
+    @Test("midnight boundary: time 00:00 in overnight window 22:00-06:00")
+    func midnightInOvernight() {
+        let schedule = ScreenOffSchedule(startHour: 22, startMinute: 0, endHour: 6, endMinute: 0)
+        #expect(schedule.isInOffWindow(currentTotalMinutes: 0) == true)
+    }
+
+    @Test("exact start time is in window")
+    func exactStartInWindow() {
+        let schedule = ScreenOffSchedule(startHour: 22, startMinute: 0, endHour: 6, endMinute: 0)
+        #expect(schedule.isInOffWindow(currentTotalMinutes: 22 * 60) == true)
+    }
 }

@@ -18,6 +18,8 @@ let package = Package(
         .library(name: "EditSettingsNew_Trackees", targets: ["EditSettingsNew_Trackees"]),
         
         .library(name: "PhotoKitAsync", targets: ["PhotoKitAsync"]),
+        .library(name: "ScreenControl", targets: ["ScreenControl"]),
+        .library(name: "ScreenOffMonitor", targets: ["ScreenOffMonitor"]),
         //.library(name: "Slideshow", targets: ["Slideshow"]),
         .library(name: "TagScanner", targets: ["TagScanner"]),
         .library(name: "Utility", targets: ["Utility"]),
@@ -89,6 +91,7 @@ let package = Package(
             .target(name: "Dao"),
             .target(name: "EditSettingsNew_Trackees"),
             .target(name: "PhotoKitAsync"),
+            .target(name: "ScreenOffMonitor"),
         ], path: "Sources/EditSettingsNew/TopLevel"),
         .testTarget(name: "EditSettingsNew_TopLevelTests",
                     dependencies: [
@@ -122,6 +125,20 @@ let package = Package(
             .target(name: "Dao"),
         ]),
         .testTarget(name: "PhotoKitAsyncTests", dependencies: ["PhotoKitAsync", .product(name: "DependenciesTestSupport", package: "swift-dependencies")]),
+        .target(name: "ScreenControl", dependencies: [
+            .product(name: "Dependencies", package: "swift-dependencies"),
+            .product(name: "DependenciesMacros", package: "swift-dependencies"),
+        ]),
+        .target(name: "ScreenOffMonitor", dependencies: [
+            .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+            .product(name: "Dependencies", package: "swift-dependencies"),
+            .target(name: "AppTypes"),
+            .target(name: "ScreenControl"),
+        ]),
+        .testTarget(name: "ScreenOffMonitorTests", dependencies: [
+            "ScreenOffMonitor",
+            .product(name: "DependenciesTestSupport", package: "swift-dependencies"),
+        ]),
 //        .target(name: "Slideshow",
 //                dependencies: [
 //                    .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
