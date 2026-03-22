@@ -17,9 +17,9 @@ public struct ScreenOffMonitorFeature: Sendable {
     public struct State: Equatable {
         @Shared(.appStorage(SCREEN_OFF_SETTING_KEY)) var schedule: ScreenOffSchedule?
 
-        var isDimmed: Bool = false
-        var savedBrightness: CGFloat?
-        var isMonitoring: Bool = false
+        public var isDimmed: Bool = false
+        public var savedBrightness: CGFloat?
+        public var isMonitoring: Bool = false
 
         public init() {}
     }

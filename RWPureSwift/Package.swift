@@ -8,6 +8,7 @@ let package = Package(
     platforms: [.iOS(.v26), .macCatalyst(.v26), .macOS(.v26)],
     products: [
         .library(name: "AppModel", targets: ["AppModel"]),
+        .library(name: "AppNavigation", targets: ["AppNavigation"]),
         .library(name: "AppTypes", targets: ["AppTypes"]),
         .library(name: "CalendarAsync", targets: ["CalendarAsync"]),
         //.library(name: "Dashboard", targets: ["Dashboard"]),
@@ -37,6 +38,15 @@ let package = Package(
     ],
     targets: [
         .target(name: "AppModel"),
+        .target(name: "AppNavigation", dependencies: [
+            .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+            .target(name: "EditSettingsNew_TopLevel"),
+            .target(name: "ScreenOffMonitor"),
+        ]),
+        .testTarget(name: "AppNavigationTests", dependencies: [
+            "AppNavigation",
+            .product(name: "DependenciesTestSupport", package: "swift-dependencies"),
+        ]),
         .target(name: "AppTypes", dependencies: [
             .product(name: "SQLiteData", package: "sqlite-data"),
             .product(name:"Tagged", package: "swift-tagged"),
@@ -91,7 +101,6 @@ let package = Package(
             .target(name: "Dao"),
             .target(name: "EditSettingsNew_Trackees"),
             .target(name: "PhotoKitAsync"),
-            .target(name: "ScreenOffMonitor"),
         ], path: "Sources/EditSettingsNew/TopLevel"),
         .testTarget(name: "EditSettingsNew_TopLevelTests",
                     dependencies: [

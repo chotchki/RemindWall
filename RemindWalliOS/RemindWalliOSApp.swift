@@ -1,7 +1,7 @@
 import SwiftUI
 import SQLiteData
 import Dao
-import EditSettingsNew_TopLevel
+import AppNavigation
 import ComposableArchitecture
 
 @main
@@ -9,8 +9,8 @@ import ComposableArchitecture
 struct RemindWalliOSApp: App {
     // NB: This is static to avoid interference with Xcode previews, which create this entry
     //     point each time they are run.
-    static let store = Store(initialState: SettingsFeature.State()) {
-        SettingsFeature()
+    static let store = Store(initialState: AppNavigationFeature.State()) {
+        AppNavigationFeature()
         ._printChanges()
     } withDependencies: {
       if ProcessInfo.processInfo.environment["UITesting"] == "true" {
@@ -31,7 +31,7 @@ struct RemindWalliOSApp: App {
           // NB: Don't run application in tests to avoid interference between the app and the test.
           EmptyView()
         } else {
-            SettingsView(store: Self.store)
+            AppNavigationView(store: Self.store)
         }
       }
     }

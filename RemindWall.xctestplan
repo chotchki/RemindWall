@@ -74,6 +74,20 @@
         "identifier" : "DaoTests",
         "name" : "DaoTests"
       }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:RWPureSwift",
+        "identifier" : "ScreenOffMonitorTests",
+        "name" : "ScreenOffMonitorTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:RWPureSwift",
+        "identifier" : "AppNavigationTests",
+        "name" : "AppNavigationTests"
+      }
     }
   ],
   "version" : 1

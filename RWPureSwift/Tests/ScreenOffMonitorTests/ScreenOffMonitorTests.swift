@@ -1,5 +1,6 @@
 import AppTypes
 import ComposableArchitecture
+import Dependencies
 import DependenciesTestSupport
 import Foundation
 import Testing
@@ -52,10 +53,13 @@ struct ScreenOffMonitorTests {
     @Test("dims screen when entering off window")
     func enterOffWindow() async {
         let clock = TestClock()
-        var brightnessSet: CGFloat?
+        let brightnessSet = LockIsolated<CGFloat?>(nil)
 
-        var state = ScreenOffMonitorFeature.State()
-        state.$schedule.withLock { $0 = .default } // 22:00-06:00
+        let state: ScreenOffMonitorFeature.State = {
+            var s = ScreenOffMonitorFeature.State()
+            s.$schedule.withLock { $0 = .default } // 22:00-06:00
+            return s
+        }()
 
         let store = TestStore(initialState: state) {
             ScreenOffMonitorFeature()
@@ -64,7 +68,7 @@ struct ScreenOffMonitorTests {
             $0.date = .constant(makeDate(hour: 23, minute: 0))
             $0.calendar = .current
             $0.screenControl.getBrightness = { 0.75 }
-            $0.screenControl.setBrightness = { brightnessSet = $0 }
+            $0.screenControl.setBrightness = { value in brightnessSet.setValue(value) }
         }
 
         await store.send(.startMonitoring) {
@@ -78,7 +82,7 @@ struct ScreenOffMonitorTests {
             $0.savedBrightness = 0.75
         }
 
-        #expect(brightnessSet == 0.0)
+        #expect(brightnessSet.value == 0.0)
 
         await store.send(.stopMonitoring) {
             $0.isMonitoring = false
@@ -90,13 +94,16 @@ struct ScreenOffMonitorTests {
     @Test("restores brightness when leaving off window")
     func leaveOffWindow() async {
         let clock = TestClock()
-        var brightnessSet: CGFloat?
+        let brightnessSet = LockIsolated<CGFloat?>(nil)
 
         // Start in a dimmed state
-        var state = ScreenOffMonitorFeature.State()
-        state.$schedule.withLock { $0 = .default } // 22:00-06:00
-        state.isDimmed = true
-        state.savedBrightness = 0.8
+        let state: ScreenOffMonitorFeature.State = {
+            var s = ScreenOffMonitorFeature.State()
+            s.$schedule.withLock { $0 = .default } // 22:00-06:00
+            s.isDimmed = true
+            s.savedBrightness = 0.8
+            return s
+        }()
 
         let store = TestStore(initialState: state) {
             ScreenOffMonitorFeature()
@@ -106,7 +113,7 @@ struct ScreenOffMonitorTests {
             $0.date = .constant(makeDate(hour: 10, minute: 0))
             $0.calendar = .current
             $0.screenControl.getBrightness = { 0.0 }
-            $0.screenControl.setBrightness = { brightnessSet = $0 }
+            $0.screenControl.setBrightness = { value in brightnessSet.setValue(value) }
         }
 
         await store.send(.startMonitoring) {
@@ -120,7 +127,7 @@ struct ScreenOffMonitorTests {
             $0.savedBrightness = nil
         }
 
-        #expect(brightnessSet == 0.8)
+        #expect(brightnessSet.value == 0.8)
 
         await store.send(.stopMonitoring) {
             $0.isMonitoring = false
@@ -130,7 +137,7 @@ struct ScreenOffMonitorTests {
     @Test("no schedule means no dimming")
     func noSchedule() async {
         let clock = TestClock()
-        var brightnessWasSet = false
+        let brightnessWasSet = LockIsolated(false)
 
         let store = TestStore(initialState: ScreenOffMonitorFeature.State()) {
             ScreenOffMonitorFeature()
@@ -139,7 +146,7 @@ struct ScreenOffMonitorTests {
             $0.date = .constant(makeDate(hour: 23, minute: 0))
             $0.calendar = .current
             $0.screenControl.getBrightness = { 0.75 }
-            $0.screenControl.setBrightness = { _ in brightnessWasSet = true }
+            $0.screenControl.setBrightness = { _ in brightnessWasSet.setValue(true) }
         }
 
         await store.send(.startMonitoring) {
@@ -149,7 +156,7 @@ struct ScreenOffMonitorTests {
         await store.receive(\.tick)
         await store.receive(\._evaluated)
 
-        #expect(brightnessWasSet == false)
+        #expect(brightnessWasSet.value == false)
 
         await store.send(.stopMonitoring) {
             $0.isMonitoring = false
@@ -159,13 +166,16 @@ struct ScreenOffMonitorTests {
     @Test("stopMonitoring restores brightness if dimmed")
     func stopWhileDimmed() async {
         let clock = TestClock()
-        var brightnessSet: CGFloat?
+        let brightnessSet = LockIsolated<CGFloat?>(nil)
 
-        var state = ScreenOffMonitorFeature.State()
-        state.$schedule.withLock { $0 = .default }
-        state.isDimmed = true
-        state.savedBrightness = 0.6
-        state.isMonitoring = true
+        let state: ScreenOffMonitorFeature.State = {
+            var s = ScreenOffMonitorFeature.State()
+            s.$schedule.withLock { $0 = .default }
+            s.isDimmed = true
+            s.savedBrightness = 0.6
+            s.isMonitoring = true
+            return s
+        }()
 
         let store = TestStore(initialState: state) {
             ScreenOffMonitorFeature()
@@ -174,7 +184,7 @@ struct ScreenOffMonitorTests {
             $0.date = .constant(makeDate(hour: 23, minute: 0))
             $0.calendar = .current
             $0.screenControl.getBrightness = { 0.0 }
-            $0.screenControl.setBrightness = { brightnessSet = $0 }
+            $0.screenControl.setBrightness = { value in brightnessSet.setValue(value) }
         }
 
         await store.send(.stopMonitoring) {
@@ -183,7 +193,7 @@ struct ScreenOffMonitorTests {
             $0.savedBrightness = nil
         }
 
-        #expect(brightnessSet == 0.6)
+        #expect(brightnessSet.value == 0.6)
     }
 
     @Test("already monitoring ignores duplicate startMonitoring")

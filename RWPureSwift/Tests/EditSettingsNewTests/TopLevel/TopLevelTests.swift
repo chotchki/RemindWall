@@ -15,13 +15,14 @@ import Testing
 })
 struct SettingsFeatureTests {
 
-    @Test("startSlideshow action returns no effect")
+    @Test("startSlideshow sends delegate action")
     func startSlideshow() async {
         let store = TestStore(initialState: SettingsFeature.State()) {
             SettingsFeature()
         }
 
         await store.send(.startSlideshow)
+        await store.receive(\.delegate.startSlideshow)
     }
 
     @Test("trackees action is forwarded without side effects")

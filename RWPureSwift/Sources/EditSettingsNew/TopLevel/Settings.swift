@@ -1,6 +1,5 @@
 import AppTypes
 import ComposableArchitecture
-import ScreenOffMonitor
 import SwiftUI
 import EditSettingsNew_Trackees
 
@@ -9,12 +8,11 @@ public struct SettingsFeature {
     
     @ObservableState
     public struct State: Equatable {
-        var trackeesState = TrackeesFeature.State()
-        var albumPickerState = AlbumPickerFeature.State()
-        var calendarPickerState = CalendarPickerFeature.State()
-        var screenOffSettingState = ScreenOffSettingFeature.State()
-        var screenOffMonitorState = ScreenOffMonitorFeature.State()
-        var path = StackState<TrackeeDetailFeature.State>()
+        public var trackeesState = TrackeesFeature.State()
+        public var albumPickerState = AlbumPickerFeature.State()
+        public var calendarPickerState = CalendarPickerFeature.State()
+        public var screenOffSettingState = ScreenOffSettingFeature.State()
+        public var path = StackState<TrackeeDetailFeature.State>()
 
         public init(){}
     }
@@ -22,7 +20,7 @@ public struct SettingsFeature {
     public enum Action {
         case albumPicker(AlbumPickerFeature.Action)
         case calendarPicker(CalendarPickerFeature.Action)
-        case screenOffMonitor(ScreenOffMonitorFeature.Action)
+        case delegate(Delegate)
         case screenOffSetting(ScreenOffSettingFeature.Action)
         case trackees(TrackeesFeature.Action)
         case path(StackActionOf<TrackeeDetailFeature>)
@@ -30,6 +28,11 @@ public struct SettingsFeature {
         case screenOffToggled(Bool)
         case slideshowToggled(Bool)
         case startSlideshow
+        
+        @CasePathable
+        public enum Delegate: Equatable {
+            case startSlideshow
+        }
     }
     
     public init() {}
@@ -41,10 +44,6 @@ public struct SettingsFeature {
 
         Scope(state: \.calendarPickerState, action: \.calendarPicker) {
             CalendarPickerFeature()
-        }
-
-        Scope(state: \.screenOffMonitorState, action: \.screenOffMonitor) {
-            ScreenOffMonitorFeature()
         }
 
         Scope(state: \.screenOffSettingState, action: \.screenOffSetting) {
@@ -78,12 +77,14 @@ public struct SettingsFeature {
                 }
                 return .none
             case .startSlideshow:
+                return .send(.delegate(.startSlideshow))
+            case .delegate:
                 return .none
             case let .path(.element(id: id, action: .delegate(.confirmDeletion))):
                 guard let detailState = state.path[id: id]
                 else { return .none }
                 return .send(.trackees(.deleteTrackee(detailState.trackee.id)))
-            case .trackees, .albumPicker, .calendarPicker, .screenOffMonitor, .screenOffSetting, .path:
+            case .trackees, .albumPicker, .calendarPicker, .screenOffSetting, .path:
                 return .none
             }
         }.forEach(\.path, action: \.path) {
@@ -152,9 +153,6 @@ public struct SettingsView: View {
                 }
             }
             .navigationTitle("Settings")
-            .onAppear {
-                store.send(.screenOffMonitor(.startMonitoring))
-            }
             .toolbar {
                 ToolbarItem {
                     Button("Start Slideshow") {
