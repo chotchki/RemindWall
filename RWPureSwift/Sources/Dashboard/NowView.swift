@@ -1,19 +1,13 @@
-import EventKit
 import SwiftUI
-import Utility
 
 struct NowView: View {
-    private var currentEvent: EKEvent
-    
-    public init(currentEvent: EKEvent) {
-        self.currentEvent = currentEvent
-    }
-    
+    let title: String
+
     var body: some View {
-        HStack{
+        HStack {
             Text("Now:")
                 .font(.largeTitle)
-            Text(currentEvent.title)
+            Text(title)
                 .font(.title)
             Spacer()
         }

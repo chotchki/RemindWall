@@ -1,4 +1,5 @@
 import ComposableArchitecture
+import Dashboard
 import EditSettingsNew_TopLevel
 import ScreenOffMonitor
 import SwiftUI
@@ -10,6 +11,7 @@ public struct AppNavigationFeature {
     public struct State: Equatable {
         public var screen: Screen = .settings
         public var settingsState = SettingsFeature.State()
+        public var dashboardState = DashboardFeature.State()
         public var screenOffMonitorState = ScreenOffMonitorFeature.State()
 
         public init() {}
@@ -22,6 +24,7 @@ public struct AppNavigationFeature {
 
     public enum Action {
         case onAppear
+        case dashboard(DashboardFeature.Action)
         case screenOffMonitor(ScreenOffMonitorFeature.Action)
         case settings(SettingsFeature.Action)
         case showDashboard
@@ -31,6 +34,10 @@ public struct AppNavigationFeature {
     public init() {}
 
     public var body: some ReducerOf<Self> {
+        Scope(state: \.dashboardState, action: \.dashboard) {
+            DashboardFeature()
+        }
+
         Scope(state: \.screenOffMonitorState, action: \.screenOffMonitor) {
             ScreenOffMonitorFeature()
         }
@@ -48,6 +55,10 @@ public struct AppNavigationFeature {
                 state.screen = .dashboard
                 return .none
 
+            case .dashboard(.delegate(.returnToSettings)):
+                state.screen = .settings
+                return .none
+
             case .showDashboard:
                 state.screen = .dashboard
                 return .none
@@ -56,7 +67,7 @@ public struct AppNavigationFeature {
                 state.screen = .settings
                 return .none
 
-            case .settings, .screenOffMonitor:
+            case .settings, .screenOffMonitor, .dashboard:
                 return .none
             }
         }
@@ -76,14 +87,10 @@ public struct AppNavigationView: View {
             case .settings:
                 SettingsView(store: store.scope(state: \.settingsState, action: \.settings))
             case .dashboard:
-                // TODO: Replace with DashboardView when ready
-                VStack {
-                    Text("Dashboard")
-                        .font(.largeTitle)
-                    Button("Back to Settings") {
-                        store.send(.showSettings)
-                    }
-                }
+                DashboardView(store: store.scope(
+                    state: \.dashboardState,
+                    action: \.dashboard
+                ))
             }
         }
         .onAppear {

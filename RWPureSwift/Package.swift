@@ -11,7 +11,7 @@ let package = Package(
         .library(name: "AppNavigation", targets: ["AppNavigation"]),
         .library(name: "AppTypes", targets: ["AppTypes"]),
         .library(name: "CalendarAsync", targets: ["CalendarAsync"]),
-        //.library(name: "Dashboard", targets: ["Dashboard"]),
+        .library(name: "Dashboard", targets: ["Dashboard"]),
         .library(name: "Dao", targets: ["Dao"]),
         
         .library(name: "EditSettingsNew_Reminders", targets: ["EditSettingsNew_Reminders"]),
@@ -21,7 +21,7 @@ let package = Package(
         .library(name: "PhotoKitAsync", targets: ["PhotoKitAsync"]),
         .library(name: "ScreenControl", targets: ["ScreenControl"]),
         .library(name: "ScreenOffMonitor", targets: ["ScreenOffMonitor"]),
-        //.library(name: "Slideshow", targets: ["Slideshow"]),
+        .library(name: "Slideshow", targets: ["Slideshow"]),
         .library(name: "TagScanner", targets: ["TagScanner"]),
         .library(name: "Utility", targets: ["Utility"]),
     ],
@@ -40,6 +40,7 @@ let package = Package(
         .target(name: "AppModel"),
         .target(name: "AppNavigation", dependencies: [
             .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+            .target(name: "Dashboard"),
             .target(name: "EditSettingsNew_TopLevel"),
             .target(name: "ScreenOffMonitor"),
         ]),
@@ -62,11 +63,18 @@ let package = Package(
             .product(name: "DependenciesMacros", package: "swift-dependencies"),
             .target(name: "AppTypes"),
         ]),
-        //.target(name: "Dashboard", dependencies: [
-        //    .target(name: "DataModel"),
-        //    .target(name: "Slideshow"),
-        //    .target(name: "Utility")
-        //]),
+        .target(name: "Dashboard", dependencies: [
+            .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+            .target(name: "AppTypes"),
+            .target(name: "CalendarAsync"),
+            .target(name: "Dao"),
+            .target(name: "Slideshow"),
+            .target(name: "Utility"),
+        ]),
+        .testTarget(name: "DashboardTests", dependencies: [
+            "Dashboard",
+            .product(name: "DependenciesTestSupport", package: "swift-dependencies"),
+        ]),
         .target(name: "Dao", dependencies: [
             .product(
                 name: "Dependencies",
@@ -148,15 +156,17 @@ let package = Package(
             "ScreenOffMonitor",
             .product(name: "DependenciesTestSupport", package: "swift-dependencies"),
         ]),
-//        .target(name: "Slideshow",
-//                dependencies: [
-//                    .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
-//                    .target(name: "AppModel"),
-//                    .target(name: "DataModel"),
-//                    .target(name: "PhotoKitAsync"),
-//                    .target(name: "Utility"),
-//                ], 
-//                resources:[ .process("Widget/Resources/PreviewAssets.xcassets")]),
+        .target(name: "Slideshow",
+                dependencies: [
+                    .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+                    .target(name: "AppTypes"),
+                    .target(name: "PhotoKitAsync"),
+                ],
+                resources: [.process("Widget/Resources/PreviewAssets.xcassets")]),
+        .testTarget(name: "SlideshowTests", dependencies: [
+            "Slideshow",
+            .product(name: "DependenciesTestSupport", package: "swift-dependencies"),
+        ]),
         .target(name: "TagScanner",
                 dependencies: [
                     .target(name: "AppTypes"),

@@ -7,6 +7,7 @@
 import SwiftUI
 import PhotosUI
 
+#if canImport(UIKit)
 public struct LivePhotoView: UIViewRepresentable {
     var livephoto: PHLivePhoto
 
@@ -32,3 +33,4 @@ public struct LivePhotoView: UIViewRepresentable {
         context.animate {}
     }
 }
+#endif

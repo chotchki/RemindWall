@@ -18,7 +18,11 @@ struct KenBurnsPanView: View {
                     .resizable()
                     .aspectRatio(contentMode: .fill)
             case .livePhoto(let pHLivePhoto):
+                #if canImport(UIKit)
                 LivePhotoView(livephoto: pHLivePhoto).aspectRatio(contentMode: .fill)
+                #else
+                Text("Live photos not supported on this platform")
+                #endif
             case .errorPhoto:
                 ContentUnavailableView("Error Loading", image: "photo")
             }
@@ -39,13 +43,12 @@ struct KenBurnsPanView: View {
     }
 }
 
+#if canImport(UIKit)
 #Preview("Portrait") {
     @Previewable @State var image = AssetType.staticImage(UIImage(named: "PortraitTest", in: Bundle.module, compatibleWith: nil)!)
     
     VStack {
-        //Spacer()
         HStack{
-            //Spacer()
             KenBurnsPanView(assetType: image, size: CGSize(width: 400, height: 600))
         }
     }.background(Color.blue)
@@ -56,9 +59,7 @@ struct KenBurnsPanView: View {
     @Previewable @State var image = AssetType.staticImage(UIImage(named: "LandscapeTest", in: Bundle.module, compatibleWith: nil)!)
     
     VStack {
-        //Spacer()
         HStack{
-            //Spacer()
             KenBurnsPanView(assetType: image, size: CGSize(width: 400, height: 600))
         }
     }.background(Color.blue)
@@ -69,9 +70,7 @@ struct KenBurnsPanView: View {
     @Previewable @State var image = AssetType.staticImage(UIImage(named: "LandscapeTest", in: Bundle.module, compatibleWith: nil)!)
     
     VStack {
-        //Spacer()
         HStack{
-            //Spacer()
             KenBurnsPanView(assetType: image, size: CGSize(width: 400, height: 600))
         }
     }.task{
@@ -81,3 +80,4 @@ struct KenBurnsPanView: View {
     .background(Color.blue)
         .frame(width: 500, height: 700, alignment: .center)
 }
+#endif

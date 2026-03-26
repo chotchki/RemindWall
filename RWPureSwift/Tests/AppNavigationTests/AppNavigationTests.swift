@@ -79,6 +79,22 @@ struct AppNavigationFeatureTests {
         }
     }
 
+    @Test("dashboard returnToSettings delegate switches to settings")
+    func dashboardReturnToSettings() async {
+        var state = AppNavigationFeature.State()
+        state.screen = .dashboard
+
+        let store = TestStore(initialState: state) {
+            AppNavigationFeature()
+        }
+
+        store.exhaustivity = .off
+
+        await store.send(.dashboard(.delegate(.returnToSettings))) {
+            $0.screen = .settings
+        }
+    }
+
     @Test("settings action is forwarded without side effects")
     func settingsActionForwarded() async {
         let store = TestStore(initialState: AppNavigationFeature.State()) {

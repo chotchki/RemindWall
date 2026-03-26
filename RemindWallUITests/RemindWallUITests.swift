@@ -159,4 +159,21 @@ final class RemindWallUITests: XCTestCase {
         let cancelButton = app.buttons["Cancel"]
         XCTAssertTrue(cancelButton.exists, "Cancel button should be visible on the Add Reminder sheet")
     }
+
+    @MainActor
+    func testDashboardScreenLoads() throws {
+        let app = launchApp()
+
+        // Wait for Settings to load
+        let startButton = app.buttons["Start Slideshow"]
+        XCTAssertTrue(startButton.waitForExistence(timeout: 5), "Start Slideshow button should exist")
+
+        // Tap to navigate to Dashboard
+        startButton.tap()
+
+        // Settings nav should disappear, confirming navigation to Dashboard
+        let settingsNav = app.navigationBars["Settings"]
+        let settingsGone = settingsNav.waitForNonExistence(timeout: 10)
+        XCTAssertTrue(settingsGone, "Settings navigation bar should disappear after starting slideshow")
+    }
 }

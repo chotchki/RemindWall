@@ -12,18 +12,18 @@ public struct AssetLoaderFeature : Sendable{
         let asset: PHAsset
         let nextAsset: PHAsset?
         
-        var size: CGSize?
+        var size: CGSize
         var currentAsset: AssetType = .loading
         
-        public init(asset: PHAsset, nextAsset: PHAsset?){
+        public init(size: CGSize, asset: PHAsset, nextAsset: PHAsset?){
+            self.size = size
             self.asset = asset
             self.nextAsset = nextAsset
         }
       }
     
     public enum Action {
-        case resize(CGSize)
-        case load
+        case onAppear
         case loadAsset(AssetType)
         case disappear
     }
@@ -33,12 +33,8 @@ public struct AssetLoaderFeature : Sendable{
     public var body: some Reducer<State, Action> {
         Reduce { state, action in
             switch action {
-            case let .resize(size):
-                state.size = size
-                return .none
-            case .load:
-                guard let size = state.size else { return .none}
-                return .run { [asset = state.asset, size = size, nextAsset = state.nextAsset] send in
+            case .onAppear:
+                return .run { [asset = state.asset, size = state.size, nextAsset = state.nextAsset] send in
                     let assetType = await self.photoKitAssets.loadAsset(asset, size)
                     await send(.loadAsset(assetType))
                     if let nA = nextAsset {
@@ -49,8 +45,7 @@ public struct AssetLoaderFeature : Sendable{
                 state.currentAsset = assetType
                 return .none
             case .disappear:
-                guard let size = state.size else { return .none}
-                return .run { [asset = state.asset, size = size] send in
+                return .run { [asset = state.asset, size = state.size] send in
                     self.photoKitAssets.unloadCache(asset, size)
                 }
             }
@@ -66,18 +61,12 @@ public struct AssetLoaderView: View {
     }
 
     public var body: some View {
-        GeometryReader { reader in
-            KenBurnsPanView(assetType: store.currentAsset, size: reader.size)
-                .onAppear(perform: {
-                    store.send(.load)
-                })
-                .onChange(of: reader.size, initial: true){
-                    _, newSize in
-                    store.send(.resize(newSize))
-                }
-                .onDisappear(perform: {
-                    store.send(.disappear)
-                })
-        }
+        KenBurnsPanView(assetType: store.currentAsset, size: store.size)
+        .onAppear(perform: {
+            store.send(.onAppear)
+        })
+        .onDisappear(perform: {
+            store.send(.disappear)
+        })
     }
 }

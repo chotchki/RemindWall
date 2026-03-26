@@ -88,6 +88,20 @@
         "identifier" : "AppNavigationTests",
         "name" : "AppNavigationTests"
       }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:RWPureSwift",
+        "identifier" : "DashboardTests",
+        "name" : "DashboardTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:RWPureSwift",
+        "identifier" : "SlideshowTests",
+        "name" : "SlideshowTests"
+      }
     }
   ],
   "version" : 1
