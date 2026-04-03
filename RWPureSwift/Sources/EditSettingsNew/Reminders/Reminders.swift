@@ -131,7 +131,7 @@ public struct RemindersView: View {
             .frame(height: 0)
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
-            .sheet(item: $store.scope(state: \.destination?.addReminder, action: \.destination.addReminder)) { store in
+            .sheet(item: $store.scope(state: \.$destination, action: \.destination).addReminder) { store in
                 AddReminderView(store: store)
             }
     }

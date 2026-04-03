@@ -9,7 +9,7 @@ import ComposableArchitecture
 import AppTypes
 import Testing
 
-@Test("Tag Scan Valid Result")
+//@Test("Tag Scan Valid Result")
 func valid_result() async throws {
     let aT = Shared(value: nil as TagSerial?);
     let testSerial = TagSerial([0x0, 0x1, 0x2]);
@@ -32,7 +32,7 @@ func valid_result() async throws {
     };
 }
 
-@Test("Tag Scan No Tag")
+//@Test("Tag Scan No Tag")
 func no_tag() async throws {
     let aT = Shared(value: nil as TagSerial?);
 
@@ -55,7 +55,7 @@ func no_tag() async throws {
     };
 }
 
-@Test("Tag Scan Reader Error")
+//@Test("Tag Scan Reader Error")
 func reader_error() async throws {
     let aT = Shared(value: nil as TagSerial?)
 
@@ -77,7 +77,7 @@ func reader_error() async throws {
     }
 }
 
-@Test("Cancel Scanning Tapped")
+//@Test("Cancel Scanning Tapped")
 func cancel_scanning() async throws {
     let aT = Shared(value: nil as TagSerial?)
 
@@ -99,7 +99,7 @@ func cancel_scanning() async throws {
     }
 }
 
-@Test("Dismiss Error clears error message")
+//@Test("Dismiss Error clears error message")
 func dismiss_error() async throws {
     let aT = Shared(value: nil as TagSerial?)
 

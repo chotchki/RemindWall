@@ -131,7 +131,7 @@ public struct TrackeesView: View {
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
             .sheet(
-                item: $store.scope(state: \.destination?.addTrackee, action: \.destination.addTrackee)
+                item: $store.scope(state: \.$destination, action: \.destination).addTrackee
             ) { addTrackeeStore in
                 NavigationStack {
                     AddTrackeeView(store: addTrackeeStore)
@@ -170,7 +170,7 @@ public struct TrackeesView: View {
             TrackeeDetailView(store: store)
         }
         .sheet(
-            item: $store.scope(state: \.destination?.addTrackee, action: \.destination.addTrackee)
+            item: $store.scope(state: \.$destination, action: \.destination).addTrackee
           ) { addTrackeeStore in
             NavigationStack {
               AddTrackeeView(store: addTrackeeStore)
