@@ -29,6 +29,8 @@ public struct DashboardFeature: Sendable {
         }
     }
 
+    @Dependency(\.cursorClient) var cursorClient
+
     public init() {}
 
     public var body: some ReducerOf<Self> {
@@ -47,6 +49,7 @@ public struct DashboardFeature: Sendable {
         Reduce { state, action in
             switch action {
             case .onAppear:
+                cursorClient.hide()
                 return .merge(
                     .send(.slideshow(.viewAppeared)),
                     .send(.alertLoader(.startMonitoring)),
@@ -54,6 +57,7 @@ public struct DashboardFeature: Sendable {
                 )
 
             case .onDisappear:
+                cursorClient.unhide()
                 return .none
 
             case .slideshow(.delegate(.tapReturnToSettings)):
@@ -107,15 +111,9 @@ public struct DashboardView: View {
         }
         .onAppear {
             store.send(.onAppear)
-            #if !DEBUG && targetEnvironment(macCatalyst)
-            NSCursor.hide()
-            #endif
         }
         .onDisappear {
             store.send(.onDisappear)
-            #if !DEBUG && targetEnvironment(macCatalyst)
-            NSCursor.unhide()
-            #endif
         }
     }
 }

@@ -142,9 +142,7 @@ struct SlideshowTests {
             SlideShowFeature()
         }
 
-        await store.send(.loadAlbumContents(nil)) {
-            $0.assetList = nil
-        }
+        await store.send(.loadAlbumContents(nil))
     }
 
     @Test("loadAlbum without selected album does nothing")

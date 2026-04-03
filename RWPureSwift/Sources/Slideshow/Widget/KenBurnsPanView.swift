@@ -14,9 +14,15 @@ struct KenBurnsPanView: View {
             case .loading:
                 ProgressView()
             case .staticImage(let uIImage):
+                #if canImport(UIKit)
                 Image(uiImage: uIImage)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
+                #else
+                Image(nsImage: uIImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                #endif
             case .livePhoto(let pHLivePhoto):
                 #if canImport(UIKit)
                 LivePhotoView(livephoto: pHLivePhoto).aspectRatio(contentMode: .fill)

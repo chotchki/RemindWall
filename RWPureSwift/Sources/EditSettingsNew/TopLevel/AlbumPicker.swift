@@ -18,9 +18,9 @@ public struct AlbumPickerFeature {
         public init(){}
     }
     
-    public enum Action: BindableAction {
-        case binding(BindingAction<State>)
+    public enum Action {
         case onAppear
+        case selectAlbum(AlbumLocalId?)
         case tapOpenSettings
         case tapAuthorizeAccess
         case loadListComplete(PHFetchResultCollection<PHAssetCollection>?)
@@ -29,11 +29,8 @@ public struct AlbumPickerFeature {
     public init(){}
     
     public var body: some Reducer<State, Action> {
-        BindingReducer()
         Reduce { state, action in
             switch action {
-            case .binding:
-                return .none
             case .onAppear:
                 state.photoStatus = photoKitAlbums.libraryAccess();
                 return loadList(state: &state)
@@ -41,6 +38,9 @@ public struct AlbumPickerFeature {
                 return .run { [photoKitAlbums] send in
                     await photoKitAlbums.openPhotoSettings()
                 }
+            case let .selectAlbum(album):
+                state.$selectedAlbum.withLock { $0 = album }
+                return .none
             case .tapAuthorizeAccess:
                 return .run{ [photoKitAlbums] send in
                     await photoKitAlbums.requestAuthorization()
@@ -66,7 +66,7 @@ public struct AlbumPickerFeature {
 }
 
 public struct AlbumPickerView: View {
-    @Bindable var store: StoreOf<AlbumPickerFeature>
+    let store: StoreOf<AlbumPickerFeature>
     
     public init(store: StoreOf<AlbumPickerFeature>) {
         self.store = store
@@ -91,9 +91,12 @@ public struct AlbumPickerView: View {
             } else if store.availibleAlbums == nil {
                 ContentUnavailableView("No Albums Found", image: "photo")
             } else {
-                Picker("Albums", selection: $store.selectedAlbum){
+                Picker("Albums", selection: Binding(
+                    get: { store.selectedAlbum },
+                    set: { store.send(.selectAlbum($0)) }
+                )){
                     ForEach(store.availibleAlbums!, id: \.localIdentifier) { album in
-                        Text(album.localizedTitle ?? "Unknown Album").tag(AlbumLocalId(album.localIdentifier))
+                        Text(album.localizedTitle ?? "Unknown Album").tag(AlbumLocalId(album.localIdentifier) as AlbumLocalId?)
                     }
                 }
                 #if !os(macOS)

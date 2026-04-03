@@ -25,9 +25,9 @@ public struct CalendarPickerFeature {
         public init() {}
     }
 
-    public enum Action: BindableAction {
-        case binding(BindingAction<State>)
+    public enum Action {
         case onAppear
+        case selectCalendar(CalendarId?)
         case tapOpenSettings
         case tapAuthorizeAccess
         case authorizationComplete(Bool)
@@ -37,14 +37,14 @@ public struct CalendarPickerFeature {
     public init() {}
 
     public var body: some Reducer<State, Action> {
-        BindingReducer()
         Reduce { state, action in
             switch action {
-            case .binding:
-                return .none
             case .onAppear:
                 state.calendarStatus = calendarAsync.calendarAccess()
                 return loadList(state: &state)
+            case let .selectCalendar(calendar):
+                state.$selectedCalendar.withLock { $0 = calendar }
+                return .none
             case .tapOpenSettings:
                 return .run { [calendarAsync] send in
                     await calendarAsync.openCalendarSettings()
@@ -81,7 +81,7 @@ public struct CalendarPickerFeature {
 }
 
 public struct CalendarPickerView: View {
-    @Bindable var store: StoreOf<CalendarPickerFeature>
+    let store: StoreOf<CalendarPickerFeature>
 
     public init(store: StoreOf<CalendarPickerFeature>) {
         self.store = store
@@ -106,7 +106,10 @@ public struct CalendarPickerView: View {
             } else if store.availableCalendars == nil {
                 ContentUnavailableView("No Calendars Found", systemImage: "calendar")
             } else {
-                Picker("Calendars", selection: $store.selectedCalendar) {
+                Picker("Calendars", selection: Binding(
+                    get: { store.selectedCalendar },
+                    set: { store.send(.selectCalendar($0)) }
+                )) {
                     Text("None").tag(nil as CalendarId?)
                     ForEach(store.availableCalendars!, id: \.calendarIdentifier) { calendar in
                         Text(calendar.title).tag(CalendarId(calendar.calendarIdentifier) as CalendarId?)

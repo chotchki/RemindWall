@@ -111,14 +111,14 @@ struct CalendarPickerTests {
         await store.send(.tapOpenSettings)
     }
 
-    @Test("binding action does not cause side effects")
-    func bindingNoSideEffects() async {
+    @Test("selectCalendar updates shared state")
+    func selectCalendarUpdatesState() async {
         let store = TestStore(initialState: CalendarPickerFeature.State()) {
             CalendarPickerFeature()
         }
 
-        await store.send(.binding(.set(\.calendarStatus, .fullAccess))) {
-            $0.calendarStatus = .fullAccess
+        await store.send(.selectCalendar(CalendarId("test-cal-id"))) {
+            $0.$selectedCalendar.withLock { $0 = CalendarId("test-cal-id") }
         }
     }
 

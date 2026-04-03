@@ -1,4 +1,4 @@
-// swift-tools-version: 6.2
+// swift-tools-version: 6.3
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -26,14 +26,14 @@ let package = Package(
         .library(name: "Utility", targets: ["Utility"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/pointfreeco/sqlite-data", from: "1.5.1", traits: ["SQLiteDataTagged"]),
-        .package(url: "https://github.com/pointfreeco/swift-structured-queries", from: "0.30.0", traits: ["StructuredQueriesTagged"]),
+        .package(url: "https://github.com/pointfreeco/sqlite-data", from: "1.6.1", traits: ["SQLiteDataTagged"]),
+        .package(url: "https://github.com/pointfreeco/swift-structured-queries", from: "0.31.1", traits: ["StructuredQueriesTagged"]),
         .package(
               url: "https://github.com/pointfreeco/swift-composable-architecture",
-              from: "1.23.1"
+              from: "1.25.4"
             ),
         .package(url: "https://github.com/ph1ps/swift-concurrency-deadline.git", from: "1.0.0"),
-        .package(url: "https://github.com/pointfreeco/swift-dependencies", from: "1.0.0"),
+        .package(url: "https://github.com/pointfreeco/swift-dependencies", from: "1.12.0"),
         .package(url: "https://github.com/pointfreeco/swift-tagged", from: "0.10.0")
     ],
     targets: [
@@ -65,6 +65,7 @@ let package = Package(
         ]),
         .target(name: "Dashboard", dependencies: [
             .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+            .product(name: "DependenciesMacros", package: "swift-dependencies"),
             .target(name: "AppTypes"),
             .target(name: "CalendarAsync"),
             .target(name: "Dao"),
@@ -178,7 +179,7 @@ let package = Package(
                     ),
                     .product(name: "DependenciesMacros", package: "swift-dependencies"),
                 ]),
-        .testTarget(name: "TagScannerTests", dependencies: [.target(name: "TagScanner")]),
+        .testTarget(name: "TagScannerTests", dependencies: ["TagScanner"]),
         .target(name: "Utility"),
     ]
 )

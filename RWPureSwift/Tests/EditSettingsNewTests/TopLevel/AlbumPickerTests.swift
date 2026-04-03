@@ -1,3 +1,4 @@
+import AppTypes
 import ComposableArchitecture
 import DependenciesTestSupport
 import Photos
@@ -100,14 +101,14 @@ struct AlbumPickerTests {
         await store.send(.loadListComplete(nil))
     }
 
-    @Test("binding action does not cause side effects")
-    func bindingNoSideEffects() async {
+    @Test("selectAlbum updates shared state")
+    func selectAlbumUpdatesState() async {
         let store = TestStore(initialState: AlbumPickerFeature.State()) {
             AlbumPickerFeature()
         }
 
-        await store.send(.binding(.set(\.photoStatus, .authorized))) {
-            $0.photoStatus = .authorized
+        await store.send(.selectAlbum(AlbumLocalId("test-album-id"))) {
+            $0.$selectedAlbum.withLock { $0 = AlbumLocalId("test-album-id") }
         }
     }
 }
