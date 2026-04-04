@@ -20,6 +20,8 @@ public struct ScreenOffMonitorFeature: Sendable {
         public var isDimmed: Bool = false
         public var savedBrightness: CGFloat?
         public var isMonitoring: Bool = false
+        public var isSlideshowPlaying: Bool = false
+        public var hasLateReminders: Bool = false
 
         public init() {}
     }
@@ -66,9 +68,11 @@ public struct ScreenOffMonitorFeature: Sendable {
 
             case .tick:
                 let schedule = state.schedule
+                let isSlideshowPlaying = state.isSlideshowPlaying
+                let hasLateReminders = state.hasLateReminders
                 return .run { [screenControl, now, calendar] send in
                     let shouldDim: Bool
-                    if let schedule {
+                    if let schedule, isSlideshowPlaying, !hasLateReminders {
                         let hour = calendar.component(.hour, from: now)
                         let minute = calendar.component(.minute, from: now)
                         let currentTotalMinutes = hour * 60 + minute

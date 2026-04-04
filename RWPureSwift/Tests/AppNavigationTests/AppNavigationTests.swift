@@ -51,6 +51,7 @@ struct AppNavigationFeatureTests {
         await store.send(.settings(.startSlideshow))
         await store.receive(\.settings.delegate.startSlideshow) {
             $0.screen = .dashboard
+            $0.screenOffMonitorState.isSlideshowPlaying = true
         }
     }
 
@@ -62,6 +63,7 @@ struct AppNavigationFeatureTests {
 
         await store.send(.showDashboard) {
             $0.screen = .dashboard
+            $0.screenOffMonitorState.isSlideshowPlaying = true
         }
     }
 
@@ -69,6 +71,7 @@ struct AppNavigationFeatureTests {
     func showSettings() async {
         var state = AppNavigationFeature.State()
         state.screen = .dashboard
+        state.screenOffMonitorState.isSlideshowPlaying = true
 
         let store = TestStore(initialState: state) {
             AppNavigationFeature()
@@ -76,6 +79,7 @@ struct AppNavigationFeatureTests {
 
         await store.send(.showSettings) {
             $0.screen = .settings
+            $0.screenOffMonitorState.isSlideshowPlaying = false
         }
     }
 
@@ -83,6 +87,7 @@ struct AppNavigationFeatureTests {
     func dashboardReturnToSettings() async {
         var state = AppNavigationFeature.State()
         state.screen = .dashboard
+        state.screenOffMonitorState.isSlideshowPlaying = true
 
         let store = TestStore(initialState: state) {
             AppNavigationFeature()
@@ -92,6 +97,7 @@ struct AppNavigationFeatureTests {
 
         await store.send(.dashboard(.delegate(.returnToSettings))) {
             $0.screen = .settings
+            $0.screenOffMonitorState.isSlideshowPlaying = false
         }
     }
 
@@ -104,6 +110,59 @@ struct AppNavigationFeatureTests {
         }
 
         await store.send(.settings(.albumPicker(.onAppear)))
+    }
+
+    @Test("startSlideshow sets isSlideshowPlaying on screen off monitor")
+    func startSlideshowSetsSlideshowPlaying() async {
+        let store = TestStore(initialState: AppNavigationFeature.State()) {
+            AppNavigationFeature()
+        }
+
+        store.exhaustivity = .off
+
+        await store.send(.settings(.startSlideshow))
+        await store.receive(\.settings.delegate.startSlideshow) {
+            $0.screen = .dashboard
+            $0.screenOffMonitorState.isSlideshowPlaying = true
+        }
+    }
+
+    @Test("returnToSettings clears isSlideshowPlaying on screen off monitor")
+    func returnToSettingsClearsSlideshowPlaying() async {
+        var state = AppNavigationFeature.State()
+        state.screen = .dashboard
+        state.screenOffMonitorState.isSlideshowPlaying = true
+
+        let store = TestStore(initialState: state) {
+            AppNavigationFeature()
+        }
+
+        store.exhaustivity = .off
+
+        await store.send(.dashboard(.delegate(.returnToSettings))) {
+            $0.screen = .settings
+            $0.screenOffMonitorState.isSlideshowPlaying = false
+        }
+    }
+
+    @Test("lateTrackeesLoaded updates hasLateReminders on screen off monitor")
+    func lateTrackeesUpdatesHasLateReminders() async {
+        var state = AppNavigationFeature.State()
+        state.screen = .dashboard
+
+        let store = TestStore(initialState: state) {
+            AppNavigationFeature()
+        }
+
+        await store.send(.dashboard(.alertLoader(._lateTrackeesLoaded(["Alice"])))) {
+            $0.dashboardState.alertLoaderState.lateTrackeeNames = ["Alice"]
+            $0.screenOffMonitorState.hasLateReminders = true
+        }
+
+        await store.send(.dashboard(.alertLoader(._lateTrackeesLoaded([])))) {
+            $0.dashboardState.alertLoaderState.lateTrackeeNames = []
+            $0.screenOffMonitorState.hasLateReminders = false
+        }
     }
 
     @Test("screenOffMonitor action is forwarded without side effects")

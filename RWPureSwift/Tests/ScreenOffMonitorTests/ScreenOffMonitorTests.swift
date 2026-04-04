@@ -58,6 +58,7 @@ struct ScreenOffMonitorTests {
         let state: ScreenOffMonitorFeature.State = {
             var s = ScreenOffMonitorFeature.State()
             s.$schedule.withLock { $0 = .default } // 22:00-06:00
+            s.isSlideshowPlaying = true
             return s
         }()
 
@@ -215,5 +216,121 @@ struct ScreenOffMonitorTests {
 
         await store.send(.startMonitoring)
         // No state change, no effects
+    }
+
+    @Test("no dimming when slideshow not playing")
+    func noDimmingWithoutSlideshow() async {
+        let clock = TestClock()
+        let brightnessWasSet = LockIsolated(false)
+
+        let state: ScreenOffMonitorFeature.State = {
+            var s = ScreenOffMonitorFeature.State()
+            s.$schedule.withLock { $0 = .default } // 22:00-06:00
+            // isSlideshowPlaying defaults to false
+            return s
+        }()
+
+        let store = TestStore(initialState: state) {
+            ScreenOffMonitorFeature()
+        } withDependencies: {
+            $0.continuousClock = clock
+            $0.date = .constant(makeDate(hour: 23, minute: 0))
+            $0.calendar = .current
+            $0.screenControl.getBrightness = { 0.75 }
+            $0.screenControl.setBrightness = { _ in brightnessWasSet.setValue(true) }
+        }
+
+        await store.send(.startMonitoring) {
+            $0.isMonitoring = true
+        }
+
+        await store.receive(\.tick)
+        await store.receive(\._evaluated)
+
+        #expect(brightnessWasSet.value == false)
+
+        await store.send(.stopMonitoring) {
+            $0.isMonitoring = false
+        }
+    }
+
+    @Test("no dimming when reminders are late")
+    func noDimmingWithLateReminders() async {
+        let clock = TestClock()
+        let brightnessWasSet = LockIsolated(false)
+
+        let state: ScreenOffMonitorFeature.State = {
+            var s = ScreenOffMonitorFeature.State()
+            s.$schedule.withLock { $0 = .default } // 22:00-06:00
+            s.isSlideshowPlaying = true
+            s.hasLateReminders = true
+            return s
+        }()
+
+        let store = TestStore(initialState: state) {
+            ScreenOffMonitorFeature()
+        } withDependencies: {
+            $0.continuousClock = clock
+            $0.date = .constant(makeDate(hour: 23, minute: 0))
+            $0.calendar = .current
+            $0.screenControl.getBrightness = { 0.75 }
+            $0.screenControl.setBrightness = { _ in brightnessWasSet.setValue(true) }
+        }
+
+        await store.send(.startMonitoring) {
+            $0.isMonitoring = true
+        }
+
+        await store.receive(\.tick)
+        await store.receive(\._evaluated)
+
+        #expect(brightnessWasSet.value == false)
+
+        await store.send(.stopMonitoring) {
+            $0.isMonitoring = false
+        }
+    }
+
+    @Test("undims when reminders become late")
+    func undimsWhenRemindersBecomeLate() async {
+        let clock = TestClock()
+        let brightnessSet = LockIsolated<CGFloat?>(nil)
+
+        let state: ScreenOffMonitorFeature.State = {
+            var s = ScreenOffMonitorFeature.State()
+            s.$schedule.withLock { $0 = .default } // 22:00-06:00
+            s.isSlideshowPlaying = true
+            s.hasLateReminders = true
+            s.isDimmed = true
+            s.savedBrightness = 0.7
+            return s
+        }()
+
+        let store = TestStore(initialState: state) {
+            ScreenOffMonitorFeature()
+        } withDependencies: {
+            $0.continuousClock = clock
+            $0.date = .constant(makeDate(hour: 23, minute: 0))
+            $0.calendar = .current
+            $0.screenControl.getBrightness = { 0.0 }
+            $0.screenControl.setBrightness = { value in brightnessSet.setValue(value) }
+        }
+
+        await store.send(.startMonitoring) {
+            $0.isMonitoring = true
+        }
+
+        await store.receive(\.tick)
+
+        await store.receive(\._evaluated) {
+            $0.isDimmed = false
+            $0.savedBrightness = nil
+        }
+
+        #expect(brightnessSet.value == 0.7)
+
+        await store.send(.stopMonitoring) {
+            $0.isMonitoring = false
+        }
     }
 }
