@@ -30,7 +30,7 @@ let package = Package(
         .package(url: "https://github.com/pointfreeco/swift-structured-queries", from: "0.31.1", traits: ["StructuredQueriesTagged"]),
         .package(
               url: "https://github.com/pointfreeco/swift-composable-architecture",
-              from: "1.25.4",
+              from: "1.25.5",
               traits: [
                 "ComposableArchitecture2Deprecations",
                 "ComposableArchitecture2DeprecationOverloads"

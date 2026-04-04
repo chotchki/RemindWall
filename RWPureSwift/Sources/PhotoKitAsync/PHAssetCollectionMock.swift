@@ -29,3 +29,31 @@ public class PHAssetCollectionMock: PHAssetCollection, @unchecked Sendable {
     }
     
 }
+
+/// A testable PHAsset subclass that provides its own identifier,
+/// avoiding the internal `"Must have a uuid if no _objectID"` assertion
+/// that PHAsset.init() triggers.
+///
+/// The trick: `mockIdentifier` is a stored property initialized before
+/// `super.init()`, and we override both `localIdentifier` and the internal
+/// ObjC `-[PHAsset identifier]` method. Because ObjC uses dynamic dispatch,
+/// our overrides are called even during `super.init()`.
+public class PHAssetMock: PHAsset, @unchecked Sendable {
+    private let mockIdentifier: String
+
+    public init(identifier: String = UUID().uuidString) {
+        self.mockIdentifier = identifier
+        super.init()
+    }
+    public override var localIdentifier: String {
+        return mockIdentifier
+    }
+
+    /// Overrides the internal `-[PHAsset identifier]` method to prevent the assertion.
+    @objc dynamic var identifier: String {
+        return mockIdentifier
+    }
+}
+
+
+

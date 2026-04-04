@@ -105,10 +105,12 @@ public struct DashboardView: View {
             }
 
             AlertView(lateTrackeeNames: store.alertLoaderState.lateTrackeeNames)
-                .onTapGesture {
-                    store.send(.tappedReturnToSettings)
-                }
         }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            store.send(.tappedReturnToSettings)
+        }
+        .accessibilityIdentifier("DashboardView")
         .onAppear {
             store.send(.onAppear)
         }

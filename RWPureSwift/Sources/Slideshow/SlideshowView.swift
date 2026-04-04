@@ -8,6 +8,8 @@ import SwiftUI
 public struct SlideShowFeature: Sendable {
     static let slideUpdateDuration = Duration.seconds(10)
 
+    private enum CancelID { case timer }
+
     @Dependency(\.continuousClock) var clock
     @Dependency(\.photoKitAlbums) var photoKitAlbums
 
@@ -50,6 +52,7 @@ public struct SlideShowFeature: Sendable {
                             await send(.tick)
                         }
                     }
+                    .cancellable(id: CancelID.timer, cancelInFlight: true)
                 )
             case let .viewResized(size):
                 state.viewSize = size
@@ -106,6 +109,7 @@ public struct SlideshowView: View {
             Group {
                 if let al = store.scope(state: \.assetLoader, action: \.assetLoader) {
                     AssetLoaderView(store: al)
+                        .id(al.asset.localIdentifier)
                 } else if store.selectedAlbum == nil {
                     ContentUnavailableView {
                         Label("Slideshow Not Configured", systemImage: "photo.stack")
@@ -116,6 +120,7 @@ public struct SlideshowView: View {
                             store.send(.delegate(.tapReturnToSettings))
                         }
                     }
+                    .accessibilityIdentifier("SlideshowNotConfigured")
                 } else {
                     ContentUnavailableView {
                         Label("Slideshow Loading", systemImage: "photo.stack")
@@ -126,6 +131,7 @@ public struct SlideshowView: View {
                             store.send(.delegate(.tapReturnToSettings))
                         }
                     }
+                    .accessibilityIdentifier("SlideshowLoading")
                 }
             }
             .onChange(of: reader.size, initial: true) { _, newSize in

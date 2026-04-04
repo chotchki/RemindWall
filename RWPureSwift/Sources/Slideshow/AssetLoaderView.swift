@@ -62,6 +62,8 @@ public struct AssetLoaderView: View {
 
     public var body: some View {
         KenBurnsPanView(assetType: store.currentAsset, size: store.size)
+        .accessibilityIdentifier("SlideshowPhoto")
+        .accessibilityValue(store.asset.localIdentifier)
         .onAppear(perform: {
             store.send(.onAppear)
         })
