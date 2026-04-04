@@ -110,6 +110,7 @@ public struct DashboardView: View {
         .onTapGesture {
             store.send(.tappedReturnToSettings)
         }
+        .ignoresSafeArea()
         .accessibilityIdentifier("DashboardView")
         .onAppear {
             store.send(.onAppear)

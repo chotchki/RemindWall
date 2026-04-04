@@ -13,6 +13,8 @@ struct KenBurnsPanView: View {
             switch assetType {
             case .loading:
                 ProgressView()
+                    .scaleEffect(2.0)
+                    .tint(.white)
             case .staticImage(let uIImage):
                 #if canImport(UIKit)
                 Image(uiImage: uIImage)
@@ -34,7 +36,7 @@ struct KenBurnsPanView: View {
             }
         }
         .frame(width: size.width, height: size.height, alignment: align).clipped()
-        .background(Color.red)
+        .background(Color.black)
         .onAppear {
             withAnimation(.linear(duration: 10)) {
                 self.align = .bottomTrailing

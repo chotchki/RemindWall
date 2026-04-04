@@ -110,6 +110,7 @@ public struct SlideshowView: View {
                 if let al = store.scope(state: \.assetLoader, action: \.assetLoader) {
                     AssetLoaderView(store: al)
                         .id(al.asset.localIdentifier)
+                        .transition(.opacity)
                 } else if store.selectedAlbum == nil {
                     ContentUnavailableView {
                         Label("Slideshow Not Configured", systemImage: "photo.stack")
@@ -134,10 +135,13 @@ public struct SlideshowView: View {
                     .accessibilityIdentifier("SlideshowLoading")
                 }
             }
+            .animation(.easeInOut(duration: 1.0), value: store.assetLoader?.asset.localIdentifier)
             .onChange(of: reader.size, initial: true) { _, newSize in
                 store.send(.viewResized(newSize))
             }
-        }.onAppear {
+        }
+        .ignoresSafeArea()
+        .onAppear {
             store.send(.viewAppeared)
         }
     }
