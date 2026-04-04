@@ -6,5 +6,9 @@
 	<false/>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>The application shows the list of upcoming events for the household</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 </dict>
 </plist>

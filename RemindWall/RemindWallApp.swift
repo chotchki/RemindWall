@@ -21,7 +21,10 @@ struct RemindWallApp: App {
     
     init() {
         prepareDependencies {
-          $0.defaultDatabase = try! $0.appDatabase()
+            $0.defaultDatabase = try! $0.appDatabase()
+            if !isTesting && ProcessInfo.processInfo.environment["UITesting"] != "true" {
+                $0.defaultSyncEngine = try! $0.appSyncEngine(for: $0.defaultDatabase)
+            }
         }
     }
     

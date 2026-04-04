@@ -62,9 +62,13 @@ extension DependencyValues {
         @Dependency(\.context) var context
         var configuration = Configuration()
         configuration.foreignKeysEnabled = true
+        let isUITesting = ProcessInfo.processInfo.environment["UITesting"] == "true"
+        let needsSync = context == .live && !isUITesting
         configuration.prepareDatabase { db in
             db.add(function: $uuid)
-            //try db.attachMetadatabase()
+            if needsSync {
+                try db.attachMetadatabase()
+            }
 #if DEBUG
             db.trace(options: .profile) {
                 switch context {
@@ -78,7 +82,6 @@ extension DependencyValues {
             }
 #endif
         }
-        let isUITesting = ProcessInfo.processInfo.environment["UITesting"] == "true"
         let database: any DatabaseWriter
         if context != .live || isUITesting {
             database = try DatabaseQueue(configuration: configuration)
@@ -134,6 +137,13 @@ extension DependencyValues {
         }
         
         return database
+    }
+
+    public mutating func appSyncEngine(for database: any DatabaseWriter) throws -> SyncEngine {
+        try SyncEngine(
+            for: database,
+            tables: Trackee.self, ReminderTime.self
+        )
     }
 }
 
