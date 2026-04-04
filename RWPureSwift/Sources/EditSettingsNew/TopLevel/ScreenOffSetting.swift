@@ -131,7 +131,7 @@ public struct ScreenOffSettingView: View {
             ScreenOffSettingView(
                 store: Store(
                     initialState: {
-                        var state = ScreenOffSettingFeature.State()
+                        let state = ScreenOffSettingFeature.State()
                         state.$schedule.withLock { $0 = .default }
                         return state
                     }()

@@ -112,7 +112,7 @@ public struct TrackeeDetailView: View {
               }
           }
       }
-      .alert($store.scope(state: \.alert, action: \.alert))
+      .alert($store.scope(state: \.$alert, action: \.alert))
   }
 }
 

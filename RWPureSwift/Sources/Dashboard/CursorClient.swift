@@ -1,4 +1,7 @@
 import Dependencies
+#if canImport(AppKit)
+import AppKit
+#endif
 import DependenciesMacros
 
 @DependencyClient

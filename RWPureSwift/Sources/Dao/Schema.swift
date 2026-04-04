@@ -132,7 +132,9 @@ extension DependencyValues {
         
         try database.write { db in
             if context != .live || isUITesting {
+                #if DEBUG
                 let _ = try db.seedSampleData()
+                #endif
             }
         }
         
