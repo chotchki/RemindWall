@@ -5,9 +5,77 @@ import SwiftUI
 struct KenBurnsPanView: View {
     let assetType: AssetType
     let size: CGSize
-    
-    @State private var align : Alignment  = .topLeading
-    
+
+    @State private var align: Alignment = .center
+
+    /// Pan routes for images that overflow horizontally (landscape photo in portrait/square view)
+    private static let horizontalRoutes: [(Alignment, Alignment)] = [
+        (.leading, .trailing),
+        (.trailing, .leading),
+        (.topLeading, .bottomTrailing),
+        (.bottomTrailing, .topLeading),
+        (.bottomLeading, .topTrailing),
+        (.topTrailing, .bottomLeading),
+    ]
+
+    /// Pan routes for images that overflow vertically (portrait photo in landscape/square view)
+    private static let verticalRoutes: [(Alignment, Alignment)] = [
+        (.top, .bottom),
+        (.bottom, .top),
+        (.topLeading, .bottomTrailing),
+        (.bottomTrailing, .topLeading),
+        (.topTrailing, .bottomLeading),
+        (.bottomLeading, .topTrailing),
+    ]
+
+    /// Pan routes for images with similar aspect ratio to the view
+    private static let diagonalRoutes: [(Alignment, Alignment)] = [
+        (.topLeading, .bottomTrailing),
+        (.bottomTrailing, .topLeading),
+        (.topTrailing, .bottomLeading),
+        (.bottomLeading, .topTrailing),
+    ]
+
+    private var imageAspectRatio: CGFloat? {
+        switch assetType {
+        case .staticImage(let image):
+            guard image.size.height > 0 else { return nil }
+            return image.size.width / image.size.height
+        case .livePhoto(let livePhoto):
+            guard livePhoto.size.height > 0 else { return nil }
+            return livePhoto.size.width / livePhoto.size.height
+        default:
+            return nil
+        }
+    }
+
+    private func pickRoute() -> (start: Alignment, end: Alignment) {
+        let viewAspect = size.height > 0 ? size.width / size.height : 1.0
+        let routes: [(Alignment, Alignment)]
+
+        if let imgAspect = imageAspectRatio {
+            if imgAspect > viewAspect * 1.1 {
+                routes = Self.horizontalRoutes
+            } else if imgAspect < viewAspect * 0.9 {
+                routes = Self.verticalRoutes
+            } else {
+                routes = Self.diagonalRoutes
+            }
+        } else {
+            routes = Self.diagonalRoutes
+        }
+
+        return routes.randomElement()!
+    }
+
+    private func startPanAnimation() {
+        let route = pickRoute()
+        align = route.start
+        withAnimation(.easeInOut(duration: 10)) {
+            align = route.end
+        }
+    }
+
     var body: some View {
         VStack{
             switch assetType {
@@ -27,7 +95,12 @@ struct KenBurnsPanView: View {
                 #endif
             case .livePhoto(let pHLivePhoto):
                 #if canImport(UIKit)
-                LivePhotoView(livephoto: pHLivePhoto).aspectRatio(contentMode: .fill)
+                Color.clear
+                    .frame(width: size.width * 1.3, height: size.height * 1.3)
+                    .overlay {
+                        LivePhotoView(livephoto: pHLivePhoto)
+                    }
+                    .clipped()
                 #else
                 Text("Live photos not supported on this platform")
                 #endif
@@ -38,15 +111,10 @@ struct KenBurnsPanView: View {
         .frame(width: size.width, height: size.height, alignment: align).clipped()
         .background(Color.black)
         .onAppear {
-            withAnimation(.linear(duration: 10)) {
-                self.align = .bottomTrailing
-            }
+            startPanAnimation()
         }
-        .onChange(of: assetType){
-            self.align = .topLeading
-            withAnimation(.linear(duration: 10)) {
-                self.align = .bottomTrailing
-            }
+        .onChange(of: assetType) {
+            startPanAnimation()
         }
     }
 }
