@@ -153,6 +153,64 @@ struct AddTrackeeTests {
       await store.send(.delegate(.saveTrackee(testTrackee)))
   }
   
+  @Test("keypadAppendCharacter appends characters to build name")
+  func keypadAppendCharacter() async {
+      @Dependency(\.uuid) var uuid
+
+      let testTrackee = Trackee(id: Trackee.ID(uuid()), name: "")
+
+      let store = TestStore(initialState: AddTrackeeFeature.State(trackee: testTrackee)) {
+          AddTrackeeFeature()
+      }
+
+      await store.send(.keypadAppendCharacter("B")) {
+          $0.trackee.name = "B"
+      }
+
+      await store.send(.keypadAppendCharacter("o")) {
+          $0.trackee.name = "Bo"
+      }
+
+      await store.send(.keypadAppendCharacter("b")) {
+          $0.trackee.name = "Bob"
+      }
+
+      await store.send(.saveButtonTapped)
+      await store.receive(\.delegate.saveTrackee, Trackee(id: testTrackee.id, name: "Bob"))
+  }
+
+  @Test("keypadDeleteCharacter removes last character")
+  func keypadDeleteCharacter() async {
+      @Dependency(\.uuid) var uuid
+
+      let testTrackee = Trackee(id: Trackee.ID(uuid()), name: "Bob")
+
+      let store = TestStore(initialState: AddTrackeeFeature.State(trackee: testTrackee)) {
+          AddTrackeeFeature()
+      }
+
+      await store.send(.keypadDeleteCharacter) {
+          $0.trackee.name = "Bo"
+      }
+
+      await store.send(.keypadDeleteCharacter) {
+          $0.trackee.name = "B"
+      }
+  }
+
+  @Test("keypadDeleteCharacter on empty name is no-op")
+  func keypadDeleteCharacterEmpty() async {
+      @Dependency(\.uuid) var uuid
+
+      let testTrackee = Trackee(id: Trackee.ID(uuid()), name: "")
+
+      let store = TestStore(initialState: AddTrackeeFeature.State(trackee: testTrackee)) {
+          AddTrackeeFeature()
+      }
+
+      await store.send(.keypadDeleteCharacter)
+  }
+
   @Test("Long name can be set and saved")
   func setLongName() async {
       @Dependency(\.uuid) var uuid
