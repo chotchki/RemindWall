@@ -7,15 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		BF2973102C8667AC0029F361 /* RemindWalliOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF29730F2C8667AC0029F361 /* RemindWalliOSApp.swift */; };
-		BF2973162C8667AD0029F361 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BF2973152C8667AD0029F361 /* Assets.xcassets */; };
-		BF2973192C8667AD0029F361 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BF2973182C8667AD0029F361 /* Preview Assets.xcassets */; };
 		BF67F8D72ECAE7C3009D36B9 /* SQLiteData in Frameworks */ = {isa = PBXBuildFile; productRef = BF67F8D62ECAE7C3009D36B9 /* SQLiteData */; };
-		BF67F8D92ECAE7CF009D36B9 /* SQLiteData in Frameworks */ = {isa = PBXBuildFile; productRef = BF67F8D82ECAE7CF009D36B9 /* SQLiteData */; };
 		BF67F8DB2ECC0A57009D36B9 /* Dao in Frameworks */ = {isa = PBXBuildFile; productRef = BF67F8DA2ECC0A57009D36B9 /* Dao */; };
-		BF67F8DD2ECC0A5E009D36B9 /* Dao in Frameworks */ = {isa = PBXBuildFile; productRef = BF67F8DC2ECC0A5E009D36B9 /* Dao */; };
 		BFBC6D4F2F70692F0089909C /* AppNavigation in Frameworks */ = {isa = PBXBuildFile; productRef = BFBC6D4E2F70692F0089909C /* AppNavigation */; };
-		BFBC6D512F7069370089909C /* AppNavigation in Frameworks */ = {isa = PBXBuildFile; productRef = BFBC6D502F7069370089909C /* AppNavigation */; };
 		BFE60AD42C4418E200E8AB67 /* RemindWallApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFE60AD32C4418E200E8AB67 /* RemindWallApp.swift */; };
 		BFE60ADA2C4418E300E8AB67 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BFE60AD92C4418E300E8AB67 /* Assets.xcassets */; };
 		BFE60ADE2C4418E300E8AB67 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BFE60ADD2C4418E300E8AB67 /* Preview Assets.xcassets */; };
@@ -29,20 +23,12 @@
 			remoteGlobalIDString = BFE60ACF2C4418E200E8AB67;
 			remoteInfo = RemindWall;
 		};
-		BF1F00D32F5663B80065801C /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = BFE60AC82C4418E200E8AB67 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = BF29730C2C8667AC0029F361;
-			remoteInfo = RemindWalliOS;
-		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		BF1F00B92F565E130065801C /* RemindWall.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = RemindWall.xctestplan; sourceTree = "<group>"; };
 		BF1F00BE2F56638B0065801C /* RemindWallUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RemindWallUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		BF1F00CD2F5663B80065801C /* RemindWalliOSUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RemindWalliOSUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		BF29730D2C8667AC0029F361 /* RemindWalliOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RemindWalliOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BF29730F2C8667AC0029F361 /* RemindWalliOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindWalliOSApp.swift; sourceTree = "<group>"; };
 		BF2973152C8667AD0029F361 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		BF2973182C8667AD0029F361 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
@@ -75,16 +61,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		BF29730A2C8667AC0029F361 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				BF67F8DD2ECC0A5E009D36B9 /* Dao in Frameworks */,
-				BF67F8D92ECAE7CF009D36B9 /* SQLiteData in Frameworks */,
-				BFBC6D512F7069370089909C /* AppNavigation in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -140,7 +116,6 @@
 			isa = PBXGroup;
 			children = (
 				BFE60AD02C4418E200E8AB67 /* RemindWall.app */,
-				BF29730D2C8667AC0029F361 /* RemindWalliOS.app */,
 				BF1F00BE2F56638B0065801C /* RemindWallUITests.xctest */,
 				BF1F00CD2F5663B80065801C /* RemindWalliOSUITests.xctest */,
 			);
@@ -219,7 +194,6 @@
 			buildRules = (
 			);
 			dependencies = (
-				BF1F00D42F5663B80065801C /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				BF1F00CE2F5663B80065801C /* RemindWalliOSUITests */,
@@ -230,28 +204,6 @@
 			productName = RemindWalliOSUITests;
 			productReference = BF1F00CD2F5663B80065801C /* RemindWalliOSUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
-		};
-		BF29730C2C8667AC0029F361 /* RemindWalliOS */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = BF29731C2C8667AD0029F361 /* Build configuration list for PBXNativeTarget "RemindWalliOS" */;
-			buildPhases = (
-				BF2973092C8667AC0029F361 /* Sources */,
-				BF29730A2C8667AC0029F361 /* Frameworks */,
-				BF29730B2C8667AC0029F361 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = RemindWalliOS;
-			packageProductDependencies = (
-				BF67F8D82ECAE7CF009D36B9 /* SQLiteData */,
-				BF67F8DC2ECC0A5E009D36B9 /* Dao */,
-				BFBC6D502F7069370089909C /* AppNavigation */,
-			);
-			productName = RemindWalliOS;
-			productReference = BF29730D2C8667AC0029F361 /* RemindWalliOS.app */;
-			productType = "com.apple.product-type.application";
 		};
 		BFE60ACF2C4418E200E8AB67 /* RemindWall */ = {
 			isa = PBXNativeTarget;
@@ -293,9 +245,6 @@
 						CreatedOnToolsVersion = 26.3;
 						TestTargetID = BF29730C2C8667AC0029F361;
 					};
-					BF29730C2C8667AC0029F361 = {
-						CreatedOnToolsVersion = 15.4;
-					};
 					BFE60ACF2C4418E200E8AB67 = {
 						CreatedOnToolsVersion = 15.4;
 					};
@@ -318,7 +267,6 @@
 			projectRoot = "";
 			targets = (
 				BFE60ACF2C4418E200E8AB67 /* RemindWall */,
-				BF29730C2C8667AC0029F361 /* RemindWalliOS */,
 				BF1F00BD2F56638B0065801C /* RemindWallUITests */,
 				BF1F00CC2F5663B80065801C /* RemindWalliOSUITests */,
 			);
@@ -337,15 +285,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		BF29730B2C8667AC0029F361 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				BF2973192C8667AD0029F361 /* Preview Assets.xcassets in Resources */,
-				BF2973162C8667AD0029F361 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -375,14 +314,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		BF2973092C8667AC0029F361 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				BF2973102C8667AC0029F361 /* RemindWalliOSApp.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		BFE60ACC2C4418E200E8AB67 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -398,11 +329,6 @@
 			isa = PBXTargetDependency;
 			target = BFE60ACF2C4418E200E8AB67 /* RemindWall */;
 			targetProxy = BF1F00C72F56638F0065801C /* PBXContainerItemProxy */;
-		};
-		BF1F00D42F5663B80065801C /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = BF29730C2C8667AC0029F361 /* RemindWalliOS */;
-			targetProxy = BF1F00D32F5663B80065801C /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -492,85 +418,6 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = RemindWalliOS;
-				VALIDATE_PRODUCT = YES;
-			};
-			name = Release;
-		};
-		BF29731A2C8667AD0029F361 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = RemindWalliOS/RemindWalliOS.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 0;
-				DEVELOPMENT_ASSET_PATHS = "\"RemindWalliOS/Preview Content\"";
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = RemindWalliOS/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = RemindWall;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "The application idles by showing a slideshow";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UIRequiresFullScreen = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 5;
-				PRODUCT_BUNDLE_IDENTIFIER = io.hotchkiss.mrAnderson.RemindWalliOS;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Debug;
-		};
-		BF29731B2C8667AD0029F361 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = RemindWalliOS/RemindWalliOS.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 0;
-				DEVELOPMENT_ASSET_PATHS = "\"RemindWalliOS/Preview Content\"";
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = RemindWalliOS/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = RemindWall;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "The application idles by showing a slideshow";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UIRequiresFullScreen = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
-				MARKETING_VERSION = 5;
-				PRODUCT_BUNDLE_IDENTIFIER = io.hotchkiss.mrAnderson.RemindWalliOS;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
-				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
@@ -828,15 +675,6 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		BF29731C2C8667AD0029F361 /* Build configuration list for PBXNativeTarget "RemindWalliOS" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				BF29731A2C8667AD0029F361 /* Debug */,
-				BF29731B2C8667AD0029F361 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		BFE60ACB2C4418E200E8AB67 /* Build configuration list for PBXProject "RemindWall" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -874,24 +712,11 @@
 			package = BF67F8D52ECAE7C3009D36B9 /* XCRemoteSwiftPackageReference "sqlite-data" */;
 			productName = SQLiteData;
 		};
-		BF67F8D82ECAE7CF009D36B9 /* SQLiteData */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = BF67F8D52ECAE7C3009D36B9 /* XCRemoteSwiftPackageReference "sqlite-data" */;
-			productName = SQLiteData;
-		};
 		BF67F8DA2ECC0A57009D36B9 /* Dao */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Dao;
 		};
-		BF67F8DC2ECC0A5E009D36B9 /* Dao */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = Dao;
-		};
 		BFBC6D4E2F70692F0089909C /* AppNavigation */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = AppNavigation;
-		};
-		BFBC6D502F7069370089909C /* AppNavigation */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = AppNavigation;
 		};
