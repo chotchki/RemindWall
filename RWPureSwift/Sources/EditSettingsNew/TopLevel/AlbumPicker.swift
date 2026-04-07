@@ -11,7 +11,7 @@ public struct AlbumPickerFeature {
     
     @ObservableState
     public struct State: Equatable {
-        @Shared(.appStorage(ALBUM_SETTING_KEY)) var selectedAlbum: AlbumLocalId?
+        @Shared(.appStorage(ALBUM_SETTING_KEY)) public var selectedAlbum: AlbumLocalId?
         var photoStatus: PHAuthorizationStatus = .notDetermined
         var availibleAlbums: PHFetchResultCollection<PHAssetCollection>?
         

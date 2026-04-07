@@ -1,3 +1,4 @@
+import AppTypes
 import ComposableArchitecture
 import DependenciesTestSupport
 import Foundation
@@ -21,6 +22,54 @@ struct AppNavigationFeatureTests {
 
     @Test("onAppear starts screen off monitoring")
     func onAppearStartsMonitoring() async {
+        let clock = TestClock()
+
+        let store = TestStore(initialState: AppNavigationFeature.State()) {
+            AppNavigationFeature()
+        } withDependencies: {
+            $0.continuousClock = clock
+            $0.date = .constant(Date())
+            $0.calendar = .current
+            $0.screenControl.getBrightness = { 0.75 }
+            $0.screenControl.setBrightness = { _ in }
+        }
+
+        store.exhaustivity = .off
+
+        await store.send(.onAppear)
+        await store.receive(\.screenOffMonitor.startMonitoring)
+        await store.finish()
+    }
+
+    @Test("onAppear with configured slideshow switches to dashboard")
+    func onAppearWithConfiguredSlideshow() async {
+        let clock = TestClock()
+
+        var state = AppNavigationFeature.State()
+        state.settingsState.albumPickerState.$selectedAlbum.withLock { $0 = AlbumLocalId("test-album") }
+
+        let store = TestStore(initialState: state) {
+            AppNavigationFeature()
+        } withDependencies: {
+            $0.continuousClock = clock
+            $0.date = .constant(Date())
+            $0.calendar = .current
+            $0.screenControl.getBrightness = { 0.75 }
+            $0.screenControl.setBrightness = { _ in }
+        }
+
+        store.exhaustivity = .off
+
+        await store.send(.onAppear) {
+            $0.screen = .dashboard
+            $0.screenOffMonitorState.isSlideshowPlaying = true
+        }
+        await store.receive(\.screenOffMonitor.startMonitoring)
+        await store.finish()
+    }
+
+    @Test("onAppear without configured slideshow stays on settings")
+    func onAppearWithoutConfiguredSlideshow() async {
         let clock = TestClock()
 
         let store = TestStore(initialState: AppNavigationFeature.State()) {

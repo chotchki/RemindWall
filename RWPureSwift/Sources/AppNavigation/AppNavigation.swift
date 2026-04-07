@@ -49,6 +49,10 @@ public struct AppNavigationFeature {
         Reduce { state, action in
             switch action {
             case .onAppear:
+                if state.settingsState.albumPickerState.selectedAlbum != nil {
+                    state.screen = .dashboard
+                    state.screenOffMonitorState.isSlideshowPlaying = true
+                }
                 return .send(.screenOffMonitor(.startMonitoring))
 
             case .settings(.delegate(.startSlideshow)):
