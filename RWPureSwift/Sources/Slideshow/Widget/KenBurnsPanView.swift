@@ -70,7 +70,14 @@ struct KenBurnsPanView: View {
 
     private func startPanAnimation() {
         let route = pickRoute()
-        align = route.start
+        // Use an explicit transaction with no animation to prevent
+        // inherited animations (e.g. the parent's opacity transition)
+        // from animating the snap to the start position.
+        var snap = Transaction()
+        snap.animation = nil
+        withTransaction(snap) {
+            align = route.start
+        }
         withAnimation(.easeInOut(duration: 10)) {
             align = route.end
         }
@@ -95,12 +102,8 @@ struct KenBurnsPanView: View {
                 #endif
             case .livePhoto(let pHLivePhoto):
                 #if canImport(UIKit)
-                Color.clear
+                LivePhotoView(livephoto: pHLivePhoto)
                     .frame(width: size.width * 1.3, height: size.height * 1.3)
-                    .overlay {
-                        LivePhotoView(livephoto: pHLivePhoto)
-                    }
-                    .clipped()
                 #else
                 Text("Live photos not supported on this platform")
                 #endif

@@ -24,6 +24,10 @@ public struct LivePhotoView: UIViewRepresentable {
         return phlpv
     }
 
+    public func sizeThatFits(_ proposal: ProposedViewSize, uiView: PHLivePhotoView, context: Context) -> CGSize {
+        proposal.replacingUnspecifiedDimensions()
+    }
+
     public func updateUIView(_ lpView: PHLivePhotoView, context: Context) {
         if livephoto != lpView.livePhoto {
             lpView.livePhoto = livephoto
