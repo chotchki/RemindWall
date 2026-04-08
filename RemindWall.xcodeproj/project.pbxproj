@@ -41,7 +41,6 @@
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		BF1F00BF2F56638B0065801C /* RemindWallUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = RemindWallUITests; sourceTree = "<group>"; };
-		BF1F00CE2F5663B80065801C /* RemindWalliOSUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = RemindWalliOSUITests; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -80,7 +79,6 @@
 				BFE60AE42C44191F00E8AB67 /* RWPureSwift */,
 				BFE60AD22C4418E200E8AB67 /* RemindWall */,
 				BF1F00BF2F56638B0065801C /* RemindWallUITests */,
-				BF1F00CE2F5663B80065801C /* RemindWalliOSUITests */,
 				BFE60AD12C4418E200E8AB67 /* Products */,
 				BFE60AE72C441A0900E8AB67 /* Frameworks */,
 			);
@@ -168,9 +166,6 @@
 			buildRules = (
 			);
 			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				BF1F00CE2F5663B80065801C /* RemindWalliOSUITests */,
 			);
 			name = RemindWalliOSUITests;
 			packageProductDependencies = (
