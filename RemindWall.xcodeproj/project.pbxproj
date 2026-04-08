@@ -29,11 +29,6 @@
 		BF1F00B92F565E130065801C /* RemindWall.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = RemindWall.xctestplan; sourceTree = "<group>"; };
 		BF1F00BE2F56638B0065801C /* RemindWallUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RemindWallUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		BF1F00CD2F5663B80065801C /* RemindWalliOSUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RemindWalliOSUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		BF29730F2C8667AC0029F361 /* RemindWalliOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindWalliOSApp.swift; sourceTree = "<group>"; };
-		BF2973152C8667AD0029F361 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		BF2973182C8667AD0029F361 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
-		BF29731D2C8668430029F361 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		BF2973202C8669050029F361 /* RemindWalliOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RemindWalliOS.entitlements; sourceTree = "<group>"; };
 		BFE331172C4440CA0095F675 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		BFE60AD02C4418E200E8AB67 /* RemindWall.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RemindWall.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BFE60AD32C4418E200E8AB67 /* RemindWallApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindWallApp.swift; sourceTree = "<group>"; };
@@ -77,26 +72,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		BF29730E2C8667AC0029F361 /* RemindWalliOS */ = {
-			isa = PBXGroup;
-			children = (
-				BF2973202C8669050029F361 /* RemindWalliOS.entitlements */,
-				BF29731D2C8668430029F361 /* Info.plist */,
-				BF29730F2C8667AC0029F361 /* RemindWalliOSApp.swift */,
-				BF2973152C8667AD0029F361 /* Assets.xcassets */,
-				BF2973172C8667AD0029F361 /* Preview Content */,
-			);
-			path = RemindWalliOS;
-			sourceTree = "<group>";
-		};
-		BF2973172C8667AD0029F361 /* Preview Content */ = {
-			isa = PBXGroup;
-			children = (
-				BF2973182C8667AD0029F361 /* Preview Assets.xcassets */,
-			);
-			path = "Preview Content";
-			sourceTree = "<group>";
-		};
 		BFE60AC72C4418E200E8AB67 = {
 			isa = PBXGroup;
 			children = (
@@ -104,7 +79,6 @@
 				BFE60AE62C44194F00E8AB67 /* ci_scripts */,
 				BFE60AE42C44191F00E8AB67 /* RWPureSwift */,
 				BFE60AD22C4418E200E8AB67 /* RemindWall */,
-				BF29730E2C8667AC0029F361 /* RemindWalliOS */,
 				BF1F00BF2F56638B0065801C /* RemindWallUITests */,
 				BF1F00CE2F5663B80065801C /* RemindWalliOSUITests */,
 				BFE60AD12C4418E200E8AB67 /* Products */,
