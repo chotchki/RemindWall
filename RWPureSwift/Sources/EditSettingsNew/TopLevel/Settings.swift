@@ -151,6 +151,14 @@ public struct SettingsView: View {
                         }
                     }
                 }
+
+                Section {
+                    let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"
+                    let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "Unknown"
+                    LabeledContent("Version") {
+                        Text("\(version) (\(build))")
+                    }
+                }
             }
             .navigationTitle("Settings")
             .toolbar {
