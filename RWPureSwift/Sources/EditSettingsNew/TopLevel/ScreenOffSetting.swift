@@ -122,6 +122,8 @@ public struct ScreenOffSettingView: View {
                 .font(.system(size: 20, weight: .semibold, design: .rounded))
                 .monospacedDigit()
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(label)
     }
 }
 
