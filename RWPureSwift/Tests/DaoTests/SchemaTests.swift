@@ -11,13 +11,13 @@ import Testing
 @Suite("Schema Tests")
 struct SchemaTests {
     @Test("Database Seed Sample Data")
-    func database_config() async throws {
-        await withDependencies {
+    func database_config() throws {
+        withDependencies {
             $0.uuid = .incrementing
             $0.defaultDatabase = try! $0.appDatabase()
         } operation: {
             @Dependency(\.defaultDatabase) var defaultDatabase
-            try! await defaultDatabase.write{ db in
+            let _ = try! defaultDatabase.write{ db in
                 try! db.seedSampleData()
             }
         }
@@ -42,7 +42,7 @@ struct SchemaTests {
             )
             
             try! await defaultDatabase.write { db in
-                try Setting.insert(setting).execute(db)
+                try Setting.insert{setting}.execute(db)
             }
             
             let fetched = try! await defaultDatabase.read { db in
@@ -69,7 +69,7 @@ struct SchemaTests {
 
             // Insert a trackee and a reminder
             try! await defaultDatabase.write { db in
-                try Trackee.insert(Trackee(id: trackeeId, name: "Alice")).execute(db)
+                try Trackee.insert{Trackee(id: trackeeId, name: "Alice")}.execute(db)
                 try db.execute(
                     sql: """
                     INSERT INTO "reminderTimes" ("id", "weekDay", "hour", "minute", "trackeeId")
@@ -124,7 +124,7 @@ struct SchemaTests {
             )
             
             try! await defaultDatabase.write { db in
-                try Setting.insert(setting1).execute(db)
+                try Setting.insert{setting1}.execute(db)
             }
             
             // Fetch and verify first insert

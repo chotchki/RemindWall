@@ -182,6 +182,7 @@ public struct TagScanLoaderView: View {
     }
 }
 
+@MainActor
 private func previewStore(_ result: ScanResult?) -> StoreOf<TagScanLoaderFeature> {
     var state = TagScanLoaderFeature.State()
     state.scanResult = result
