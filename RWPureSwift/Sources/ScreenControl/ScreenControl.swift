@@ -1,8 +1,5 @@
 import Dependencies
 import DependenciesMacros
-#if canImport(IOKit)
-import IOKit
-#endif
 #if canImport(UIKit)
 import UIKit
 #endif
@@ -16,93 +13,36 @@ public struct ScreenControl: Sendable {
     public var setBrightness: @Sendable (CGFloat) async -> Void
 }
 
-// MARK: - IOKit Display Brightness (macCatalyst)
-
-#if canImport(IOKit)
-
-/// Typealias for IODisplayGetFloatParameter from IOGraphicsLib
-/// Signature: kern_return_t IODisplayGetFloatParameter(io_service_t service, IOOptionBits options, CFStringRef parameterName, float *value)
-private typealias IODisplayGetFloatParameterFunc = @convention(c) (io_service_t, UInt32, CFString, UnsafeMutablePointer<Float>) -> kern_return_t
-
-/// Typealias for IODisplaySetFloatParameter from IOGraphicsLib
-/// Signature: kern_return_t IODisplaySetFloatParameter(io_service_t service, IOOptionBits options, CFStringRef parameterName, float value)
-private typealias IODisplaySetFloatParameterFunc = @convention(c) (io_service_t, UInt32, CFString, Float) -> kern_return_t
-
-/// Loads IODisplayGetFloatParameter and IODisplaySetFloatParameter from IOKit via dlsym.
-/// These symbols live in the IOKit framework but are not exposed in Swift headers.
-private func loadIODisplayFunctions() -> (get: IODisplayGetFloatParameterFunc, set: IODisplaySetFloatParameterFunc)? {
-    guard let handle = dlopen("/System/Library/Frameworks/IOKit.framework/IOKit", RTLD_LAZY) else {
-        return nil
-    }
-    guard let getPtr = dlsym(handle, "IODisplayGetFloatParameter"),
-          let setPtr = dlsym(handle, "IODisplaySetFloatParameter") else {
-        return nil
-    }
-    let getFunc = unsafeBitCast(getPtr, to: IODisplayGetFloatParameterFunc.self)
-    let setFunc = unsafeBitCast(setPtr, to: IODisplaySetFloatParameterFunc.self)
-    return (getFunc, setFunc)
-}
-
-nonisolated(unsafe) private let brightnessKey = "brightness" as CFString
-
-private func ioKitGetBrightness() -> CGFloat? {
-    guard let funcs = loadIODisplayFunctions() else { return nil }
-    var iterator = io_iterator_t()
-    let result = IOServiceGetMatchingServices(
-        kIOMainPortDefault,
-        IOServiceMatching("IODisplayConnect"),
-        &iterator
-    )
-    guard result == kIOReturnSuccess else { return nil }
-    defer { IOObjectRelease(iterator) }
-
-    let service = IOIteratorNext(iterator)
-    guard service != IO_OBJECT_NULL else { return nil }
-    defer { IOObjectRelease(service) }
-
-    var brightness: Float = 0
-    let kr = funcs.get(service, 0, brightnessKey, &brightness)
-    guard kr == kIOReturnSuccess else { return nil }
-    return CGFloat(brightness)
-}
-
-private func ioKitSetBrightness(_ value: CGFloat) {
-    guard let funcs = loadIODisplayFunctions() else { return }
-    var iterator = io_iterator_t()
-    let result = IOServiceGetMatchingServices(
-        kIOMainPortDefault,
-        IOServiceMatching("IODisplayConnect"),
-        &iterator
-    )
-    guard result == kIOReturnSuccess else { return }
-    defer { IOObjectRelease(iterator) }
-
-    let service = IOIteratorNext(iterator)
-    guard service != IO_OBJECT_NULL else { return }
-    defer { IOObjectRelease(service) }
-
-    _ = funcs.set(service, 0, brightnessKey, Float(value))
-}
-
-#endif
-
 extension ScreenControl: DependencyKey {
     public static var liveValue: Self {
         Self(
             getBrightness: {
-                #if targetEnvironment(macCatalyst)
-                return ioKitGetBrightness() ?? 1.0
-                #elseif canImport(UIKit)
-                return await MainActor.run { UIScreen.main.brightness }
+                #if canImport(UIKit)
+                return await MainActor.run {
+                    guard let scene = UIApplication.shared.connectedScenes.first,
+                          let windowSceneDelegate = scene.delegate as? UIWindowSceneDelegate,
+                          let window = windowSceneDelegate.window else {
+                            return 1.0
+                    }
+                    
+                    return window?.windowScene?.screen.brightness ?? 1.0
+                }
                 #else
                 return 1.0
                 #endif
             },
             setBrightness: { brightness in
-                #if targetEnvironment(macCatalyst)
-                ioKitSetBrightness(brightness)
-                #elseif canImport(UIKit)
-                await MainActor.run { UIScreen.main.brightness = brightness }
+                #if canImport(UIKit)
+                await MainActor.run {
+                    guard let scene = UIApplication.shared.connectedScenes.first,
+                          let windowSceneDelegate = scene.delegate as? UIWindowSceneDelegate,
+                          let window = windowSceneDelegate.window,
+                          let screen = window?.windowScene?.keyWindow?.screen else {
+                            return
+                    }
+                    
+                    screen.brightness = 1.0
+                }
                 #endif
             }
         )

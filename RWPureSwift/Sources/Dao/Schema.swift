@@ -145,20 +145,6 @@ extension DependencyValues {
             .execute(db)
         }
         
-        migrator.registerMigration("Create settings table") { db in
-            try #sql(
-            """
-            CREATE TABLE "settings" (
-              "id" TEXT PRIMARY KEY NOT NULL ON CONFLICT REPLACE DEFAULT (uuid()),
-              "key" TEXT NOT NULL,
-              "value" TEXT NOT NULL,
-              "lastModified" TEXT NOT NULL
-            )
-            """
-            )
-            .execute(db)
-        }
-        
         migrator.registerMigration("Remove cascade delete from reminderTimes") { db in
             try db.execute(sql: """
                 CREATE TABLE "reminderTimes_new" (
@@ -180,6 +166,20 @@ extension DependencyValues {
             try db.execute(sql: """
                 ALTER TABLE "reminderTimes_new" RENAME TO "reminderTimes"
                 """)
+        }
+        
+        migrator.registerMigration("Create settings table") { db in
+            try #sql(
+            """
+            CREATE TABLE "settings" (
+              "id" TEXT PRIMARY KEY NOT NULL ON CONFLICT REPLACE DEFAULT (uuid()),
+              "key" TEXT NOT NULL,
+              "value" TEXT NOT NULL,
+              "lastModified" TEXT NOT NULL
+            )
+            """
+            )
+            .execute(db)
         }
         
         try migrator.migrate(database)
