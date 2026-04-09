@@ -47,6 +47,7 @@ public struct TrackeesFeature: Sendable {
                 return .run { [t = state.$trackees, dd = self.defaultDatabase] send in
                     await withErrorReporting {
                         try await dd.write { db in
+                            try ReminderTime.where { $0.trackeeId.eq(trackeeId) }.delete().execute(db)
                             try Trackee.find(trackeeId).delete().execute(db)
                         }
                         try await t.load(Trackee.all.order(by: \.name))

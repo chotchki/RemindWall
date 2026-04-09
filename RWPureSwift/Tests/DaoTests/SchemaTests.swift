@@ -2,6 +2,7 @@ import Dao
 import Dependencies
 import DependenciesTestSupport
 import Foundation
+import GRDB
 import SQLiteData
 import StructuredQueries
 import Testing
@@ -54,6 +55,55 @@ struct SchemaTests {
         }
     }
     
+    @Test("INSERT OR REPLACE on trackees does not cascade-delete reminders")
+    func insertOrReplaceDoesNotCascadeDelete() async throws {
+        await withDependencies {
+            $0.uuid = .incrementing
+            $0.defaultDatabase = try! $0.appDatabase()
+        } operation: {
+            @Dependency(\.defaultDatabase) var defaultDatabase
+            @Dependency(\.uuid) var uuid
+
+            let trackeeId = Trackee.ID(uuid())
+            let reminderId = UUID()
+
+            // Insert a trackee and a reminder
+            try! await defaultDatabase.write { db in
+                try Trackee.insert(Trackee(id: trackeeId, name: "Alice")).execute(db)
+                try db.execute(
+                    sql: """
+                    INSERT INTO "reminderTimes" ("id", "weekDay", "hour", "minute", "trackeeId")
+                    VALUES (?, 1, 9, 0, ?)
+                    """,
+                    arguments: [reminderId.uuidString, trackeeId.rawValue.uuidString]
+                )
+            }
+
+            // Verify reminder exists
+            let before = try! await defaultDatabase.read { db in
+                try ReminderTime.where { $0.trackeeId.eq(trackeeId) }.fetchAll(db)
+            }
+            #expect(before.count == 1)
+
+            // Simulate what SyncEngine does: INSERT OR REPLACE the same trackee
+            try! await defaultDatabase.write { db in
+                try db.execute(
+                    sql: """
+                    INSERT OR REPLACE INTO "trackees" ("id", "name")
+                    VALUES (?, ?)
+                    """,
+                    arguments: [trackeeId.rawValue.uuidString, "Alice"]
+                )
+            }
+
+            // Verify reminder still exists after INSERT OR REPLACE
+            let after = try! await defaultDatabase.read { db in
+                try ReminderTime.where { $0.trackeeId.eq(trackeeId) }.fetchAll(db)
+            }
+            #expect(after.count == 1, "Reminder was cascade-deleted by INSERT OR REPLACE on trackees")
+        }
+    }
+
     @Test("Setting with same key uses last modified for conflict resolution")
     func settingLastModifiedConflict() async throws {
         await withDependencies {

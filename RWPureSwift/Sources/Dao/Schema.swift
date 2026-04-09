@@ -145,6 +145,29 @@ extension DependencyValues {
             .execute(db)
         }
         
+        migrator.registerMigration("Remove cascade delete from reminderTimes") { db in
+            try db.execute(sql: """
+                CREATE TABLE "reminderTimes_new" (
+                  "id" TEXT PRIMARY KEY NOT NULL ON CONFLICT REPLACE DEFAULT (uuid()),
+                  "weekDay" INT NOT NULL,
+                  "hour" INT NOT NULL,
+                  "minute" INT NOT NULL,
+                  "associatedTag" TEXT NULL,
+                  "lastScan" TEXT NULL,
+                  "trackeeId" TEXT NOT NULL REFERENCES "trackees"("id")
+                )
+                """)
+            try db.execute(sql: """
+                INSERT INTO "reminderTimes_new" SELECT * FROM "reminderTimes"
+                """)
+            try db.execute(sql: """
+                DROP TABLE "reminderTimes"
+                """)
+            try db.execute(sql: """
+                ALTER TABLE "reminderTimes_new" RENAME TO "reminderTimes"
+                """)
+        }
+        
         migrator.registerMigration("Create settings table") { db in
             try #sql(
             """
