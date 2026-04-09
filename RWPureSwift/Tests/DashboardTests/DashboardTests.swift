@@ -1,7 +1,9 @@
+import AppTypes
 import ComposableArchitecture
 import Dependencies
 import DependenciesTestSupport
 import Foundation
+import TagScanner
 import Testing
 
 @testable import Dashboard
@@ -23,6 +25,10 @@ struct DashboardTests {
             $0.date = .constant(Date())
             $0.calendar = .current
             $0.cursorClient.hide = { hideCalled.setValue(true) }
+            $0.tagReaderClient.nextTagId = {
+                try? await Task.sleep(for: .seconds(100))
+                return .noTag
+            }
         }
 
         store.exhaustivity = .off
@@ -35,6 +41,7 @@ struct DashboardTests {
         await store.receive(\.slideshow.viewAppeared)
         await store.receive(\.alertLoader.startMonitoring)
         await store.receive(\.calendarEvents.startMonitoring)
+        await store.receive(\.tagScanLoader.startMonitoring)
 
         await store.finish()
     }

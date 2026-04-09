@@ -1,6 +1,7 @@
 import ComposableArchitecture
 import Slideshow
 import SwiftUI
+import TagScanLoader
 
 @Reducer
 public struct DashboardFeature: Sendable {
@@ -10,6 +11,7 @@ public struct DashboardFeature: Sendable {
         public var slideshowState = SlideShowFeature.State()
         public var alertLoaderState = AlertLoaderFeature.State()
         public var calendarEventsState = CalendarEventsFeature.State()
+        public var tagScanLoaderState = TagScanLoaderFeature.State()
 
         public init() {}
     }
@@ -20,6 +22,7 @@ public struct DashboardFeature: Sendable {
         case slideshow(SlideShowFeature.Action)
         case alertLoader(AlertLoaderFeature.Action)
         case calendarEvents(CalendarEventsFeature.Action)
+        case tagScanLoader(TagScanLoaderFeature.Action)
         case delegate(Delegate)
         case tappedReturnToSettings
 
@@ -46,6 +49,10 @@ public struct DashboardFeature: Sendable {
             CalendarEventsFeature()
         }
 
+        Scope(state: \.tagScanLoaderState, action: \.tagScanLoader) {
+            TagScanLoaderFeature()
+        }
+
         Reduce { state, action in
             switch action {
             case .onAppear:
@@ -53,7 +60,8 @@ public struct DashboardFeature: Sendable {
                 return .merge(
                     .send(.slideshow(.viewAppeared)),
                     .send(.alertLoader(.startMonitoring)),
-                    .send(.calendarEvents(.startMonitoring))
+                    .send(.calendarEvents(.startMonitoring)),
+                    .send(.tagScanLoader(.startMonitoring))
                 )
 
             case .onDisappear:
@@ -66,7 +74,7 @@ public struct DashboardFeature: Sendable {
             case .tappedReturnToSettings:
                 return .send(.delegate(.returnToSettings))
 
-            case .slideshow, .alertLoader, .calendarEvents, .delegate:
+            case .slideshow, .alertLoader, .calendarEvents, .tagScanLoader, .delegate:
                 return .none
             }
         }
@@ -105,6 +113,11 @@ public struct DashboardView: View {
             }
 
             AlertView(lateTrackeeNames: store.alertLoaderState.lateTrackeeNames)
+
+            TagScanLoaderView(store: store.scope(
+                state: \.tagScanLoaderState,
+                action: \.tagScanLoader
+            ))
         }
         .contentShape(Rectangle())
         .onTapGesture {

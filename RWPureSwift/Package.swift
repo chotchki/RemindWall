@@ -22,6 +22,7 @@ let package = Package(
         .library(name: "ScreenControl", targets: ["ScreenControl"]),
         .library(name: "ScreenOffMonitor", targets: ["ScreenOffMonitor"]),
         .library(name: "Slideshow", targets: ["Slideshow"]),
+        .library(name: "TagScanLoader", targets: ["TagScanLoader"]),
         .library(name: "TagScanner", targets: ["TagScanner"]),
         .library(name: "Utility", targets: ["Utility"]),
     ],
@@ -74,6 +75,7 @@ let package = Package(
             .target(name: "CalendarAsync"),
             .target(name: "Dao"),
             .target(name: "Slideshow"),
+            .target(name: "TagScanLoader"),
             .target(name: "Utility"),
         ]),
         .testTarget(name: "DashboardTests", dependencies: [
@@ -170,6 +172,18 @@ let package = Package(
                 resources: [.process("Widget/Resources/PreviewAssets.xcassets")]),
         .testTarget(name: "SlideshowTests", dependencies: [
             "Slideshow",
+            .product(name: "DependenciesTestSupport", package: "swift-dependencies"),
+        ]),
+        .target(name: "TagScanLoader",
+                dependencies: [
+                    .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+                    .product(name: "StructuredQueries", package: "swift-structured-queries"),
+                    .target(name: "AppTypes"),
+                    .target(name: "Dao"),
+                    .target(name: "TagScanner"),
+                ]),
+        .testTarget(name: "TagScanLoaderTests", dependencies: [
+            "TagScanLoader",
             .product(name: "DependenciesTestSupport", package: "swift-dependencies"),
         ]),
         .target(name: "TagScanner",

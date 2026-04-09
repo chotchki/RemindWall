@@ -102,6 +102,13 @@
         "identifier" : "SlideshowTests",
         "name" : "SlideshowTests"
       }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:RWPureSwift",
+        "identifier" : "TagScanLoaderTests",
+        "name" : "TagScanLoaderTests"
+      }
     }
   ],
   "version" : 1
