@@ -57,6 +57,23 @@ extension ReminderTime.Draft: Equatable, Sendable {
 
 
 
+@Table
+public nonisolated struct Setting: Equatable, Identifiable, Sendable {
+    public typealias ID = Tagged<Self, UUID>
+    
+    public let id: ID
+    public var key: String
+    public var value: String
+    public var lastModified: Date
+    
+    public init(id: ID, key: String, value: String, lastModified: Date) {
+        self.id = id
+        self.key = key
+        self.value = value
+        self.lastModified = lastModified
+    }
+}
+
 extension DependencyValues {
     public mutating func appDatabase() throws -> any DatabaseWriter {
         @Dependency(\.context) var context
@@ -128,6 +145,20 @@ extension DependencyValues {
             .execute(db)
         }
         
+        migrator.registerMigration("Create settings table") { db in
+            try #sql(
+            """
+            CREATE TABLE "settings" (
+              "id" TEXT PRIMARY KEY NOT NULL ON CONFLICT REPLACE DEFAULT (uuid()),
+              "key" TEXT NOT NULL,
+              "value" TEXT NOT NULL,
+              "lastModified" TEXT NOT NULL
+            )
+            """
+            )
+            .execute(db)
+        }
+        
         try migrator.migrate(database)
         
         try database.write { db in
@@ -144,7 +175,7 @@ extension DependencyValues {
     public mutating func appSyncEngine(for database: any DatabaseWriter) throws -> SyncEngine {
         try SyncEngine(
             for: database,
-            tables: Trackee.self, ReminderTime.self
+            tables: Trackee.self, ReminderTime.self, Setting.self
         )
     }
 }
