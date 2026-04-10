@@ -39,6 +39,35 @@ struct TagScanLoaderTests {
         await store.finish()
     }
 
+    @Test("re-sending startMonitoring cancels previous loop and starts new one")
+    func restartMonitoring() async {
+        let callCount = LockIsolated(0)
+
+        let store = TestStore(initialState: TagScanLoaderFeature.State()) {
+            TagScanLoaderFeature()
+        } withDependencies: {
+            $0.tagReaderClient.nextTagId = {
+                callCount.withValue { $0 += 1 }
+                // Block to simulate waiting for a card scan
+                try? await Task.sleep(for: .seconds(100))
+                return .noTag
+            }
+        }
+
+        store.exhaustivity = .off
+
+        // Start first monitoring loop
+        await store.send(.startMonitoring)
+
+        // Re-send startMonitoring — cancelInFlight cancels the first loop.
+        // Before the fix, this scenario would crash with a precondition
+        // failure in SmartCardMonitor.nextValidCard() because the cancelled
+        // task left a pending continuation behind.
+        await store.send(.startMonitoring)
+
+        await store.finish()
+    }
+
     @Test("noTag does not change state")
     func noTagIgnored() async {
         let store = TestStore(initialState: TagScanLoaderFeature.State()) {

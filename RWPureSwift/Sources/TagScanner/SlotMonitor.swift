@@ -80,20 +80,20 @@ actor SmartCardMonitor {
 
     /// Suspends until the next time any slot transitions to `.validCard`.
     /// Events that arrive when no caller is waiting are silently dropped.
-    /// Throws `CancellationError` if the calling task is cancelled while waiting.
     public func nextValidCard() async -> ReaderState {
-        // One waiter at a time. Two concurrent callers is a programming error.
-        precondition(pendingContinuation == nil, "Concurrent calls to nextValidCard() are not supported")
-        
+        // Clean up any leftover continuation from a previous cancelled call.
+        if let existing = pendingContinuation {
+            pendingContinuation = nil
+            existing.resume(returning: .noTag)
+        }
+
         guard initSuccess else {
             return .readerError("The slot monitor failed in start up")
         }
 
         return await withCheckedContinuation { continuation in
-            // Immediately check cancellation — the task may have already been
-            // cancelled before we reached this point.
             if Task.isCancelled {
-                continuation.resume(returning: .readerError("Task Cancelled"))
+                continuation.resume(returning: .noTag)
             } else {
                 self.pendingContinuation = continuation
             }
