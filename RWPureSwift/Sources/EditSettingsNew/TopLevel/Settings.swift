@@ -159,6 +159,14 @@ public struct SettingsView: View {
                         Text("\(version) (\(build))")
                     }
                 }
+
+                #if targetEnvironment(macCatalyst)
+                Section {
+                    Button("Quit Application", role: .destructive) {
+                        UIApplication.shared.perform(#selector(NSXPCConnection.suspend))
+                    }
+                }
+                #endif
             }
             .navigationTitle("Settings")
             .toolbar {

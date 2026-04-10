@@ -3,6 +3,7 @@ import DependenciesMacros
 import Foundation
 #if targetEnvironment(macCatalyst)
 import IOKit
+import UIKit
 #elseif canImport(UIKit)
 import UIKit
 #endif
@@ -113,6 +114,17 @@ enum DDCBrightness {
 
     /// Finds the first external display's IOAVService.
     private static func findDisplayService() -> CFTypeRef? {
+        // Check that at least one external display is connected before probing IOKit.
+        // IOAVServiceCreateWithService crashes when called without an external display.
+        let hasExternalScreen = DispatchQueue.main.sync {
+            UIApplication.shared.openSessions.contains { session in
+                session.scene?.session.role == .windowExternalDisplayNonInteractive
+            }
+        }
+        guard hasExternalScreen else {
+            return nil
+        }
+
         var iterator: io_iterator_t = 0
         guard IOServiceGetMatchingServices(
             kIOMainPortDefault,
@@ -125,11 +137,12 @@ enum DDCBrightness {
 
         var ioService = IOIteratorNext(iterator)
         while ioService != IO_OBJECT_NULL {
+            defer { IOObjectRelease(ioService) }
+
             if let avService = IOAVServiceCreateWithService(kCFAllocatorDefault, ioService) {
-                IOObjectRelease(ioService)
                 return avService
             }
-            IOObjectRelease(ioService)
+
             ioService = IOIteratorNext(iterator)
         }
         return nil
