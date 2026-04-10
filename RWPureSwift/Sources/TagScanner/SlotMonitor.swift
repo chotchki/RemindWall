@@ -38,7 +38,7 @@ actor SmartCardMonitor {
     private let initSuccess: Bool
 
     private let storage = CancellableStorage()
-    private var pendingContinuation: CheckedContinuation<ReaderState, Never>?
+    private var pendingContinuations: [UUID: CheckedContinuation<ReaderState, Never>] = [:]
 
     // MARK: - Init
 
@@ -79,23 +79,19 @@ actor SmartCardMonitor {
     // MARK: - Public API
 
     /// Suspends until the next time any slot transitions to `.validCard`.
+    /// Multiple callers can wait concurrently; all are resumed when a card arrives.
     /// Events that arrive when no caller is waiting are silently dropped.
     public func nextValidCard() async -> ReaderState {
-        // Clean up any leftover continuation from a previous cancelled call.
-        if let existing = pendingContinuation {
-            pendingContinuation = nil
-            existing.resume(returning: .noTag)
-        }
-
         guard initSuccess else {
             return .readerError("The slot monitor failed in start up")
         }
 
+        let id = UUID()
         return await withCheckedContinuation { continuation in
             if Task.isCancelled {
                 continuation.resume(returning: .noTag)
             } else {
-                self.pendingContinuation = continuation
+                self.pendingContinuations[id] = continuation
             }
         }
     }
@@ -103,13 +99,17 @@ actor SmartCardMonitor {
     // MARK: - Private
 
     /// Called when a valid card event arrives from the pipeline.
+    /// Resumes all waiting callers with the same result.
     private func deliver(_ state: ReaderState) {
-        guard let continuation = pendingContinuation else {
+        guard !pendingContinuations.isEmpty else {
             // Nobody waiting — drop the event.
             return
         }
-        pendingContinuation = nil
-        continuation.resume(returning: state)
+        let continuations = pendingContinuations
+        pendingContinuations.removeAll()
+        for (_, continuation) in continuations {
+            continuation.resume(returning: state)
+        }
     }
 
     private static func decodeCard(_ slot: TKSmartCardSlot) async -> ReaderState {

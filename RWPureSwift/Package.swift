@@ -197,7 +197,10 @@ let package = Package(
                     ),
                     .product(name: "DependenciesMacros", package: "swift-dependencies"),
                 ]),
-        .testTarget(name: "TagScannerTests", dependencies: ["TagScanner"]),
+        .testTarget(name: "TagScannerTests", dependencies: [
+            "TagScanner",
+            .product(name: "DependenciesTestSupport", package: "swift-dependencies"),
+        ]),
         .target(name: "Utility"),
     ]
 )
