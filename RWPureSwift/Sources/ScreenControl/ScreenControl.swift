@@ -1,5 +1,6 @@
 import Dependencies
 import DependenciesMacros
+import Foundation
 #if targetEnvironment(macCatalyst)
 import IOKit
 #elseif canImport(UIKit)
