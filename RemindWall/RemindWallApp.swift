@@ -2,12 +2,15 @@ import SwiftUI
 import SQLiteData
 import Dao
 import AppNavigation
+import ScreenControl
 import ComposableArchitecture
 
 @main
 @MainActor
 struct RemindWallApp: App {
     private static let isUITesting = ProcessInfo.processInfo.environment["UITesting"] == "true"
+
+    @Environment(\.scenePhase) private var scenePhase
 
     // NB: This is static to avoid interference with Xcode previews, which create this entry
     //     point each time they are run.
@@ -25,7 +28,7 @@ struct RemindWallApp: App {
             }
         }
     }()
-    
+
     init() {
         prepareDependencies {
             $0.defaultDatabase = try! $0.appDatabase()
@@ -34,16 +37,24 @@ struct RemindWallApp: App {
             }
         }
     }
-    
+
     var body: some Scene {
       WindowGroup {
         if ProcessInfo.processInfo.environment.keys.contains("XCTestBundlePath") {
-          // NB: Don't run application in unit tests to avoid interference between the app and the test.
-          //     UI tests need the real UI, so only check for XCTestBundlePath (set in-process for unit tests only).
           EmptyView()
         } else {
             AppNavigationView(store: Self.store)
         }
       }
+      #if targetEnvironment(macCatalyst)
+      .onChange(of: scenePhase) { _, newPhase in
+          if newPhase == .background {
+              Task {
+                  @Dependency(\.screenControl) var screenControl
+                  await screenControl.setBrightness(1.0)
+              }
+          }
+      }
+      #endif
     }
 }
