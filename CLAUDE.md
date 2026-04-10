@@ -4,10 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-RemindWall is a cross-platform iOS/macOS Catalyst SwiftUI application for managing photo slideshows with reminder tracking for multiple people ("trackees"). It combines photo library management with reminder scheduling and NFC tag scanning functionality.
+RemindWall is a cross-platform iOS/macOS Catalyst SwiftUI application for managing photo slideshows with reminder tracking for multiple people ("trackees"). It combines photo library management with reminder scheduling, NFC tag scanning, calendar event display, and DDC/CI external monitor brightness control.
 
 **Platforms:** iOS 26+, macCatalyst 26+
-**Swift Version:** 6.2
+**Swift Version:** 6.2 (swift-tools-version 6.3)
 
 ## Build and Development
 
@@ -33,22 +33,28 @@ The app uses **The Composable Architecture (TCA)** from Point-Free throughout.
 ### Module Structure (RWPureSwift/Sources/)
 
 **Feature Modules (TCA Reducers):**
-- `EditSettingsNew/TopLevel/` - Main settings form (album picker, calendar picker, trackee list)
+- `AppNavigation/` - Top-level navigation between settings and dashboard screens
+- `Dashboard/` - Main dashboard combining slideshow, alerts, calendar events, and tag scanning
+- `EditSettingsNew/TopLevel/` - Main settings form (album picker, calendar picker, screen off schedule, trackee list)
 - `EditSettingsNew/Trackees/` - Trackee CRUD and detail views
 - `EditSettingsNew/Reminders/` - Reminder time management per trackee
-- `Slideshow/` - Photo gallery with Ken Burns animation
+- `Slideshow/` - Photo gallery with Ken Burns animation and live photo support
 - `TagScanner/` - NFC tag reading and association
+- `TagScanLoader/` - Bridges tag scanning with the database layer
+- `ScreenOffMonitor/` - Scheduled screen dimming based on time-of-day rules
 
 **Data Layer:**
 - `Dao/` - SQLite database using Point-Free's `sqlite-data`. Contains schema with `Trackee` and `ReminderTime` tables
-- `DataModel/` - Legacy SwiftData models (being phased out)
+- `AppModel/` - App state definitions
 
 **Framework Wrappers:**
 - `CalendarAsync/` - EventKit async wrapper
 - `PhotoKitAsync/` - Photos framework async wrapper with mock support
+- `ScreenControl/` - Screen brightness control (UIKit on iOS, DDC/CI over I2C on macCatalyst for external monitors)
 
 **Shared Types:**
-- `AppTypes/` - Core value types: `ReminderPart`, `DaysOfWeek`, `CalendarId`, `TagSerial`, `SlotName`
+- `AppTypes/` - Core value types: `ReminderPart`, `ScreenOffSchedule`, `CalendarId`, `TagSerial`, `SlotName`, `AlbumLocalId`
+- `Utility/` - Small helpers (hex conversion, emoji checking)
 
 ### Key Patterns
 
@@ -60,16 +66,26 @@ The app uses **The Composable Architecture (TCA)** from Point-Free throughout.
 
 **Tagged Types:** IDs use `Tagged<Self, UUID>` for type safety (e.g., `Trackee.ID`, `ReminderTime.ID`).
 
+**Shared State:** Uses `@Shared(.appStorage(...))` for persisted settings that multiple features observe (e.g., screen off schedule, selected album).
+
 ### Feature Hierarchy
 
 ```
-SettingsFeature (TopLevel)
-├── AlbumPickerFeature
-├── CalendarPickerFeature
-└── TrackeesFeature
-    └── TrackeeDetailFeature
-        └── RemindersFeature
-            └── AddReminderFeature
+AppNavigationFeature
+├── ScreenOffMonitorFeature
+├── DashboardFeature
+│   ├── SlideShowFeature
+│   ├── AlertLoaderFeature
+│   ├── CalendarEventsFeature
+│   └── TagScanLoaderFeature
+└── SettingsFeature (TopLevel)
+    ├── AlbumPickerFeature
+    ├── CalendarPickerFeature
+    ├── ScreenOffSettingFeature
+    └── TrackeesFeature
+        └── TrackeeDetailFeature
+            └── RemindersFeature
+                └── AddReminderFeature
 ```
 
 ## Testing Conventions
@@ -92,6 +108,12 @@ struct FeatureTests {
     }
 }
 ```
+
+## Platform-Specific Notes
+
+- **macCatalyst:** Uses DDC/CI over IOKit's `IOAVService` I2C interface for external monitor brightness control. This requires an external display to be connected; the code guards against crashes when no external monitor is present. Also includes a quit button in settings (macCatalyst only).
+- **iOS:** Uses `UIScreen.brightness` for screen control.
+- **UI Testing:** Controlled via `UITesting` environment variable; clears UserDefaults and uses in-memory storage.
 
 ## Dependencies
 
