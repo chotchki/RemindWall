@@ -75,60 +75,60 @@ struct ReminderPartFeatureTests {
     
     // MARK: - Minute Tests
     
-    @Test("Increment minute wraps from 59 to 0")
+    @Test("Increment minute wraps from 45 to 0")
     func incrementMinuteWrapsAround() async {
-        let reminderPart = Shared(value: ReminderPart(weekDay: .Monday, hour: 10, minute: 59))
+        let reminderPart = Shared(value: ReminderPart(weekDay: .Monday, hour: 10, minute: 45))
         let store = TestStore(initialState: ReminderPartFeature.State(reminderPart)) {
             ReminderPartFeature()
         }
-        
+
         await store.send(.incrementMinute) {
             $0.$reminderPart.minute.withLock { $0 = 0 }
         }
-        
+
         #expect(store.state.reminderPart.minute == 0)
     }
-    
-    @Test("Increment minute increases by 1")
+
+    @Test("Increment minute increases by 15")
     func incrementMinuteIncreasesValue() async {
         let reminderPart = Shared(value: ReminderPart(weekDay: .Monday, hour: 10, minute: 30))
         let store = TestStore(initialState: ReminderPartFeature.State(reminderPart)) {
             ReminderPartFeature()
         }
-        
+
         await store.send(.incrementMinute) {
-            $0.$reminderPart.minute.withLock { $0 = 31 }
+            $0.$reminderPart.minute.withLock { $0 = 45 }
         }
-        
-        #expect(store.state.reminderPart.minute == 31)
+
+        #expect(store.state.reminderPart.minute == 45)
     }
-    
-    @Test("Decrement minute wraps from 0 to 59")
+
+    @Test("Decrement minute wraps from 0 to 45")
     func decrementMinuteWrapsAround() async {
         let reminderPart = Shared(value: ReminderPart(weekDay: .Monday, hour: 10, minute: 0))
         let store = TestStore(initialState: ReminderPartFeature.State(reminderPart)) {
             ReminderPartFeature()
         }
-        
+
         await store.send(.decrementMinute) {
-            $0.$reminderPart.minute.withLock { $0 = 59 }
+            $0.$reminderPart.minute.withLock { $0 = 45 }
         }
-        
-        #expect(store.state.reminderPart.minute == 59)
+
+        #expect(store.state.reminderPart.minute == 45)
     }
-    
-    @Test("Decrement minute decreases by 1")
+
+    @Test("Decrement minute decreases by 15")
     func decrementMinuteDecreasesValue() async {
         let reminderPart = Shared(value: ReminderPart(weekDay: .Monday, hour: 10, minute: 30))
         let store = TestStore(initialState: ReminderPartFeature.State(reminderPart)) {
             ReminderPartFeature()
         }
-        
+
         await store.send(.decrementMinute) {
-            $0.$reminderPart.minute.withLock { $0 = 29 }
+            $0.$reminderPart.minute.withLock { $0 = 15 }
         }
-        
-        #expect(store.state.reminderPart.minute == 29)
+
+        #expect(store.state.reminderPart.minute == 15)
     }
     
     // MARK: - AM/PM Toggle Tests
@@ -297,16 +297,16 @@ struct ReminderPartFeatureTests {
     
     @Test("Multiple minute increments work correctly")
     func multipleMinuteIncrements() async {
-        let reminderPart = Shared(value: ReminderPart(weekDay: .Monday, hour: 10, minute: 58))
+        let reminderPart = Shared(value: ReminderPart(weekDay: .Monday, hour: 10, minute: 15))
         let store = TestStore(initialState: ReminderPartFeature.State(reminderPart)) {
             ReminderPartFeature()
         }
-        
-        await store.send(.incrementMinute) { $0.$reminderPart.minute.withLock { $0 = 59 } }
+
+        await store.send(.incrementMinute) { $0.$reminderPart.minute.withLock { $0 = 30 } }
+        await store.send(.incrementMinute) { $0.$reminderPart.minute.withLock { $0 = 45 } }
         await store.send(.incrementMinute) { $0.$reminderPart.minute.withLock { $0 = 0 } }
-        await store.send(.incrementMinute) { $0.$reminderPart.minute.withLock { $0 = 1 } }
-        
-        #expect(store.state.reminderPart.minute == 1)
+
+        #expect(store.state.reminderPart.minute == 0)
     }
     
     @Test("Changing time and weekday together")
@@ -325,16 +325,16 @@ struct ReminderPartFeatureTests {
         }
         
         await store.send(.incrementMinute) {
-            $0.$reminderPart.minute.withLock { $0 = 31 }
+            $0.$reminderPart.minute.withLock { $0 = 45 }
         }
-        
+
         await store.send(.toggleAMPM) {
             $0.$reminderPart.hour.withLock { $0 = 21 }
         }
-        
+
         #expect(store.state.reminderPart.weekDay == .Friday)
         #expect(store.state.reminderPart.hour == 21)
-        #expect(store.state.reminderPart.minute == 31)
+        #expect(store.state.reminderPart.minute == 45)
         #expect(store.state.isAM == false)
         #expect(store.state.displayHour == 9)
     }

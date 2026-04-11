@@ -53,11 +53,11 @@ public struct ReminderPartFeature {
                 return .none
                 
             case .incrementMinute:
-                state.$reminderPart.minute.withLock{$0 = ($0 + 1) % 60}
+                state.$reminderPart.minute.withLock{$0 = ($0 + 15) % 60}
                 return .none
-                
+
             case .decrementMinute:
-                state.$reminderPart.minute.withLock{$0 = ($0 - 1 + 60) % 60}
+                state.$reminderPart.minute.withLock{$0 = ($0 - 15 + 60) % 60}
                 return .none
                 
             case .toggleAMPM:
