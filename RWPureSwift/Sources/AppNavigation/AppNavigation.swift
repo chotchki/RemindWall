@@ -75,7 +75,7 @@ public struct AppNavigationFeature {
                 state.screenOffMonitorState.isSlideshowPlaying = false
                 return .none
 
-            case let .dashboard(.alertLoader(._lateTrackeesLoaded(names))):
+            case let .dashboard(.alertLoader(._lateTrackeesLoaded(names, dayOfWeek: _))):
                 state.screenOffMonitorState.hasLateReminders = !names.isEmpty
                 return .none
 

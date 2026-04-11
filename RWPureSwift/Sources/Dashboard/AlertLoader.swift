@@ -16,6 +16,7 @@ public struct AlertLoaderFeature: Sendable {
     @ObservableState
     public struct State: Equatable {
         public var lateTrackeeNames: [String] = []
+        public var dayOfWeek: String = ""
 
         public init() {}
     }
@@ -23,7 +24,7 @@ public struct AlertLoaderFeature: Sendable {
     public enum Action: Equatable {
         case startMonitoring
         case tick
-        case _lateTrackeesLoaded([String])
+        case _lateTrackeesLoaded([String], dayOfWeek: String)
     }
 
     enum CancelID { case alertLoop }
@@ -57,11 +58,13 @@ public struct AlertLoaderFeature: Sendable {
                             .filter { lateTrackeeIds.contains($0.id) }
                             .map { $0.name }
                     }
-                    await send(._lateTrackeesLoaded(lateNames))
+                    let dayOfWeek = calendar.weekdaySymbols[calendar.component(.weekday, from: now) - 1]
+                    await send(._lateTrackeesLoaded(lateNames, dayOfWeek: dayOfWeek))
                 }
 
-            case let ._lateTrackeesLoaded(names):
+            case let ._lateTrackeesLoaded(names, dayOfWeek):
                 state.lateTrackeeNames = names
+                state.dayOfWeek = dayOfWeek
                 return .none
             }
         }

@@ -203,12 +203,13 @@ struct AppNavigationFeatureTests {
             AppNavigationFeature()
         }
 
-        await store.send(.dashboard(.alertLoader(._lateTrackeesLoaded(["Alice"])))) {
+        await store.send(.dashboard(.alertLoader(._lateTrackeesLoaded(["Alice"], dayOfWeek: "Sunday")))) {
             $0.dashboardState.alertLoaderState.lateTrackeeNames = ["Alice"]
+            $0.dashboardState.alertLoaderState.dayOfWeek = "Sunday"
             $0.screenOffMonitorState.hasLateReminders = true
         }
 
-        await store.send(.dashboard(.alertLoader(._lateTrackeesLoaded([])))) {
+        await store.send(.dashboard(.alertLoader(._lateTrackeesLoaded([], dayOfWeek: "Sunday")))) {
             $0.dashboardState.alertLoaderState.lateTrackeeNames = []
             $0.screenOffMonitorState.hasLateReminders = false
         }

@@ -61,8 +61,9 @@ struct AlertLoaderTests {
             AlertLoaderFeature()
         }
 
-        await store.send(._lateTrackeesLoaded(["Alice", "Bob"])) {
+        await store.send(._lateTrackeesLoaded(["Alice", "Bob"], dayOfWeek: "Sunday")) {
             $0.lateTrackeeNames = ["Alice", "Bob"]
+            $0.dayOfWeek = "Sunday"
         }
     }
 
@@ -112,7 +113,9 @@ struct AlertLoaderTests {
 
         // --- Tick 1: Sunday 10:00 AM — before the late window ---
         await store.send(.tick)
-        await store.receive(\._lateTrackeesLoaded)
+        await store.receive(\._lateTrackeesLoaded) {
+            $0.dayOfWeek = cal.weekdaySymbols[0]
+        }
 
         // --- Tick 2: Advance to Sunday 1:00 PM — inside the late window ---
         let duringLateDate = cal.date(from: DateComponents(

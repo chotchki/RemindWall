@@ -2,12 +2,13 @@ import SwiftUI
 
 public struct AlertView: View {
     let lateTrackeeNames: [String]
+    let dayOfWeek: String
 
     public var body: some View {
         VStack {
             if !lateTrackeeNames.isEmpty {
                 Spacer()
-                Text("\(ListFormatter.localizedString(byJoining: lateTrackeeNames)) you are late for your meds!")
+                Text("It's \(dayOfWeek) — \(ListFormatter.localizedString(byJoining: lateTrackeeNames)) you are late for your meds!")
                     .font(.custom("Overlay", size: 200.0, relativeTo: .largeTitle))
                     .colorInvert()
                     .frame(maxWidth: .infinity)
@@ -24,7 +25,7 @@ public struct AlertView: View {
         VStack {
             Spacer()
         }.background(Color.white)
-        AlertView(lateTrackeeNames: ["Bob"])
+        AlertView(lateTrackeeNames: ["Bob"], dayOfWeek: "Monday")
     }
 }
 
@@ -33,7 +34,7 @@ public struct AlertView: View {
         VStack {
             Spacer()
         }.background(Color.white)
-        AlertView(lateTrackeeNames: ["Bob", "Sue"])
+        AlertView(lateTrackeeNames: ["Bob", "Sue"], dayOfWeek: "Wednesday")
     }
 }
 
@@ -42,6 +43,6 @@ public struct AlertView: View {
         VStack {
             Spacer()
         }.background(Color.white)
-        AlertView(lateTrackeeNames: ["Bob", "Sue", "Christopher"])
+        AlertView(lateTrackeeNames: ["Bob", "Sue", "Christopher"], dayOfWeek: "Friday")
     }
 }

@@ -112,7 +112,7 @@ public struct DashboardView: View {
                 }
             }
 
-            AlertView(lateTrackeeNames: store.alertLoaderState.lateTrackeeNames)
+            AlertView(lateTrackeeNames: store.alertLoaderState.lateTrackeeNames, dayOfWeek: store.alertLoaderState.dayOfWeek)
 
             TagScanLoaderView(store: store.scope(
                 state: \.tagScanLoaderState,
