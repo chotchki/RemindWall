@@ -78,15 +78,36 @@ struct AlbumPickerTests {
         await store.send(.tapOpenSettings)
     }
 
-    @Test("tapAuthorizeAccess requests authorization")
-    func tapAuthorizeAccess() async {
+    @Test("tapAuthorizeAccess requests authorization and refreshes on grant")
+    func tapAuthorizeAccessGranted() async {
         let store = TestStore(initialState: AlbumPickerFeature.State()) {
             AlbumPickerFeature()
         } withDependencies: {
             $0.photoKitAlbums.requestAuthorization = {}
+            $0.photoKitAlbums.libraryAccess = { .authorized }
+            $0.photoKitAlbums.availableAlbums = { nil }
         }
 
         await store.send(.tapAuthorizeAccess)
+        await store.receive(\.authorizationComplete) {
+            $0.photoStatus = .authorized
+        }
+        await store.receive(\.loadListComplete)
+    }
+
+    @Test("tapAuthorizeAccess requests authorization and updates status on deny")
+    func tapAuthorizeAccessDenied() async {
+        let store = TestStore(initialState: AlbumPickerFeature.State()) {
+            AlbumPickerFeature()
+        } withDependencies: {
+            $0.photoKitAlbums.requestAuthorization = {}
+            $0.photoKitAlbums.libraryAccess = { .denied }
+        }
+
+        await store.send(.tapAuthorizeAccess)
+        await store.receive(\.authorizationComplete) {
+            $0.photoStatus = .denied
+        }
     }
 
     @Test("loadListComplete sets available albums")

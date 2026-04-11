@@ -4,10 +4,24 @@ import ScreenControl
 import SwiftUI
 import EditSettingsNew_Trackees
 
+private enum TerminateAppKey: DependencyKey {
+    static let liveValue: @Sendable () -> Void = { exit(0) }
+    static let testValue: @Sendable () -> Void = { }
+}
+
+extension DependencyValues {
+    var terminateApp: @Sendable () -> Void {
+        get { self[TerminateAppKey.self] }
+        set { self[TerminateAppKey.self] = newValue }
+    }
+}
+
 @Reducer
 public struct SettingsFeature {
-    
+
+    @Dependency(\.fireAndForget) var fireAndForget
     @Dependency(\.screenControl) var screenControl
+    @Dependency(\.terminateApp) var terminateApp
 
     @ObservableState
     public struct State: Equatable {
@@ -31,6 +45,7 @@ public struct SettingsFeature {
         case _brightnessCheckCompleted(Bool)
         case calendarToggled(Bool)
         case onAppear
+        case quitApplication
         case screenOffToggled(Bool)
         case slideshowToggled(Bool)
         case startSlideshow
@@ -76,6 +91,12 @@ public struct SettingsFeature {
             case let ._brightnessCheckCompleted(available):
                 state.isBrightnessControlAvailable = available
                 return .none
+            case .quitApplication:
+                return .run { [fireAndForget, terminateApp] _ in
+                    await fireAndForget {
+                        terminateApp()
+                    }
+                }
             case let .screenOffToggled(isOn):
                 if isOn {
                     state.screenOffSettingState.$schedule.withLock { $0 = .default }
@@ -188,7 +209,7 @@ public struct SettingsView: View {
                 #if targetEnvironment(macCatalyst)
                 Section {
                     Button("Quit Application", role: .destructive) {
-                        UIApplication.shared.perform(#selector(NSXPCConnection.suspend))
+                        store.send(.quitApplication)
                     }
                 }
                 #endif

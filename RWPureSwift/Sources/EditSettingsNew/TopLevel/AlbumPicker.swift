@@ -23,6 +23,7 @@ public struct AlbumPickerFeature {
         case selectAlbum(AlbumLocalId?)
         case tapOpenSettings
         case tapAuthorizeAccess
+        case authorizationComplete
         case loadListComplete(PHFetchResultCollection<PHAssetCollection>?)
     }
     
@@ -42,9 +43,13 @@ public struct AlbumPickerFeature {
                 state.$selectedAlbum.withLock { $0 = album }
                 return .none
             case .tapAuthorizeAccess:
-                return .run{ [photoKitAlbums] send in
+                return .run { [photoKitAlbums] send in
                     await photoKitAlbums.requestAuthorization()
+                    await send(.authorizationComplete)
                 }
+            case .authorizationComplete:
+                state.photoStatus = photoKitAlbums.libraryAccess()
+                return loadList(state: &state)
             case let .loadListComplete(list):
                 state.availibleAlbums = list
                 return .none

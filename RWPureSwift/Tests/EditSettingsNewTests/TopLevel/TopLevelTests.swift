@@ -206,6 +206,15 @@ struct SettingsFeatureTests {
         await store.receive(\._brightnessCheckCompleted)
     }
 
+    @Test("quitApplication fires effect")
+    func quitApplication() async {
+        let store = TestStore(initialState: SettingsFeature.State()) {
+            SettingsFeature()
+        }
+
+        await store.send(.quitApplication)
+    }
+
     @Test("confirmDeletion via path deletes trackee from database")
     func confirmDeletionDeletesTrackee() async {
         @Dependency(\.defaultDatabase) var defaultDatabase

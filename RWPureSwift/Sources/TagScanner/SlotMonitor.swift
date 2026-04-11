@@ -39,6 +39,8 @@ actor SmartCardMonitor {
 
     private let storage = CancellableStorage()
     private var pendingContinuations: [UUID: CheckedContinuation<ReaderState, Never>] = [:]
+    /// Buffers the last card event if it arrived when no one was waiting.
+    private var bufferedResult: ReaderState?
 
     // MARK: - Init
 
@@ -86,6 +88,12 @@ actor SmartCardMonitor {
             return .readerError("The slot monitor failed in start up")
         }
 
+        // If a card event arrived before anyone was waiting, return it immediately.
+        if let buffered = bufferedResult {
+            bufferedResult = nil
+            return buffered
+        }
+
         let id = UUID()
         return await withCheckedContinuation { continuation in
             if Task.isCancelled {
@@ -96,13 +104,22 @@ actor SmartCardMonitor {
         }
     }
 
+    /// Removes and resumes a single waiter due to task cancellation.
+    func cancelWaiter(id: UUID) {
+        if let continuation = pendingContinuations.removeValue(forKey: id) {
+            continuation.resume(returning: .noTag)
+        }
+    }
+
     // MARK: - Private
 
     /// Called when a valid card event arrives from the pipeline.
     /// Resumes all waiting callers with the same result.
+    /// If no one is waiting, buffers the result for the next caller.
     private func deliver(_ state: ReaderState) {
         guard !pendingContinuations.isEmpty else {
-            // Nobody waiting — drop the event.
+            // Nobody waiting — buffer so the next caller gets it immediately.
+            bufferedResult = state
             return
         }
         let continuations = pendingContinuations

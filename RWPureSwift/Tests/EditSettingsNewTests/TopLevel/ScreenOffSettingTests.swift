@@ -1,6 +1,8 @@
 import AppTypes
 import ComposableArchitecture
+import CoreGraphics
 import DependenciesTestSupport
+import ScreenControl
 import Testing
 
 @testable import EditSettingsNew_TopLevel

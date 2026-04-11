@@ -166,13 +166,88 @@ struct MultiWaiterTests {
         #expect(r3 == expected)
     }
 
-    @Test("Deliver with no waiters does not crash")
-    func deliver_with_no_waiters() async {
+    @Test("Deliver with no waiters buffers result for next caller")
+    func deliver_with_no_waiters_buffers() async {
         let coordinator = MultiWaiterCoordinator()
-        // Should be a no-op, not crash
-        await coordinator.deliver(.tagPresent(TagSerial([0x01])))
+        let expected = ReaderState.tagPresent(TagSerial([0x01]))
+
+        // Deliver with nobody waiting — should buffer
+        await coordinator.deliver(expected)
         let count = await coordinator.waiterCount
         #expect(count == 0)
+
+        // Next caller should get the buffered result immediately
+        let result = await coordinator.waitForResult()
+        #expect(result == expected)
+
+        // Buffer should be consumed
+        let buffered = await coordinator.hasBufferedResult
+        #expect(buffered == false)
+    }
+
+    @Test("Buffer is consumed only once — second caller must wait")
+    func buffer_consumed_once() async throws {
+        let coordinator = MultiWaiterCoordinator()
+        let first = ReaderState.tagPresent(TagSerial([0x01]))
+        let second = ReaderState.tagPresent(TagSerial([0x02]))
+
+        // Deliver with no waiters — buffers
+        await coordinator.deliver(first)
+
+        // First caller consumes the buffer
+        let r1 = await coordinator.waitForResult()
+        #expect(r1 == first)
+
+        // Second caller should block (no buffer left)
+        let secondResult = LockIsolated<ReaderState?>(nil)
+        let task = Task.detached {
+            let result = await coordinator.waitForResult()
+            secondResult.withValue { $0 = result }
+        }
+
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(secondResult.value == nil, "Second caller should still be waiting")
+        #expect(await coordinator.waiterCount == 1)
+
+        // Deliver again to unblock
+        await coordinator.deliver(second)
+        await task.value
+        #expect(secondResult.value == second)
+    }
+
+    @Test("Multiple deliveries with no waiters keep only the latest")
+    func buffer_overwrites_with_latest() async {
+        let coordinator = MultiWaiterCoordinator()
+        let old = ReaderState.tagPresent(TagSerial([0xAA]))
+        let latest = ReaderState.tagPresent(TagSerial([0xBB]))
+
+        await coordinator.deliver(old)
+        await coordinator.deliver(latest)
+
+        let result = await coordinator.waitForResult()
+        #expect(result == latest)
+    }
+
+    @Test("Deliver to waiters clears buffer — no stale data leaks")
+    func deliver_to_waiters_does_not_set_buffer() async throws {
+        let coordinator = MultiWaiterCoordinator()
+        let expected = ReaderState.tagPresent(TagSerial([0xCC]))
+
+        // Start a waiter
+        let task = Task.detached {
+            await coordinator.waitForResult()
+        }
+
+        try await Task.sleep(for: .milliseconds(100))
+        #expect(await coordinator.waiterCount == 1)
+
+        // Deliver to the waiter
+        await coordinator.deliver(expected)
+        let result = await task.value
+        #expect(result == expected)
+
+        // Buffer should NOT be set (delivery went to a waiter)
+        #expect(await coordinator.hasBufferedResult == false)
     }
 
     @Test("Second waiter is not evicted when first waiter re-enters after delivery")
@@ -234,19 +309,35 @@ struct MultiWaiterTests {
 
 /// Actor that mirrors the fixed SmartCardMonitor pattern: multiple callers can
 /// await `waitForResult()` concurrently, and `deliver()` resumes all of them.
+/// Also buffers the last result when no waiters are present.
 private actor MultiWaiterCoordinator {
     private var waiters: [UUID: CheckedContinuation<ReaderState, Never>] = [:]
+    private var bufferedResult: ReaderState?
 
     var waiterCount: Int { waiters.count }
+    var hasBufferedResult: Bool { bufferedResult != nil }
 
     func waitForResult() async -> ReaderState {
+        if let buffered = bufferedResult {
+            bufferedResult = nil
+            return buffered
+        }
+
         let id = UUID()
         return await withCheckedContinuation { continuation in
-            waiters[id] = continuation
+            if Task.isCancelled {
+                continuation.resume(returning: .noTag)
+            } else {
+                waiters[id] = continuation
+            }
         }
     }
 
     func deliver(_ state: ReaderState) {
+        guard !waiters.isEmpty else {
+            bufferedResult = state
+            return
+        }
         let current = waiters
         waiters.removeAll()
         for (_, continuation) in current {
