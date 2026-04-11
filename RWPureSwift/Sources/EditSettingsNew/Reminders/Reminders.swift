@@ -114,6 +114,12 @@ public struct RemindersView: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
+
+                    if let lastScan = reminder.lastScan {
+                        Label(lastScan.formatted(date: .abbreviated, time: .shortened), systemImage: "checkmark.circle")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 Spacer()
                 Button(role: .destructive) {
