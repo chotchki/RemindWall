@@ -1,10 +1,7 @@
 import Dependencies
 import DependenciesMacros
 import Foundation
-#if targetEnvironment(macCatalyst)
-import IOKit
-import UIKit
-#elseif canImport(UIKit)
+#if canImport(UIKit)
 import UIKit
 #endif
 
@@ -15,6 +12,10 @@ public struct ScreenControl: Sendable {
 
     /// Sets the screen brightness (0.0 to 1.0).
     public var setBrightness: @Sendable (CGFloat) async -> Void
+
+    /// Checks whether the external display brightness tool (m1ddc) is available.
+    /// Always returns true on iOS (uses built-in UIScreen).
+    public var isAvailable: @Sendable () async -> Bool = { true }
 }
 
 extension ScreenControl: DependencyKey {
@@ -22,7 +23,7 @@ extension ScreenControl: DependencyKey {
         Self(
             getBrightness: {
                 #if targetEnvironment(macCatalyst)
-                return DDCBrightness.getBrightness() ?? 1.0
+                return M1DDCBrightness.getBrightness() ?? 1.0
                 #elseif canImport(UIKit)
                 return await MainActor.run {
                     guard let scene = UIApplication.shared.connectedScenes.first,
@@ -39,7 +40,7 @@ extension ScreenControl: DependencyKey {
             },
             setBrightness: { brightness in
                 #if targetEnvironment(macCatalyst)
-                DDCBrightness.setBrightness(brightness)
+                M1DDCBrightness.setBrightness(brightness)
                 #elseif canImport(UIKit)
                 await MainActor.run {
                     guard let scene = UIApplication.shared.connectedScenes.first,
@@ -49,8 +50,15 @@ extension ScreenControl: DependencyKey {
                             return
                     }
 
-                    screen.brightness = 1.0
+                    screen.brightness = brightness
                 }
+                #endif
+            },
+            isAvailable: {
+                #if targetEnvironment(macCatalyst)
+                return M1DDCBrightness.isAvailable()
+                #else
+                return true
                 #endif
             }
         )
@@ -63,7 +71,8 @@ extension ScreenControl: TestDependencyKey {
     public static var previewValue: Self {
         Self(
             getBrightness: { 0.75 },
-            setBrightness: { _ in }
+            setBrightness: { _ in },
+            isAvailable: { true }
         )
     }
 }
@@ -75,176 +84,114 @@ extension DependencyValues {
     }
 }
 
-// MARK: - DDC/CI Brightness Control (Mac Catalyst)
+// MARK: - m1ddc CLI Brightness Control (Mac Catalyst)
 
 #if targetEnvironment(macCatalyst)
 
-// Private IOKit functions for DDC over I2C on Apple Silicon.
-// These are not in public headers but are stable symbols in IOKit.framework.
-// Reference: MonitorControl (https://github.com/MonitorControl/MonitorControl)
+enum M1DDCBrightness {
+    /// Common install locations for m1ddc (Homebrew on Apple Silicon / Intel).
+    private static let searchPaths = [
+        "/opt/homebrew/bin/m1ddc",
+        "/usr/local/bin/m1ddc",
+    ]
 
-@_silgen_name("IOAVServiceCreateWithService")
-private func IOAVServiceCreateWithService(
-    _ allocator: CFAllocator,
-    _ service: io_service_t
-) -> CFTypeRef?
+    /// Returns the path to the m1ddc binary, or nil if not found.
+    private static func findBinary() -> String? {
+        searchPaths.first { FileManager.default.isExecutableFile(atPath: $0) }
+    }
 
-@_silgen_name("IOAVServiceWriteI2C")
-private func IOAVServiceWriteI2C(
-    _ service: CFTypeRef,
-    _ chipAddress: UInt32,
-    _ dataAddress: UInt32,
-    _ inputBuffer: UnsafeMutablePointer<UInt8>,
-    _ inputBufferSize: UInt32
-) -> IOReturn
+    /// Whether m1ddc is installed and executable.
+    static func isAvailable() -> Bool {
+        findBinary() != nil
+    }
 
-@_silgen_name("IOAVServiceReadI2C")
-private func IOAVServiceReadI2C(
-    _ service: CFTypeRef,
-    _ chipAddress: UInt32,
-    _ dataAddress: UInt32,
-    _ outputBuffer: UnsafeMutablePointer<UInt8>,
-    _ outputBufferSize: UInt32
-) -> IOReturn
+    /// Runs m1ddc with the given arguments using posix_spawn and returns trimmed stdout, or nil on failure.
+    /// (Process/NSTask is unavailable in Mac Catalyst, so we use posix_spawn directly.)
+    private static func run(_ arguments: [String]) -> String? {
+        guard let path = findBinary() else { return nil }
 
-enum DDCBrightness {
-    private static let chipAddress: UInt32 = 0x37
-    private static let dataAddress: UInt32 = 0x51
-    private static let brightnessVCP: UInt8 = 0x10
+        // Set up a pipe for stdout
+        var pipeFDs: [Int32] = [0, 0]
+        guard pipe(&pipeFDs) == 0 else { return nil }
 
-    /// Finds the first external display's IOAVService.
-    private static func findDisplayService() -> CFTypeRef? {
-        // Check that at least one external display is connected before probing IOKit.
-        // IOAVServiceCreateWithService crashes when called without an external display.
-        let hasExternalScreen = DispatchQueue.main.sync {
-            UIApplication.shared.openSessions.contains { session in
-                session.scene?.session.role == .windowExternalDisplayNonInteractive
-            }
-        }
-        guard hasExternalScreen else {
+        // Build argv: [path, arg1, arg2, ..., nil]
+        let allArgs = [path] + arguments
+        let cArgs = allArgs.map { strdup($0) } + [nil]
+        defer { cArgs.forEach { $0.map { free($0) } } }
+
+        var fileActions: posix_spawn_file_actions_t?
+        posix_spawn_file_actions_init(&fileActions)
+        defer { posix_spawn_file_actions_destroy(&fileActions) }
+
+        // Redirect stdout to write end of pipe
+        posix_spawn_file_actions_adddup2(&fileActions, pipeFDs[1], STDOUT_FILENO)
+        // Close both pipe ends in child (inherited via dup2 for stdout)
+        posix_spawn_file_actions_addclose(&fileActions, pipeFDs[0])
+        posix_spawn_file_actions_addclose(&fileActions, pipeFDs[1])
+        // Send stderr to /dev/null
+        posix_spawn_file_actions_addopen(&fileActions, STDERR_FILENO, "/dev/null", O_WRONLY, 0)
+
+        var pid: pid_t = 0
+        let spawnResult = posix_spawn(&pid, path, &fileActions, nil, cArgs.map { UnsafeMutablePointer(mutating: $0) }, environ)
+
+        // Close write end in parent
+        close(pipeFDs[1])
+
+        guard spawnResult == 0 else {
+            close(pipeFDs[0])
             return nil
         }
 
-        var iterator: io_iterator_t = 0
-        guard IOServiceGetMatchingServices(
-            kIOMainPortDefault,
-            IOServiceMatching("DCPAVServiceProxy"),
-            &iterator
-        ) == KERN_SUCCESS else {
-            return nil
+        // Read stdout from child
+        let readFD = pipeFDs[0]
+        var data = Data()
+        let bufferSize = 256
+        let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: bufferSize)
+        defer { buffer.deallocate() }
+        while true {
+            let bytesRead = read(readFD, buffer, bufferSize)
+            if bytesRead <= 0 { break }
+            data.append(buffer, count: bytesRead)
         }
-        defer { IOObjectRelease(iterator) }
+        close(readFD)
 
-        var ioService = IOIteratorNext(iterator)
-        while ioService != IO_OBJECT_NULL {
-            defer { IOObjectRelease(ioService) }
+        // Wait for child
+        var status: Int32 = 0
+        waitpid(pid, &status, 0)
 
-            if let avService = IOAVServiceCreateWithService(kCFAllocatorDefault, ioService) {
-                return avService
-            }
+        guard status == 0 else { return nil }
 
-            ioService = IOIteratorNext(iterator)
-        }
-        return nil
-    }
-
-    /// Sends a DDC/CI Set VCP Feature command.
-    private static func setVCPFeature(service: CFTypeRef, vcp: UInt8, value: UInt16) -> Bool {
-        var data: [UInt8] = [
-            0x84,                      // 0x80 | (payload_length + 1)
-            0x03,                      // Set VCP Feature opcode
-            vcp,
-            UInt8(value >> 8),         // Value high byte
-            UInt8(value & 0xFF),       // Value low byte
-            0                          // Checksum placeholder
-        ]
-
-        var checksum: UInt8 = 0x6E ^ UInt8(dataAddress & 0xFF)
-        for i in 0..<(data.count - 1) {
-            checksum ^= data[i]
-        }
-        data[data.count - 1] = checksum
-
-        return data.withUnsafeMutableBufferPointer { buffer in
-            IOAVServiceWriteI2C(
-                service, chipAddress, dataAddress,
-                buffer.baseAddress!, UInt32(buffer.count)
-            ) == KERN_SUCCESS
-        }
-    }
-
-    /// Sends a DDC/CI Get VCP Feature request and reads the response.
-    private static func getVCPFeature(service: CFTypeRef, vcp: UInt8) -> (current: UInt16, max: UInt16)? {
-        var request: [UInt8] = [
-            0x82,                      // 0x80 | (payload_length + 1)
-            0x01,                      // Get VCP Feature opcode
-            vcp,
-            0                          // Checksum placeholder
-        ]
-
-        var checksum: UInt8 = 0x6E ^ UInt8(dataAddress & 0xFF)
-        for i in 0..<(request.count - 1) {
-            checksum ^= request[i]
-        }
-        request[request.count - 1] = checksum
-
-        let writeOK = request.withUnsafeMutableBufferPointer { buffer in
-            IOAVServiceWriteI2C(
-                service, chipAddress, dataAddress,
-                buffer.baseAddress!, UInt32(buffer.count)
-            ) == KERN_SUCCESS
-        }
-        guard writeOK else { return nil }
-
-        // Wait for the display to process the request
-        Thread.sleep(forTimeInterval: 0.04)
-
-        // Read response (11 bytes for Get VCP Feature Reply)
-        var reply = [UInt8](repeating: 0, count: 11)
-        let readOK = reply.withUnsafeMutableBufferPointer { buffer in
-            IOAVServiceReadI2C(
-                service, chipAddress, dataAddress,
-                buffer.baseAddress!, UInt32(buffer.count)
-            ) == KERN_SUCCESS
-        }
-        guard readOK else { return nil }
-
-        // Validate checksum
-        var replyChecksum: UInt8 = 0x50
-        for i in 0..<(reply.count - 1) {
-            replyChecksum ^= reply[i]
-        }
-        guard replyChecksum == reply[reply.count - 1] else { return nil }
-
-        let maxValue = (UInt16(reply[6]) << 8) | UInt16(reply[7])
-        let currentValue = (UInt16(reply[8]) << 8) | UInt16(reply[9])
-        return (current: currentValue, max: maxValue)
+        return String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     /// Gets the current monitor brightness as a value from 0.0 to 1.0.
     static func getBrightness() -> CGFloat? {
-        guard let service = findDisplayService() else { return nil }
-        guard let result = getVCPFeature(service: service, vcp: brightnessVCP) else { return nil }
-        guard result.max > 0 else { return nil }
-        return CGFloat(result.current) / CGFloat(result.max)
+        guard let output = run(["get", "luminance"]),
+              let current = Int(output) else {
+            return nil
+        }
+
+        let maxValue = getMaxBrightness() ?? 100
+        guard maxValue > 0 else { return nil }
+        return CGFloat(current) / CGFloat(maxValue)
+    }
+
+    /// Gets the maximum brightness value from the display.
+    private static func getMaxBrightness() -> Int? {
+        guard let output = run(["max", "luminance"]),
+              let value = Int(output) else {
+            return nil
+        }
+        return value
     }
 
     /// Sets the monitor brightness from a value of 0.0 to 1.0.
     @discardableResult
     static func setBrightness(_ value: CGFloat) -> Bool {
-        guard let service = findDisplayService() else { return false }
-
-        // Read the max value from the display, fall back to DDC standard 100
-        let maxValue: UInt16
-        if let result = getVCPFeature(service: service, vcp: brightnessVCP) {
-            maxValue = result.max
-        } else {
-            maxValue = 100
-        }
-
+        let maxValue = getMaxBrightness() ?? 100
         let clamped = max(0, min(1, value))
-        let ddcValue = UInt16(clamped * CGFloat(maxValue))
-        return setVCPFeature(service: service, vcp: brightnessVCP, value: ddcValue)
+        let ddcValue = Int(clamped * CGFloat(maxValue))
+        return run(["set", "luminance", "\(ddcValue)"]) != nil
     }
 }
 

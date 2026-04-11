@@ -116,6 +116,7 @@ let package = Package(
             .target(name: "Dao"),
             .target(name: "EditSettingsNew_Trackees"),
             .target(name: "PhotoKitAsync"),
+            .target(name: "ScreenControl"),
         ], path: "Sources/EditSettingsNew/TopLevel"),
         .testTarget(name: "EditSettingsNew_TopLevelTests",
                     dependencies: [

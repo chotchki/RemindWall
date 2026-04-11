@@ -179,6 +179,33 @@ struct SettingsFeatureTests {
         #expect(state.path.count == 0)
     }
 
+    @Test("onAppear checks brightness control availability")
+    func onAppearChecksBrightness() async {
+        let store = TestStore(initialState: SettingsFeature.State()) {
+            SettingsFeature()
+        } withDependencies: {
+            $0.screenControl.isAvailable = { false }
+        }
+
+        await store.send(.onAppear)
+        await store.receive(\._brightnessCheckCompleted) {
+            $0.isBrightnessControlAvailable = false
+        }
+    }
+
+    @Test("onAppear with available brightness control")
+    func onAppearBrightnessAvailable() async {
+        let store = TestStore(initialState: SettingsFeature.State()) {
+            SettingsFeature()
+        } withDependencies: {
+            $0.screenControl.isAvailable = { true }
+        }
+
+        await store.send(.onAppear)
+        // isBrightnessControlAvailable defaults to true, so no state change
+        await store.receive(\._brightnessCheckCompleted)
+    }
+
     @Test("confirmDeletion via path deletes trackee from database")
     func confirmDeletionDeletesTrackee() async {
         @Dependency(\.defaultDatabase) var defaultDatabase

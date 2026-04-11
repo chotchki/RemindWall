@@ -1,11 +1,14 @@
 import AppTypes
 import ComposableArchitecture
+import ScreenControl
 import SwiftUI
 import EditSettingsNew_Trackees
 
 @Reducer
 public struct SettingsFeature {
     
+    @Dependency(\.screenControl) var screenControl
+
     @ObservableState
     public struct State: Equatable {
         public var trackeesState = TrackeesFeature.State()
@@ -13,6 +16,7 @@ public struct SettingsFeature {
         public var calendarPickerState = CalendarPickerFeature.State()
         public var screenOffSettingState = ScreenOffSettingFeature.State()
         public var path = StackState<TrackeeDetailFeature.State>()
+        public var isBrightnessControlAvailable: Bool = true
 
         public init(){}
     }
@@ -24,7 +28,9 @@ public struct SettingsFeature {
         case screenOffSetting(ScreenOffSettingFeature.Action)
         case trackees(TrackeesFeature.Action)
         case path(StackActionOf<TrackeeDetailFeature>)
+        case _brightnessCheckCompleted(Bool)
         case calendarToggled(Bool)
+        case onAppear
         case screenOffToggled(Bool)
         case slideshowToggled(Bool)
         case startSlideshow
@@ -61,6 +67,14 @@ public struct SettingsFeature {
                 } else {
                     state.calendarPickerState.$selectedCalendar.withLock { $0 = nil }
                 }
+                return .none
+            case .onAppear:
+                return .run { [screenControl] send in
+                    let available = await screenControl.isAvailable()
+                    await send(._brightnessCheckCompleted(available))
+                }
+            case let ._brightnessCheckCompleted(available):
+                state.isBrightnessControlAvailable = available
                 return .none
             case let .screenOffToggled(isOn):
                 if isOn {
@@ -131,6 +145,17 @@ public struct SettingsView: View {
                             store: store.scope(state: \.screenOffSettingState, action: \.screenOffSetting)
                         )
                     }
+                    #if targetEnvironment(macCatalyst)
+                    if !store.isBrightnessControlAvailable {
+                        HStack {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(.yellow)
+                            Text("External brightness control requires m1ddc. Install via: brew install m1ddc")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    #endif
                 } header: {
                     Toggle("Screen Off", isOn: Binding(
                         get: { store.screenOffSettingState.schedule != nil },
@@ -168,6 +193,7 @@ public struct SettingsView: View {
                 }
                 #endif
             }
+            .onAppear { store.send(.onAppear) }
             .navigationTitle("Settings")
             .toolbar {
                 ToolbarItem {

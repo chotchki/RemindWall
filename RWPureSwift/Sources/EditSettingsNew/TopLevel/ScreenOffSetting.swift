@@ -1,12 +1,17 @@
 import AppTypes
 import ComposableArchitecture
+import ScreenControl
 import SwiftUI
 
 @Reducer
 public struct ScreenOffSettingFeature {
+    @Dependency(\.continuousClock) var clock
+    @Dependency(\.screenControl) var screenControl
+
     @ObservableState
     public struct State: Equatable {
         @Shared(.appStorage(SCREEN_OFF_SETTING_KEY)) var schedule: ScreenOffSchedule?
+        public var isTesting: Bool = false
 
         public init() {}
     }
@@ -15,6 +20,8 @@ public struct ScreenOffSettingFeature {
         case setStartTime(hour: Int, minute: Int)
         case setEndTime(hour: Int, minute: Int)
         case setSchedule(startHour: Int, startMinute: Int, endHour: Int, endMinute: Int)
+        case testScreenOff
+        case _testComplete
     }
 
     public init() {}
@@ -48,6 +55,19 @@ public struct ScreenOffSettingFeature {
                         endMinute: ((endMinute % 60) + 60) % 60
                     )
                 }
+                return .none
+            case .testScreenOff:
+                guard !state.isTesting else { return .none }
+                state.isTesting = true
+                return .run { [screenControl, clock] send in
+                    let savedBrightness = await screenControl.getBrightness()
+                    await screenControl.setBrightness(0.0)
+                    try await clock.sleep(for: .seconds(1))
+                    await screenControl.setBrightness(savedBrightness)
+                    await send(._testComplete)
+                }
+            case ._testComplete:
+                state.isTesting = false
                 return .none
             }
         }
@@ -96,6 +116,22 @@ public struct ScreenOffSettingView: View {
                         display: schedule.endTimeDisplay
                     )
                 }
+
+                Button {
+                    store.send(.testScreenOff)
+                } label: {
+                    HStack {
+                        if store.isTesting {
+                            ProgressView()
+                                .padding(.trailing, 4)
+                            Text("Testing...")
+                        } else {
+                            Image(systemName: "display")
+                            Text("Test Screen Off")
+                        }
+                    }
+                }
+                .disabled(store.isTesting)
             }
             .padding(.vertical, 8)
         }

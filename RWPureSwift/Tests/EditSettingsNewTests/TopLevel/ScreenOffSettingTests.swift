@@ -1,5 +1,6 @@
 import AppTypes
 import ComposableArchitecture
+import DependenciesTestSupport
 import Testing
 
 @testable import EditSettingsNew_TopLevel
@@ -91,5 +92,51 @@ struct ScreenOffSettingTests {
         await store.send(.setStartTime(hour: 10, minute: 30))
         await store.send(.setEndTime(hour: 7, minute: 0))
         await store.send(.setSchedule(startHour: 22, startMinute: 0, endHour: 6, endMinute: 0))
+    }
+
+    // MARK: - Test Screen Off
+
+    @Test("testScreenOff dims and restores brightness")
+    func testScreenOff() async {
+        var state = ScreenOffSettingFeature.State()
+        state.$schedule.withLock { $0 = .default }
+
+        let brightnessValues = LockIsolated<[CGFloat]>([])
+        let clock = TestClock()
+
+        let store = TestStore(initialState: state) {
+            ScreenOffSettingFeature()
+        } withDependencies: {
+            $0.continuousClock = clock
+            $0.screenControl.getBrightness = { 0.75 }
+            $0.screenControl.setBrightness = { value in
+                brightnessValues.withValue { $0.append(value) }
+            }
+        }
+
+        await store.send(.testScreenOff) {
+            $0.isTesting = true
+        }
+
+        await clock.advance(by: .seconds(1))
+
+        await store.receive(\._testComplete) {
+            $0.isTesting = false
+        }
+
+        #expect(brightnessValues.value == [0.0, 0.75])
+    }
+
+    @Test("testScreenOff ignored while already testing")
+    func testScreenOffWhileTesting() async {
+        var state = ScreenOffSettingFeature.State()
+        state.$schedule.withLock { $0 = .default }
+        state.isTesting = true
+
+        let store = TestStore(initialState: state) {
+            ScreenOffSettingFeature()
+        }
+
+        await store.send(.testScreenOff)
     }
 }
