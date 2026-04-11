@@ -95,9 +95,58 @@ enum M1DDCBrightness {
         "/usr/local/bin/m1ddc",
     ]
 
+    /// Cached path once found, to avoid repeated lookups.
+    nonisolated(unsafe) private static var cachedPath: String?
+    nonisolated(unsafe) private static var hasSearched = false
+
     /// Returns the path to the m1ddc binary, or nil if not found.
+    /// Tries FileManager first, then falls back to actually invoking each
+    /// candidate path (works around sandbox restrictions on file metadata).
     private static func findBinary() -> String? {
-        searchPaths.first { FileManager.default.isExecutableFile(atPath: $0) }
+        if hasSearched { return cachedPath }
+
+        // First try FileManager (fast, works outside sandbox)
+        if let path = searchPaths.first(where: { FileManager.default.isExecutableFile(atPath: $0) }) {
+            cachedPath = path
+            hasSearched = true
+            return path
+        }
+
+        // Fallback: try to actually spawn each candidate.
+        // In a sandbox, FileManager may deny stat() but posix_spawn may still work.
+        for path in searchPaths {
+            if canSpawn(path) {
+                cachedPath = path
+                hasSearched = true
+                return path
+            }
+        }
+
+        hasSearched = true
+        return nil
+    }
+
+    /// Attempts to spawn the binary with no arguments to test reachability.
+    private static func canSpawn(_ path: String) -> Bool {
+        let cPath = strdup(path)
+        defer { free(cPath) }
+        let argv: [UnsafeMutablePointer<CChar>?] = [cPath, nil]
+
+        var fileActions: posix_spawn_file_actions_t?
+        posix_spawn_file_actions_init(&fileActions)
+        defer { posix_spawn_file_actions_destroy(&fileActions) }
+        // Silence all output
+        posix_spawn_file_actions_addopen(&fileActions, STDOUT_FILENO, "/dev/null", O_WRONLY, 0)
+        posix_spawn_file_actions_addopen(&fileActions, STDERR_FILENO, "/dev/null", O_WRONLY, 0)
+
+        var pid: pid_t = 0
+        let result = posix_spawn(&pid, path, &fileActions, nil, argv, environ)
+        if result == 0 {
+            var status: Int32 = 0
+            waitpid(pid, &status, 0)
+            return true
+        }
+        return false
     }
 
     /// Whether m1ddc is installed and executable.

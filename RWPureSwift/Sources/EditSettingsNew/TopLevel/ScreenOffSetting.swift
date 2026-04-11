@@ -12,6 +12,7 @@ public struct ScreenOffSettingFeature {
     public struct State: Equatable {
         @Shared(.appStorage(SCREEN_OFF_SETTING_KEY)) var schedule: ScreenOffSchedule?
         public var isTesting: Bool = false
+        public var testStatus: String?
 
         public init() {}
     }
@@ -21,6 +22,7 @@ public struct ScreenOffSettingFeature {
         case setEndTime(hour: Int, minute: Int)
         case setSchedule(startHour: Int, startMinute: Int, endHour: Int, endMinute: Int)
         case testScreenOff
+        case _testProgress(String)
         case _testComplete
     }
 
@@ -59,15 +61,25 @@ public struct ScreenOffSettingFeature {
             case .testScreenOff:
                 guard !state.isTesting else { return .none }
                 state.isTesting = true
+                state.testStatus = "Saving brightness…"
                 return .run { [screenControl, clock] send in
                     let savedBrightness = await screenControl.getBrightness()
+                    await send(._testProgress("Dimming screen…"))
                     await screenControl.setBrightness(0.0)
-                    try await clock.sleep(for: .seconds(1))
+                    for remaining in stride(from: 10, through: 1, by: -1) {
+                        await send(._testProgress("Screen off — restoring in \(remaining)s"))
+                        try await clock.sleep(for: .seconds(1))
+                    }
+                    await send(._testProgress("Restoring brightness…"))
                     await screenControl.setBrightness(savedBrightness)
                     await send(._testComplete)
                 }
+            case let ._testProgress(status):
+                state.testStatus = status
+                return .none
             case ._testComplete:
                 state.isTesting = false
+                state.testStatus = nil
                 return .none
             }
         }
@@ -124,7 +136,7 @@ public struct ScreenOffSettingView: View {
                         if store.isTesting {
                             ProgressView()
                                 .padding(.trailing, 4)
-                            Text("Testing...")
+                            Text(store.testStatus ?? "Testing…")
                         } else {
                             Image(systemName: "display")
                             Text("Test Screen Off")

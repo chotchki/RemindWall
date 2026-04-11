@@ -98,7 +98,7 @@ struct ScreenOffSettingTests {
 
     // MARK: - Test Screen Off
 
-    @Test("testScreenOff dims and restores brightness")
+    @Test("testScreenOff dims and restores brightness with countdown")
     func testScreenOff() async {
         var state = ScreenOffSettingFeature.State()
         state.$schedule.withLock { $0 = .default }
@@ -118,12 +118,30 @@ struct ScreenOffSettingTests {
 
         await store.send(.testScreenOff) {
             $0.isTesting = true
+            $0.testStatus = "Saving brightness…"
         }
 
-        await clock.advance(by: .seconds(1))
+        // Receive "Dimming screen…" progress
+        await store.receive(\._testProgress) {
+            $0.testStatus = "Dimming screen…"
+        }
+
+        // Advance through the 10-second countdown
+        for remaining in stride(from: 10, through: 1, by: -1) {
+            await store.receive(\._testProgress) {
+                $0.testStatus = "Screen off — restoring in \(remaining)s"
+            }
+            await clock.advance(by: .seconds(1))
+        }
+
+        // Receive "Restoring brightness…" progress
+        await store.receive(\._testProgress) {
+            $0.testStatus = "Restoring brightness…"
+        }
 
         await store.receive(\._testComplete) {
             $0.isTesting = false
+            $0.testStatus = nil
         }
 
         #expect(brightnessValues.value == [0.0, 0.75])
