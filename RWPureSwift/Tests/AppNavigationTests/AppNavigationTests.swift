@@ -194,24 +194,23 @@ struct AppNavigationFeatureTests {
         }
     }
 
-    @Test("lateTrackeesLoaded updates hasLateReminders on screen off monitor")
+    @Test("tick updates hasLateReminders on screen off monitor")
     func lateTrackeesUpdatesHasLateReminders() async {
         var state = AppNavigationFeature.State()
         state.screen = .dashboard
 
         let store = TestStore(initialState: state) {
             AppNavigationFeature()
+        } withDependencies: {
+            $0.date = .constant(Date())
+            $0.calendar = .current
         }
 
-        await store.send(.dashboard(.alertLoader(._lateTrackeesLoaded(["Alice"], dayOfWeek: "Sunday")))) {
-            $0.dashboardState.alertLoaderState.lateTrackeeNames = ["Alice"]
-            $0.dashboardState.alertLoaderState.dayOfWeek = "Sunday"
-            $0.screenOffMonitorState.hasLateReminders = true
-        }
-
-        await store.send(.dashboard(.alertLoader(._lateTrackeesLoaded([], dayOfWeek: "Sunday")))) {
-            $0.dashboardState.alertLoaderState.lateTrackeeNames = []
-            $0.screenOffMonitorState.hasLateReminders = false
+        // With no late reminders, tick should set hasLateReminders to false
+        await store.send(.dashboard(.alertLoader(.tick))) {
+            $0.dashboardState.alertLoaderState.dayOfWeek = Calendar.current.weekdaySymbols[
+                Calendar.current.component(.weekday, from: Date()) - 1
+            ]
         }
     }
 

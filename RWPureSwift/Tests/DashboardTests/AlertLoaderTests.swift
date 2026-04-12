@@ -31,13 +31,12 @@ struct AlertLoaderTests {
 
         // Immediate tick
         await store.receive(\.tick)
-        await store.receive(\._lateTrackeesLoaded)
 
         await store.finish()
     }
 
-    @Test("tick loads late trackee names from database")
-    func tickLoadsFromDatabase() async {
+    @Test("tick computes late trackee names from state")
+    func tickComputesFromState() async {
         let store = TestStore(initialState: AlertLoaderFeature.State()) {
             AlertLoaderFeature()
         } withDependencies: {
@@ -45,25 +44,12 @@ struct AlertLoaderTests {
             $0.calendar = .current
         }
 
-        store.exhaustivity = .off
-
-        await store.send(.tick)
-
         // Seed data has no late reminders by default
-        await store.receive(\._lateTrackeesLoaded) {
+        await store.send(.tick) {
             $0.lateTrackeeNames = []
-        }
-    }
-
-    @Test("_lateTrackeesLoaded updates state")
-    func lateTrackeesLoadedUpdatesState() async {
-        let store = TestStore(initialState: AlertLoaderFeature.State()) {
-            AlertLoaderFeature()
-        }
-
-        await store.send(._lateTrackeesLoaded(["Alice", "Bob"], dayOfWeek: "Sunday")) {
-            $0.lateTrackeeNames = ["Alice", "Bob"]
-            $0.dayOfWeek = "Sunday"
+            $0.dayOfWeek = Calendar.current.weekdaySymbols[
+                Calendar.current.component(.weekday, from: Date()) - 1
+            ]
         }
     }
 
@@ -112,8 +98,7 @@ struct AlertLoaderTests {
         }
 
         // --- Tick 1: Sunday 10:00 AM — before the late window ---
-        await store.send(.tick)
-        await store.receive(\._lateTrackeesLoaded) {
+        await store.send(.tick) {
             $0.dayOfWeek = cal.weekdaySymbols[0]
         }
 
@@ -123,8 +108,7 @@ struct AlertLoaderTests {
         ))!
         currentDate.withValue { $0 = duringLateDate }
 
-        await store.send(.tick)
-        await store.receive(\._lateTrackeesLoaded) {
+        await store.send(.tick) {
             $0.lateTrackeeNames = [alice.name]
         }
 
@@ -148,8 +132,7 @@ struct AlertLoaderTests {
         }
 
         // --- Tick 3: Still Sunday 1:00 PM — in late window but lastScan is fresh ---
-        await store.send(.tick)
-        await store.receive(\._lateTrackeesLoaded) {
+        await store.send(.tick) {
             $0.lateTrackeeNames = []
         }
     }

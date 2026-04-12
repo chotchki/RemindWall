@@ -3,12 +3,12 @@ import ComposableArchitecture
 import Dao
 import Dependencies
 import Foundation
+import SQLiteData
 
 @Reducer
 public struct AlertLoaderFeature: Sendable {
     @Dependency(\.continuousClock) var clock
-    @Dependency(\.defaultDatabase) var database
-    @Dependency(\.date.now) var now
+    @Dependency(\.date) var date
     @Dependency(\.calendar) var calendar
 
     static let refreshInterval = Duration.seconds(5)
@@ -18,13 +18,21 @@ public struct AlertLoaderFeature: Sendable {
         public var lateTrackeeNames: [String] = []
         public var dayOfWeek: String = ""
 
-        public init() {}
+        @FetchAll(ReminderTime.none)
+        var allReminders: [ReminderTime]
+
+        @FetchAll(Trackee.none)
+        var allTrackees: [Trackee]
+
+        public init() {
+            self._allReminders = FetchAll(ReminderTime.all)
+            self._allTrackees = FetchAll(Trackee.all)
+        }
     }
 
     public enum Action: Equatable {
         case startMonitoring
         case tick
-        case _lateTrackeesLoaded([String], dayOfWeek: String)
     }
 
     enum CancelID { case alertLoop }
@@ -44,28 +52,19 @@ public struct AlertLoaderFeature: Sendable {
                 .cancellable(id: CancelID.alertLoop, cancelInFlight: true)
 
             case .tick:
-                return .run { [database, now, calendar] send in
-                    let lateNames = try await database.read { db in
-                        let allReminders = try ReminderTime.all.fetchAll(db)
-                        let lateTrackeeIds = Set(
-                            allReminders
-                                .filter { $0.isLate(date: now, calendar: calendar) }
-                                .map { $0.trackeeId }
-                        )
-
-                        let allTrackees = try Trackee.all.fetchAll(db)
-                        return allTrackees
-                            .filter { lateTrackeeIds.contains($0.id) }
-                            .map { $0.name }
-                    }
-                    let dayOfWeek = calendar.weekdaySymbols[calendar.component(.weekday, from: now) - 1]
-                    await send(._lateTrackeesLoaded(lateNames, dayOfWeek: dayOfWeek))
-                }
-
-            case let ._lateTrackeesLoaded(names, dayOfWeek):
-                state.lateTrackeeNames = names
-                state.dayOfWeek = dayOfWeek
+                let now = date.now
+                let cal = calendar
+                let lateTrackeeIds = Set(
+                    state.allReminders
+                        .filter { $0.isLate(date: now, calendar: cal) }
+                        .map { $0.trackeeId }
+                )
+                state.lateTrackeeNames = state.allTrackees
+                    .filter { lateTrackeeIds.contains($0.id) }
+                    .map { $0.name }
+                state.dayOfWeek = cal.weekdaySymbols[cal.component(.weekday, from: now) - 1]
                 return .none
+
             }
         }
     }

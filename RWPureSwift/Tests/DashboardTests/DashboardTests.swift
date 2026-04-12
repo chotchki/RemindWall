@@ -1,5 +1,6 @@
 import AppTypes
 import ComposableArchitecture
+import Dao
 import Dependencies
 import DependenciesTestSupport
 import Foundation
@@ -9,7 +10,9 @@ import Testing
 @testable import Dashboard
 
 @MainActor
-@Suite("Dashboard Feature Tests")
+@Suite("Dashboard Feature Tests", .dependencies {
+    $0.defaultDatabase = try! $0.appDatabase()
+})
 struct DashboardTests {
 
     @Test("onAppear starts all child features and hides cursor")
