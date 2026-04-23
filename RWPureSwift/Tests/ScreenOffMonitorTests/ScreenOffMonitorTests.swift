@@ -123,15 +123,16 @@ struct ScreenOffMonitorTests {
 
         await store.receive(\.tick)
 
+        // savedBrightness is kept so enforcement can verify restore
         await store.receive(\._evaluated) {
             $0.isDimmed = false
-            $0.savedBrightness = nil
         }
 
         #expect(brightnessSet.value == 0.8)
 
         await store.send(.stopMonitoring) {
             $0.isMonitoring = false
+            $0.savedBrightness = nil
         }
     }
 
@@ -324,10 +325,90 @@ struct ScreenOffMonitorTests {
 
         await store.receive(\._evaluated) {
             $0.isDimmed = false
-            $0.savedBrightness = nil
         }
 
         #expect(brightnessSet.value == 0.7)
+
+        await store.send(.stopMonitoring) {
+            $0.isMonitoring = false
+            $0.savedBrightness = nil
+        }
+    }
+
+    @Test("brightness enforcement retries when restore silently fails")
+    func brightnessEnforcementRetries() async {
+        let clock = TestClock()
+        let brightnessSetCount = LockIsolated(0)
+
+        // State: undimmed but savedBrightness still set (restore was attempted)
+        let state: ScreenOffMonitorFeature.State = {
+            var s = ScreenOffMonitorFeature.State()
+            s.savedBrightness = 0.75
+            s.isSlideshowPlaying = true
+            return s
+        }()
+
+        let store = TestStore(initialState: state) {
+            ScreenOffMonitorFeature()
+        } withDependencies: {
+            $0.continuousClock = clock
+            $0.date = .constant(makeDate(hour: 10, minute: 0))
+            $0.calendar = .current
+            // Brightness is still near zero — restore didn't take effect
+            $0.screenControl.getBrightness = { 0.0 }
+            $0.screenControl.setBrightness = { _ in brightnessSetCount.withValue { $0 += 1 } }
+        }
+
+        await store.send(.startMonitoring) {
+            $0.isMonitoring = true
+        }
+
+        await store.receive(\.tick)
+
+        // Enforcement detects brightness is still 0, retries setBrightness
+        await store.receive(\._evaluated)
+
+        #expect(brightnessSetCount.value == 1)
+
+        await store.send(.stopMonitoring) {
+            $0.isMonitoring = false
+            $0.savedBrightness = nil
+        }
+    }
+
+    @Test("brightness enforcement clears savedBrightness once confirmed")
+    func brightnessEnforcementClears() async {
+        let clock = TestClock()
+
+        // State: undimmed but savedBrightness still set
+        let state: ScreenOffMonitorFeature.State = {
+            var s = ScreenOffMonitorFeature.State()
+            s.savedBrightness = 0.75
+            s.isSlideshowPlaying = true
+            return s
+        }()
+
+        let store = TestStore(initialState: state) {
+            ScreenOffMonitorFeature()
+        } withDependencies: {
+            $0.continuousClock = clock
+            $0.date = .constant(makeDate(hour: 10, minute: 0))
+            $0.calendar = .current
+            // Brightness successfully restored
+            $0.screenControl.getBrightness = { 0.75 }
+            $0.screenControl.setBrightness = { _ in }
+        }
+
+        await store.send(.startMonitoring) {
+            $0.isMonitoring = true
+        }
+
+        await store.receive(\.tick)
+
+        // Enforcement sees brightness is fine, clears savedBrightness
+        await store.receive(\._evaluated) {
+            $0.savedBrightness = nil
+        }
 
         await store.send(.stopMonitoring) {
             $0.isMonitoring = false

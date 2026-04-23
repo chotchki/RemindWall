@@ -53,7 +53,7 @@ public struct ScreenOffMonitorFeature: Sendable {
 
             case .stopMonitoring:
                 state.isMonitoring = false
-                if state.isDimmed, let saved = state.savedBrightness {
+                if let saved = state.savedBrightness {
                     let brightness = saved
                     state.isDimmed = false
                     state.savedBrightness = nil
@@ -92,11 +92,23 @@ public struct ScreenOffMonitorFeature: Sendable {
                         await screenControl.setBrightness(0.0)
                     }
                 } else if !shouldDim && state.isDimmed {
+                    // Transition out of dim: attempt restore but keep savedBrightness
+                    // so we can retry if setBrightness silently fails on iOS.
                     let saved = state.savedBrightness ?? 1.0
                     state.isDimmed = false
-                    state.savedBrightness = nil
                     return .run { [screenControl] _ in
                         await screenControl.setBrightness(saved)
+                    }
+                } else if !shouldDim && !state.isDimmed, let saved = state.savedBrightness {
+                    // Brightness enforcement: verify restore actually took effect.
+                    // If current brightness is still near zero, re-apply.
+                    if currentBrightness < 0.01 {
+                        return .run { [screenControl] _ in
+                            await screenControl.setBrightness(saved)
+                        }
+                    } else {
+                        // Brightness confirmed restored, clear saved value.
+                        state.savedBrightness = nil
                     }
                 }
                 return .none
