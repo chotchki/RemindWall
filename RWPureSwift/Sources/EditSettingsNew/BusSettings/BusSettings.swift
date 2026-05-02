@@ -155,17 +155,21 @@ public struct BusSettingsView: View {
     private var apiKeyRow: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                SecureField("OneBusAway API key", text: Binding(
+                TextField("OneBusAway API key", text: Binding(
                     get: { store.apiKeyDraft },
                     set: { store.send(.apiKeyChanged($0)) }
                 ))
+                #if !os(macOS)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                #endif
                 Button("Save") { store.send(.saveApiKey) }
                     .disabled(store.apiKeyDraft.isEmpty)
             }
-            if let url = URL(string: "mailto:oba_api_key@soundtransit.org") {
-                Link("Need a key? Email Sound Transit", destination: url)
-                    .font(.caption)
-            }
+            Text("Need a key? Email oba_api_key@soundtransit.org")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .textSelection(.enabled)
         }
     }
 
