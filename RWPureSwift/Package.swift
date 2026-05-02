@@ -78,6 +78,7 @@ let package = Package(
             .target(name: "Dao"),
             .target(name: "Slideshow"),
             .target(name: "TagScanLoader"),
+            .target(name: "TransitAPI"),
             .target(name: "Utility"),
         ]),
         .testTarget(name: "DashboardTests", dependencies: [

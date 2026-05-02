@@ -11,6 +11,7 @@ public struct DashboardFeature: Sendable {
         public var slideshowState = SlideShowFeature.State()
         public var alertLoaderState = AlertLoaderFeature.State()
         public var calendarEventsState = CalendarEventsFeature.State()
+        public var busArrivalsState = BusArrivalsFeature.State()
         public var tagScanLoaderState = TagScanLoaderFeature.State()
 
         public init() {}
@@ -22,6 +23,7 @@ public struct DashboardFeature: Sendable {
         case slideshow(SlideShowFeature.Action)
         case alertLoader(AlertLoaderFeature.Action)
         case calendarEvents(CalendarEventsFeature.Action)
+        case busArrivals(BusArrivalsFeature.Action)
         case tagScanLoader(TagScanLoaderFeature.Action)
         case delegate(Delegate)
         case tappedReturnToSettings
@@ -49,6 +51,10 @@ public struct DashboardFeature: Sendable {
             CalendarEventsFeature()
         }
 
+        Scope(state: \.busArrivalsState, action: \.busArrivals) {
+            BusArrivalsFeature()
+        }
+
         Scope(state: \.tagScanLoaderState, action: \.tagScanLoader) {
             TagScanLoaderFeature()
         }
@@ -61,6 +67,7 @@ public struct DashboardFeature: Sendable {
                     .send(.slideshow(.viewAppeared)),
                     .send(.alertLoader(.startMonitoring)),
                     .send(.calendarEvents(.startMonitoring)),
+                    .send(.busArrivals(.startMonitoring)),
                     .send(.tagScanLoader(.startMonitoring))
                 )
 
@@ -74,7 +81,7 @@ public struct DashboardFeature: Sendable {
             case .tappedReturnToSettings:
                 return .send(.delegate(.returnToSettings))
 
-            case .slideshow, .alertLoader, .calendarEvents, .tagScanLoader, .delegate:
+            case .slideshow, .alertLoader, .calendarEvents, .busArrivals, .tagScanLoader, .delegate:
                 return .none
             }
         }
@@ -110,6 +117,11 @@ public struct DashboardView: View {
                     )
                     .transition(.slide)
                 }
+                BusArrivalsBar(
+                    arrivals: store.busArrivalsState.arrivals,
+                    errorMessage: store.busArrivalsState.lastError
+                )
+                .transition(.move(edge: .bottom))
             }
 
             AlertView(lateTrackeeNames: store.alertLoaderState.lateTrackeeNames, dayOfWeek: store.alertLoaderState.dayOfWeek)
