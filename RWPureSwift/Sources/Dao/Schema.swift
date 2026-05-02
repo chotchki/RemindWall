@@ -60,12 +60,12 @@ extension ReminderTime.Draft: Equatable, Sendable {
 @Table
 public nonisolated struct Setting: Equatable, Identifiable, Sendable {
     public typealias ID = Tagged<Self, UUID>
-    
+
     public let id: ID
     public var key: String
     public var value: String
     public var lastModified: Date
-    
+
     public init(id: ID, key: String, value: String, lastModified: Date) {
         self.id = id
         self.key = key
@@ -73,6 +73,36 @@ public nonisolated struct Setting: Equatable, Identifiable, Sendable {
         self.lastModified = lastModified
     }
 }
+
+@Table
+public nonisolated struct MonitoredStop: Equatable, Identifiable, Sendable {
+    public typealias ID = Tagged<Self, UUID>
+
+    public let id: ID
+    public var label: String
+    public var stopId: String
+    public var routeId: String
+    public var routeShortName: String
+    public var sortOrder: Int
+
+    public init(
+        id: ID,
+        label: String,
+        stopId: String,
+        routeId: String,
+        routeShortName: String,
+        sortOrder: Int
+    ) {
+        self.id = id
+        self.label = label
+        self.stopId = stopId
+        self.routeId = routeId
+        self.routeShortName = routeShortName
+        self.sortOrder = sortOrder
+    }
+}
+
+extension MonitoredStop.Draft: Equatable, Sendable {}
 
 extension DependencyValues {
     public mutating func appDatabase() throws -> any DatabaseWriter {
@@ -181,7 +211,23 @@ extension DependencyValues {
             )
             .execute(db)
         }
-        
+
+        migrator.registerMigration("Create monitoredStops table") { db in
+            try #sql(
+            """
+            CREATE TABLE "monitoredStops" (
+              "id" TEXT PRIMARY KEY NOT NULL ON CONFLICT REPLACE DEFAULT (uuid()),
+              "label" TEXT NOT NULL,
+              "stopId" TEXT NOT NULL,
+              "routeId" TEXT NOT NULL,
+              "routeShortName" TEXT NOT NULL,
+              "sortOrder" INTEGER NOT NULL DEFAULT 0
+            )
+            """
+            )
+            .execute(db)
+        }
+
         try migrator.migrate(database)
         
         try database.write { db in
@@ -198,7 +244,7 @@ extension DependencyValues {
     public mutating func appSyncEngine(for database: any DatabaseWriter) throws -> SyncEngine {
         try SyncEngine(
             for: database,
-            tables: Trackee.self, ReminderTime.self, Setting.self
+            tables: Trackee.self, ReminderTime.self, Setting.self, MonitoredStop.self
         )
     }
 }

@@ -104,6 +104,122 @@ struct SchemaTests {
         }
     }
 
+    @Test("Insert and query a MonitoredStop")
+    func insertAndQueryMonitoredStop() async throws {
+        await withDependencies {
+            $0.uuid = .incrementing
+            $0.defaultDatabase = try! $0.appDatabase()
+        } operation: {
+            @Dependency(\.defaultDatabase) var defaultDatabase
+            @Dependency(\.uuid) var uuid
+
+            let stop = MonitoredStop(
+                id: MonitoredStop.ID(uuid()),
+                label: "School bus",
+                stopId: "1_75403",
+                routeId: "1_100224",
+                routeShortName: "12",
+                sortOrder: 0
+            )
+
+            try! await defaultDatabase.write { db in
+                try MonitoredStop.insert { stop }.execute(db)
+            }
+
+            let fetched = try! await defaultDatabase.read { db in
+                try MonitoredStop.where { $0.stopId.eq("1_75403") }.fetchOne(db)
+            }
+
+            #expect(fetched != nil)
+            #expect(fetched?.label == "School bus")
+            #expect(fetched?.routeId == "1_100224")
+            #expect(fetched?.routeShortName == "12")
+            #expect(fetched?.sortOrder == 0)
+        }
+    }
+
+    @Test("MonitoredStop ordering by sortOrder")
+    func monitoredStopOrdering() async throws {
+        await withDependencies {
+            $0.uuid = .incrementing
+            $0.defaultDatabase = try! $0.appDatabase()
+        } operation: {
+            @Dependency(\.defaultDatabase) var defaultDatabase
+            @Dependency(\.uuid) var uuid
+
+            try! await defaultDatabase.write { db in
+                try MonitoredStop.insert {
+                    MonitoredStop(
+                        id: MonitoredStop.ID(uuid()),
+                        label: "Second", stopId: "1_2", routeId: "1_b",
+                        routeShortName: "B", sortOrder: 1
+                    )
+                    MonitoredStop(
+                        id: MonitoredStop.ID(uuid()),
+                        label: "First", stopId: "1_1", routeId: "1_a",
+                        routeShortName: "A", sortOrder: 0
+                    )
+                }.execute(db)
+            }
+
+            let ordered = try! await defaultDatabase.read { db in
+                try MonitoredStop.all.order(by: \.sortOrder).fetchAll(db)
+            }
+
+            #expect(ordered.map(\.label) == ["First", "Second"])
+        }
+    }
+
+    @Test("INSERT OR REPLACE on monitoredStops preserves siblings")
+    func monitoredStopReplaceDoesNotDropOthers() async throws {
+        await withDependencies {
+            $0.uuid = .incrementing
+            $0.defaultDatabase = try! $0.appDatabase()
+        } operation: {
+            @Dependency(\.defaultDatabase) var defaultDatabase
+            @Dependency(\.uuid) var uuid
+
+            let kept = MonitoredStop.ID(uuid())
+            let replaced = MonitoredStop.ID(uuid())
+
+            try! await defaultDatabase.write { db in
+                try MonitoredStop.insert {
+                    MonitoredStop(
+                        id: kept,
+                        label: "Keep", stopId: "1_k", routeId: "1_a",
+                        routeShortName: "A", sortOrder: 0
+                    )
+                    MonitoredStop(
+                        id: replaced,
+                        label: "Original", stopId: "1_r", routeId: "1_b",
+                        routeShortName: "B", sortOrder: 1
+                    )
+                }.execute(db)
+            }
+
+            // Simulate what SyncEngine does: INSERT OR REPLACE the same row id.
+            try! await defaultDatabase.write { db in
+                try db.execute(
+                    sql: """
+                    INSERT OR REPLACE INTO "monitoredStops"
+                      ("id", "label", "stopId", "routeId", "routeShortName", "sortOrder")
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    arguments: [
+                        replaced.rawValue.uuidString,
+                        "Updated", "1_r", "1_b", "B", 1
+                    ]
+                )
+            }
+
+            let all = try! await defaultDatabase.read { db in
+                try MonitoredStop.all.order(by: \.sortOrder).fetchAll(db)
+            }
+            #expect(all.count == 2)
+            #expect(all.map(\.label) == ["Keep", "Updated"])
+        }
+    }
+
     @Test("Setting with same key uses last modified for conflict resolution")
     func settingLastModifiedConflict() async throws {
         await withDependencies {
