@@ -1,8 +1,9 @@
 import AppTypes
 import ComposableArchitecture
+import EditSettingsNew_BusSettings
+import EditSettingsNew_Trackees
 import ScreenControl
 import SwiftUI
-import EditSettingsNew_Trackees
 
 private enum TerminateAppKey: DependencyKey {
     static let liveValue: @Sendable () -> Void = { exit(0) }
@@ -29,14 +30,17 @@ public struct SettingsFeature {
         public var albumPickerState = AlbumPickerFeature.State()
         public var calendarPickerState = CalendarPickerFeature.State()
         public var screenOffSettingState = ScreenOffSettingFeature.State()
+        public var busSettingsState = BusSettingsFeature.State()
         public var path = StackState<TrackeeDetailFeature.State>()
         public var isBrightnessControlAvailable: Bool = true
 
         public init(){}
     }
-    
+
     public enum Action {
         case albumPicker(AlbumPickerFeature.Action)
+        case busAlertsToggled(Bool)
+        case busSettings(BusSettingsFeature.Action)
         case calendarPicker(CalendarPickerFeature.Action)
         case delegate(Delegate)
         case screenOffSetting(ScreenOffSettingFeature.Action)
@@ -49,7 +53,7 @@ public struct SettingsFeature {
         case screenOffToggled(Bool)
         case slideshowToggled(Bool)
         case startSlideshow
-        
+
         @CasePathable
         public enum Delegate: Equatable {
             case startSlideshow
@@ -61,6 +65,10 @@ public struct SettingsFeature {
     public var body: some ReducerOf<Self> {
         Scope(state: \.albumPickerState, action: \.albumPicker) {
             AlbumPickerFeature()
+        }
+
+        Scope(state: \.busSettingsState, action: \.busSettings) {
+            BusSettingsFeature()
         }
 
         Scope(state: \.calendarPickerState, action: \.calendarPicker) {
@@ -76,6 +84,12 @@ public struct SettingsFeature {
         }
         Reduce { state, action in
             switch action {
+            case let .busAlertsToggled(isOn):
+                state.busSettingsState.$enabled.withLock { $0 = isOn }
+                if isOn, state.busSettingsState.window == nil {
+                    state.busSettingsState.$window.withLock { $0 = .default }
+                }
+                return .none
             case let .calendarToggled(isOn):
                 if isOn {
                     state.calendarPickerState.$selectedCalendar.withLock { $0 = CalendarId("") }
@@ -119,7 +133,7 @@ public struct SettingsFeature {
                 guard let detailState = state.path[id: id]
                 else { return .none }
                 return .send(.trackees(.deleteTrackee(detailState.trackee.id)))
-            case .trackees, .albumPicker, .calendarPicker, .screenOffSetting, .path:
+            case .busSettings, .trackees, .albumPicker, .calendarPicker, .screenOffSetting, .path:
                 return .none
             }
         }.forEach(\.path, action: \.path) {
@@ -181,6 +195,19 @@ public struct SettingsView: View {
                     Toggle("Screen Off", isOn: Binding(
                         get: { store.screenOffSettingState.schedule != nil },
                         set: { store.send(.screenOffToggled($0)) }
+                    ))
+                }
+
+                Section {
+                    if store.busSettingsState.enabled {
+                        BusSettingsView(
+                            store: store.scope(state: \.busSettingsState, action: \.busSettings)
+                        )
+                    }
+                } header: {
+                    Toggle("Bus Alerts", isOn: Binding(
+                        get: { store.busSettingsState.enabled },
+                        set: { store.send(.busAlertsToggled($0)) }
                     ))
                 }
 

@@ -14,6 +14,7 @@ let package = Package(
         .library(name: "Dashboard", targets: ["Dashboard"]),
         .library(name: "Dao", targets: ["Dao"]),
         
+        .library(name: "EditSettingsNew_BusSettings", targets: ["EditSettingsNew_BusSettings"]),
         .library(name: "EditSettingsNew_Reminders", targets: ["EditSettingsNew_Reminders"]),
         .library(name: "EditSettingsNew_TopLevel", targets: ["EditSettingsNew_TopLevel"]),
         .library(name: "EditSettingsNew_Trackees", targets: ["EditSettingsNew_Trackees"]),
@@ -92,6 +93,19 @@ let package = Package(
             .target(name: "AppTypes"),
         ]),
         .testTarget(name: "DaoTests", dependencies: ["Dao", .product(name: "DependenciesTestSupport", package: "swift-dependencies")]),
+        .target(name: "EditSettingsNew_BusSettings", dependencies: [
+            .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+            .product(name: "Dependencies", package: "swift-dependencies"),
+            .target(name: "AppTypes"),
+            .target(name: "Dao"),
+            .target(name: "TransitAPI"),
+        ], path: "Sources/EditSettingsNew/BusSettings"),
+        .testTarget(name: "EditSettingsNew_BusSettingsTests",
+                    dependencies: [
+                        "EditSettingsNew_BusSettings",
+                        .product(name: "DependenciesTestSupport", package: "swift-dependencies")
+                    ], path: "Tests/EditSettingsNewTests/BusSettings"),
+
         .target(name: "EditSettingsNew_Reminders",dependencies: [
             .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
             .product(
@@ -115,6 +129,7 @@ let package = Package(
               ),
             .target(name: "CalendarAsync"),
             .target(name: "Dao"),
+            .target(name: "EditSettingsNew_BusSettings"),
             .target(name: "EditSettingsNew_Trackees"),
             .target(name: "PhotoKitAsync"),
             .target(name: "ScreenControl"),
