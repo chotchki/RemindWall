@@ -24,6 +24,7 @@ let package = Package(
         .library(name: "Slideshow", targets: ["Slideshow"]),
         .library(name: "TagScanLoader", targets: ["TagScanLoader"]),
         .library(name: "TagScanner", targets: ["TagScanner"]),
+        .library(name: "TransitAPI", targets: ["TransitAPI"]),
         .library(name: "Utility", targets: ["Utility"]),
     ],
     dependencies: [
@@ -202,6 +203,15 @@ let package = Package(
             "TagScanner",
             .product(name: "DependenciesTestSupport", package: "swift-dependencies"),
         ]),
+        .target(name: "TransitAPI", dependencies: [
+            .product(name: "Dependencies", package: "swift-dependencies"),
+            .product(name: "DependenciesMacros", package: "swift-dependencies"),
+            .target(name: "AppTypes"),
+        ]),
+        .testTarget(name: "TransitAPITests", dependencies: [
+            "TransitAPI",
+            .product(name: "DependenciesTestSupport", package: "swift-dependencies"),
+        ], resources: [.process("Fixtures")]),
         .target(name: "Utility"),
     ]
 )

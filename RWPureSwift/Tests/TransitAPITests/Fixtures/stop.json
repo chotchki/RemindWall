@@ -1,0 +1,26 @@
+{
+  "code": 200,
+  "currentTime": 1746118800000,
+  "text": "OK",
+  "version": 2,
+  "data": {
+    "entry": {
+      "id": "1_75403",
+      "code": "75403",
+      "name": "3rd Ave & Pike St",
+      "lat": 47.609,
+      "lon": -122.337,
+      "direction": "N",
+      "locationType": 0,
+      "wheelchairBoarding": "ACCESSIBLE",
+      "routeIds": ["1_100224", "1_100479"]
+    },
+    "references": {
+      "agencies": [],
+      "routes": [],
+      "stops": [],
+      "trips": [],
+      "situations": []
+    }
+  }
+}

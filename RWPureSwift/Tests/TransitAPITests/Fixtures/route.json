@@ -1,0 +1,26 @@
+{
+  "code": 200,
+  "currentTime": 1746118800000,
+  "text": "OK",
+  "version": 2,
+  "data": {
+    "entry": {
+      "id": "1_100224",
+      "shortName": "12",
+      "longName": "Capitol Hill - Downtown",
+      "description": "",
+      "type": 3,
+      "url": "https://kingcounty.gov/route/12",
+      "color": "0072CE",
+      "textColor": "FFFFFF",
+      "agencyId": "1"
+    },
+    "references": {
+      "agencies": [],
+      "routes": [],
+      "stops": [],
+      "trips": [],
+      "situations": []
+    }
+  }
+}
