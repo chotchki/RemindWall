@@ -171,6 +171,10 @@ let package = Package(
             .product(name: "Dependencies", package: "swift-dependencies"),
             .product(name: "DependenciesMacros", package: "swift-dependencies"),
         ]),
+        .testTarget(name: "ScreenControlTests", dependencies: [
+            "ScreenControl",
+            .product(name: "DependenciesTestSupport", package: "swift-dependencies"),
+        ]),
         .target(name: "ScreenOffMonitor", dependencies: [
             .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
             .product(name: "Dependencies", package: "swift-dependencies"),

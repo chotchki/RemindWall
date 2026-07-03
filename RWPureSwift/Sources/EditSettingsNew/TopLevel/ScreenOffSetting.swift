@@ -1,7 +1,10 @@
 import AppTypes
 import ComposableArchitecture
+import os
 import ScreenControl
 import SwiftUI
+
+private let logger = Logger(subsystem: "RemindWall", category: "ScreenOffSetting")
 
 @Reducer
 public struct ScreenOffSettingFeature {
@@ -63,15 +66,22 @@ public struct ScreenOffSettingFeature {
                 state.isTesting = true
                 state.testStatus = "Saving brightness…"
                 return .run { [screenControl, clock] send in
-                    let savedBrightness = await screenControl.getBrightness()
+                    let savedBrightness = try await screenControl.getBrightness()
                     await send(._testProgress("Dimming screen…"))
-                    await screenControl.setBrightness(0.0)
+                    try await screenControl.setBrightness(0.0)
                     for remaining in stride(from: 10, through: 1, by: -1) {
                         await send(._testProgress("Screen off — restoring in \(remaining)s"))
                         try await clock.sleep(for: .seconds(1))
                     }
                     await send(._testProgress("Restoring brightness…"))
-                    await screenControl.setBrightness(savedBrightness)
+                    try await screenControl.setBrightness(savedBrightness)
+                    await send(._testComplete)
+                } catch: { [screenControl] error, send in
+                    // Never leave the test stranded dark: full-brightness rescue.
+                    // (savedBrightness isn't in scope here; 1.0 is the safe exit
+                    // for a hand-run test button.)
+                    logger.warning("screen off test failed: \(error.localizedDescription, privacy: .public)")
+                    try? await screenControl.setBrightness(1.0)
                     await send(._testComplete)
                 }
             case let ._testProgress(status):

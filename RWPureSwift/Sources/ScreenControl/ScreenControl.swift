@@ -1,31 +1,56 @@
 import Dependencies
 import DependenciesMacros
 import Foundation
+import os
 #if canImport(UIKit)
 import UIKit
 #endif
 
+/// Errors from the brightness/display-power pipeline. Failures are THROWN, not
+/// masked — the old `?? 1.0` fallback made a failed DDC read indistinguishable
+/// from a bright screen and broke the restore logic.
+public enum ScreenControlError: Error, Equatable {
+    /// ddcd didn't answer (not running, wrong port).
+    case daemonUnreachable(String)
+    /// ddcd answered with an error (m1ddc failure, timeout, no display).
+    case daemonError(status: Int, message: String)
+    case invalidResponse
+}
+
 @DependencyClient
 public struct ScreenControl: Sendable {
-    /// Gets the current screen brightness (0.0 to 1.0).
-    public var getBrightness: @Sendable () async -> CGFloat = { 1.0 }
+    /// Current screen brightness (0.0 to 1.0). Throws when it can't be read —
+    /// callers must not fabricate a value.
+    public var getBrightness: @Sendable () async throws -> CGFloat
 
     /// Sets the screen brightness (0.0 to 1.0).
-    public var setBrightness: @Sendable (CGFloat) async -> Void
+    public var setBrightness: @Sendable (CGFloat) async throws -> Void
 
-    /// Checks whether the external display brightness tool (m1ddc) is available.
-    /// Always returns true on iOS (uses built-in UIScreen).
-    public var isAvailable: @Sendable () async -> Bool = { true }
+    /// True display power (Mac kiosk: panel standby via ddcd /display).
+    /// No-op on iOS — the brightness path is the iOS dim mechanism.
+    public var setDisplayPower: @Sendable (_ on: Bool) async throws -> Void
+
+    /// Whether brightness control is usable right now (ddcd reachable and
+    /// m1ddc present on the Mac; always true on iOS).
+    public var isAvailable: @Sendable () async -> Bool = { false }
 }
+
+let logger = Logger(subsystem: "RemindWall", category: "ScreenControl")
 
 extension ScreenControl: DependencyKey {
     public static var liveValue: Self {
-        Self(
+        #if targetEnvironment(macCatalyst)
+        let client = DdcdClient.live()
+        return Self(
+            getBrightness: { try await client.getBrightness() },
+            setBrightness: { try await client.setBrightness($0) },
+            setDisplayPower: { try await client.setDisplayPower(on: $0) },
+            isAvailable: { await client.healthy() }
+        )
+        #elseif canImport(UIKit)
+        return Self(
             getBrightness: {
-                #if targetEnvironment(macCatalyst)
-                return M1DDCBrightness.getBrightness() ?? 1.0
-                #elseif canImport(UIKit)
-                return await MainActor.run {
+                await MainActor.run {
                     guard let scene = UIApplication.shared.connectedScenes.first,
                           let windowSceneDelegate = scene.delegate as? UIWindowSceneDelegate,
                           let window = windowSceneDelegate.window else {
@@ -34,14 +59,8 @@ extension ScreenControl: DependencyKey {
 
                     return window?.windowScene?.screen.brightness ?? 1.0
                 }
-                #else
-                return 1.0
-                #endif
             },
             setBrightness: { brightness in
-                #if targetEnvironment(macCatalyst)
-                M1DDCBrightness.setBrightness(brightness)
-                #elseif canImport(UIKit)
                 await MainActor.run {
                     guard let scene = UIApplication.shared.connectedScenes.first,
                           let windowSceneDelegate = scene.delegate as? UIWindowSceneDelegate,
@@ -52,16 +71,18 @@ extension ScreenControl: DependencyKey {
 
                     screen.brightness = brightness
                 }
-                #endif
             },
-            isAvailable: {
-                #if targetEnvironment(macCatalyst)
-                return M1DDCBrightness.isAvailable()
-                #else
-                return true
-                #endif
-            }
+            setDisplayPower: { _ in },
+            isAvailable: { true }
         )
+        #else
+        return Self(
+            getBrightness: { 1.0 },
+            setBrightness: { _ in },
+            setDisplayPower: { _ in },
+            isAvailable: { false }
+        )
+        #endif
     }
 }
 
@@ -72,6 +93,7 @@ extension ScreenControl: TestDependencyKey {
         Self(
             getBrightness: { 0.75 },
             setBrightness: { _ in },
+            setDisplayPower: { _ in },
             isAvailable: { true }
         )
     }
@@ -84,164 +106,106 @@ extension DependencyValues {
     }
 }
 
-// MARK: - m1ddc CLI Brightness Control (Mac Catalyst)
+// MARK: - ddcd HTTP client (Mac Catalyst)
 
-#if targetEnvironment(macCatalyst)
+/// Talks to the local ddcd daemon. The daemon owns the hard problems
+/// (m1ddc timeouts, DDC bus serialization, max-luminance caching); this is a
+/// thin, honest transport. Internal for tests — production reaches it only
+/// through ScreenControl.liveValue.
+struct DdcdClient: Sendable {
+    let baseURL: URL
+    let session: URLSession
 
-enum M1DDCBrightness {
-    /// Common install locations for m1ddc (Homebrew on Apple Silicon / Intel).
-    private static let searchPaths = [
-        "/opt/homebrew/bin/m1ddc",
-        "/usr/local/bin/m1ddc",
-    ]
+    /// Every request carries this header; ddcd refuses bare requests (the
+    /// kiosk box serves public traffic, localhost is not a trust boundary).
+    static let guardHeader = "x-ddcd"
 
-    /// Cached path once found, to avoid repeated lookups.
-    nonisolated(unsafe) private static var cachedPath: String?
-    nonisolated(unsafe) private static var hasSearched = false
-
-    /// Returns the path to the m1ddc binary, or nil if not found.
-    /// Tries FileManager first, then falls back to actually invoking each
-    /// candidate path (works around sandbox restrictions on file metadata).
-    private static func findBinary() -> String? {
-        if hasSearched { return cachedPath }
-
-        // First try FileManager (fast, works outside sandbox)
-        if let path = searchPaths.first(where: { FileManager.default.isExecutableFile(atPath: $0) }) {
-            cachedPath = path
-            hasSearched = true
-            return path
-        }
-
-        // Fallback: try to actually spawn each candidate.
-        // In a sandbox, FileManager may deny stat() but posix_spawn may still work.
-        for path in searchPaths {
-            if canSpawn(path) {
-                cachedPath = path
-                hasSearched = true
-                return path
-            }
-        }
-
-        hasSearched = true
-        return nil
+    static func live() -> DdcdClient {
+        let port = ProcessInfo.processInfo.environment["DDCD_PORT"].flatMap(Int.init) ?? 8377
+        let config = URLSessionConfiguration.ephemeral
+        // Above ddcd's worst case (5s m1ddc timeout + retry backoff), below
+        // the 30s monitor tick so calls can't stack.
+        config.timeoutIntervalForRequest = 10
+        return DdcdClient(
+            baseURL: URL(string: "http://127.0.0.1:\(port)")!,
+            session: URLSession(configuration: config)
+        )
     }
 
-    /// Attempts to spawn the binary with no arguments to test reachability.
-    private static func canSpawn(_ path: String) -> Bool {
-        let cPath = strdup(path)
-        defer { free(cPath) }
-        let argv: [UnsafeMutablePointer<CChar>?] = [cPath, nil]
-
-        var fileActions: posix_spawn_file_actions_t?
-        posix_spawn_file_actions_init(&fileActions)
-        defer { posix_spawn_file_actions_destroy(&fileActions) }
-        // Silence all output
-        posix_spawn_file_actions_addopen(&fileActions, STDOUT_FILENO, "/dev/null", O_WRONLY, 0)
-        posix_spawn_file_actions_addopen(&fileActions, STDERR_FILENO, "/dev/null", O_WRONLY, 0)
-
-        var pid: pid_t = 0
-        let result = posix_spawn(&pid, path, &fileActions, nil, argv, environ)
-        if result == 0 {
-            var status: Int32 = 0
-            waitpid(pid, &status, 0)
-            return true
-        }
-        return false
+    private struct BrightnessResponse: Decodable {
+        let brightness: Double
     }
 
-    /// Whether m1ddc is installed and executable.
-    static func isAvailable() -> Bool {
-        findBinary() != nil
+    private struct HealthResponse: Decodable {
+        let status: String
+        let m1ddc_present: Bool
     }
 
-    /// Runs m1ddc with the given arguments using posix_spawn and returns trimmed stdout, or nil on failure.
-    /// (Process/NSTask is unavailable in Mac Catalyst, so we use posix_spawn directly.)
-    private static func run(_ arguments: [String]) -> String? {
-        guard let path = findBinary() else { return nil }
-
-        // Set up a pipe for stdout
-        var pipeFDs: [Int32] = [0, 0]
-        guard pipe(&pipeFDs) == 0 else { return nil }
-
-        // Build argv: [path, arg1, arg2, ..., nil]
-        let allArgs = [path] + arguments
-        let cArgs = allArgs.map { strdup($0) } + [nil]
-        defer { cArgs.forEach { $0.map { free($0) } } }
-
-        var fileActions: posix_spawn_file_actions_t?
-        posix_spawn_file_actions_init(&fileActions)
-        defer { posix_spawn_file_actions_destroy(&fileActions) }
-
-        // Redirect stdout to write end of pipe
-        posix_spawn_file_actions_adddup2(&fileActions, pipeFDs[1], STDOUT_FILENO)
-        // Close both pipe ends in child (inherited via dup2 for stdout)
-        posix_spawn_file_actions_addclose(&fileActions, pipeFDs[0])
-        posix_spawn_file_actions_addclose(&fileActions, pipeFDs[1])
-        // Send stderr to /dev/null
-        posix_spawn_file_actions_addopen(&fileActions, STDERR_FILENO, "/dev/null", O_WRONLY, 0)
-
-        var pid: pid_t = 0
-        let spawnResult = posix_spawn(&pid, path, &fileActions, nil, cArgs.map { UnsafeMutablePointer(mutating: $0) }, environ)
-
-        // Close write end in parent
-        close(pipeFDs[1])
-
-        guard spawnResult == 0 else {
-            close(pipeFDs[0])
-            return nil
-        }
-
-        // Read stdout from child
-        let readFD = pipeFDs[0]
-        var data = Data()
-        let bufferSize = 256
-        let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: bufferSize)
-        defer { buffer.deallocate() }
-        while true {
-            let bytesRead = read(readFD, buffer, bufferSize)
-            if bytesRead <= 0 { break }
-            data.append(buffer, count: bytesRead)
-        }
-        close(readFD)
-
-        // Wait for child
-        var status: Int32 = 0
-        waitpid(pid, &status, 0)
-
-        guard status == 0 else { return nil }
-
-        return String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
+    private struct ErrorResponse: Decodable {
+        let error: String
     }
 
-    /// Gets the current monitor brightness as a value from 0.0 to 1.0.
-    static func getBrightness() -> CGFloat? {
-        guard let output = run(["get", "luminance"]),
-              let current = Int(output) else {
-            return nil
-        }
-
-        let maxValue = getMaxBrightness() ?? 100
-        guard maxValue > 0 else { return nil }
-        return CGFloat(current) / CGFloat(maxValue)
+    private struct SetBrightnessBody: Encodable {
+        let brightness: Double
     }
 
-    /// Gets the maximum brightness value from the display.
-    private static func getMaxBrightness() -> Int? {
-        guard let output = run(["max", "luminance"]),
-              let value = Int(output) else {
-            return nil
-        }
-        return value
+    private struct DisplayPowerBody: Encodable {
+        let on: Bool
     }
 
-    /// Sets the monitor brightness from a value of 0.0 to 1.0.
-    @discardableResult
-    static func setBrightness(_ value: CGFloat) -> Bool {
-        let maxValue = getMaxBrightness() ?? 100
-        let clamped = max(0, min(1, value))
-        let ddcValue = Int(clamped * CGFloat(maxValue))
-        return run(["set", "luminance", "\(ddcValue)"]) != nil
+    func getBrightness() async throws -> CGFloat {
+        let data = try await send("GET", "brightness")
+        guard let response = try? JSONDecoder().decode(BrightnessResponse.self, from: data) else {
+            throw ScreenControlError.invalidResponse
+        }
+        return CGFloat(response.brightness)
+    }
+
+    func setBrightness(_ value: CGFloat) async throws {
+        _ = try await send("PUT", "brightness", body: SetBrightnessBody(brightness: Double(value)))
+    }
+
+    func setDisplayPower(on: Bool) async throws {
+        _ = try await send("PUT", "display", body: DisplayPowerBody(on: on))
+    }
+
+    /// Available means the daemon answers AND it can see m1ddc — a running
+    /// daemon with no binary would fail every operation.
+    func healthy() async -> Bool {
+        guard let data = try? await send("GET", "health"),
+              let health = try? JSONDecoder().decode(HealthResponse.self, from: data) else {
+            return false
+        }
+        return health.status == "ok" && health.m1ddc_present
+    }
+
+    private func send(_ method: String, _ path: String, body: (some Encodable)? = nil as Int?) async throws -> Data {
+        var request = URLRequest(url: baseURL.appendingPathComponent(path))
+        request.httpMethod = method
+        request.setValue("1", forHTTPHeaderField: Self.guardHeader)
+        if let body {
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = try JSONEncoder().encode(body)
+        }
+
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch {
+            logger.warning("ddcd unreachable: \(error.localizedDescription, privacy: .public)")
+            throw ScreenControlError.daemonUnreachable(error.localizedDescription)
+        }
+
+        guard let http = response as? HTTPURLResponse else {
+            throw ScreenControlError.invalidResponse
+        }
+        guard (200..<300).contains(http.statusCode) else {
+            let message = (try? JSONDecoder().decode(ErrorResponse.self, from: data))?.error
+                ?? String(data: data, encoding: .utf8) ?? "no detail"
+            logger.warning("ddcd \(method, privacy: .public) /\(path, privacy: .public) -> \(http.statusCode): \(message, privacy: .public)")
+            throw ScreenControlError.daemonError(status: http.statusCode, message: message)
+        }
+        return data
     }
 }
-
-#endif

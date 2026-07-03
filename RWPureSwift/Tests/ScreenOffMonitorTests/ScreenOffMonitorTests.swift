@@ -21,6 +21,24 @@ private func makeDate(hour: Int, minute: Int) -> Date {
 @Suite("ScreenOffMonitor Feature Tests")
 struct ScreenOffMonitorTests {
 
+    @Test("unreadable brightness skips the tick instead of fabricating a value")
+    func tickSkippedWhenBrightnessUnreadable() async {
+        let store = TestStore(initialState: ScreenOffMonitorFeature.State()) {
+            ScreenOffMonitorFeature()
+        } withDependencies: {
+            $0.date = .constant(makeDate(hour: 15, minute: 0))
+            $0.calendar = .current
+            $0.screenControl.getBrightness = {
+                throw NSError(domain: "test", code: 1, userInfo: [NSLocalizedDescriptionKey: "ddcd down"])
+            }
+        }
+
+        // No _evaluated must arrive — the old `?? 1.0` fallback would have
+        // recorded a fake bright screen as the restore level here.
+        await store.send(.tick)
+        await store.finish()
+    }
+
     @Test("startMonitoring sets isMonitoring and fires immediate tick")
     func startMonitoring() async {
         let clock = TestClock()

@@ -2,7 +2,10 @@ import AppTypes
 import ComposableArchitecture
 import Dependencies
 import Foundation
+import os
 import ScreenControl
+
+private let logger = Logger(subsystem: "RemindWall", category: "ScreenOffMonitor")
 
 @Reducer
 public struct ScreenOffMonitorFeature: Sendable {
@@ -60,7 +63,9 @@ public struct ScreenOffMonitorFeature: Sendable {
                     return .merge(
                         .cancel(id: CancelID.monitorLoop),
                         .run { [screenControl] _ in
-                            await screenControl.setBrightness(brightness)
+                            try await screenControl.setBrightness(brightness)
+                        } catch: { error, _ in
+                            logger.warning("restore on stop failed: \(error.localizedDescription, privacy: .public)")
                         }
                     )
                 }
@@ -80,8 +85,14 @@ public struct ScreenOffMonitorFeature: Sendable {
                     } else {
                         shouldDim = false
                     }
-                    let currentBrightness = await screenControl.getBrightness()
+                    let currentBrightness = try await screenControl.getBrightness()
                     await send(._evaluated(shouldDim: shouldDim, currentBrightness: currentBrightness))
+                } catch: { error, _ in
+                    // DDC unreachable (daemon down, panel asleep): skip the tick and
+                    // let the 30s loop retry. NEVER fabricate a brightness — the old
+                    // `?? 1.0` here made a failed read look like a bright screen and
+                    // corrupted the restore level.
+                    logger.warning("tick skipped, brightness unreadable: \(error.localizedDescription, privacy: .public)")
                 }
 
             case let ._evaluated(shouldDim, currentBrightness):
@@ -89,7 +100,9 @@ public struct ScreenOffMonitorFeature: Sendable {
                     state.isDimmed = true
                     state.savedBrightness = currentBrightness
                     return .run { [screenControl] _ in
-                        await screenControl.setBrightness(0.0)
+                        try await screenControl.setBrightness(0.0)
+                    } catch: { error, _ in
+                        logger.warning("dim failed: \(error.localizedDescription, privacy: .public)")
                     }
                 } else if !shouldDim && state.isDimmed {
                     // Transition out of dim: attempt restore but keep savedBrightness
@@ -97,14 +110,20 @@ public struct ScreenOffMonitorFeature: Sendable {
                     let saved = state.savedBrightness ?? 1.0
                     state.isDimmed = false
                     return .run { [screenControl] _ in
-                        await screenControl.setBrightness(saved)
+                        try await screenControl.setBrightness(saved)
+                    } catch: { error, _ in
+                        // savedBrightness stays set - the enforcement branch below
+                        // retries on subsequent ticks.
+                        logger.warning("restore failed, will retry: \(error.localizedDescription, privacy: .public)")
                     }
                 } else if !shouldDim && !state.isDimmed, let saved = state.savedBrightness {
                     // Brightness enforcement: verify restore actually took effect.
                     // If current brightness is still near zero, re-apply.
                     if currentBrightness < 0.01 {
                         return .run { [screenControl] _ in
-                            await screenControl.setBrightness(saved)
+                            try await screenControl.setBrightness(saved)
+                        } catch: { error, _ in
+                            logger.warning("restore retry failed: \(error.localizedDescription, privacy: .public)")
                         }
                     } else {
                         // Brightness confirmed restored, clear saved value.

@@ -51,7 +51,9 @@ struct RemindWallApp: App {
           if newPhase == .background {
               Task {
                   @Dependency(\.screenControl) var screenControl
-                  await screenControl.setBrightness(1.0)
+                  // Best-effort courtesy restore when leaving the foreground -
+                  // nothing sane to do if the daemon is down at quit time.
+                  try? await screenControl.setBrightness(1.0)
               }
           }
       }
