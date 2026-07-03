@@ -40,6 +40,7 @@ const MAX_LUMINANCE_RANGE: std::ops::RangeInclusive<i64> = 1..=1000;
 pub struct Config {
     pub m1ddc_path: PathBuf,
     pub timeout: Duration,
+    pub retry_delays: Vec<Duration>,
 }
 
 impl Config {
@@ -61,7 +62,12 @@ impl Config {
         Self {
             m1ddc_path,
             timeout: Duration::from_millis(timeout_ms),
+            retry_delays: Self::default_retry_delays(),
         }
+    }
+
+    pub fn default_retry_delays() -> Vec<Duration> {
+        vec![Duration::from_millis(300), Duration::from_millis(900)]
     }
 }
 
@@ -97,6 +103,15 @@ pub struct Ddc {
     path: PathBuf,
     timeout: Duration,
     lock: Mutex<()>,
+    /// Max luminance survives for the daemon's lifetime (it's a monitor
+    /// property) - re-reading it doubled the DDC traffic of every operation.
+    /// Invalidated when an operation fails, so a monitor swap heals itself.
+    max_cache: Mutex<Option<i64>>,
+    /// Backoff schedule for transient failures - the DCP AV service takes a
+    /// few seconds to return after display wake, and a restore issued right
+    /// after wake shouldn't fail spuriously. Timeouts are NOT retried (a
+    /// wedged transaction already cost its full timeout).
+    retry_delays: Vec<Duration>,
 }
 
 impl Ddc {
@@ -105,6 +120,8 @@ impl Ddc {
             path: config.m1ddc_path.clone(),
             timeout: config.timeout,
             lock: Mutex::new(()),
+            max_cache: Mutex::new(None),
+            retry_delays: config.retry_delays.clone(),
         }
     }
 
@@ -142,30 +159,73 @@ impl Ddc {
         Ok(stdout)
     }
 
+    /// Bounded retry for transient failures (panel wake, marginal DDC read).
+    /// Retries only `Failed`/`BadOutput` — a `Timeout` already burned its full
+    /// budget on a wedged transaction, and `Unavailable` won't heal by waiting.
+    async fn run_with_retry(&self, args: &[&str]) -> Result<String, DdcError> {
+        let mut last_err = None;
+        for (attempt, delay) in std::iter::once(None)
+            .chain(self.retry_delays.iter().map(Some))
+            .enumerate()
+        {
+            if let Some(delay) = delay {
+                tokio::time::sleep(*delay).await;
+            }
+            match self.run(args).await {
+                Ok(out) => return Ok(out),
+                Err(e @ (DdcError::Timeout | DdcError::Unavailable(_))) => return Err(e),
+                Err(e) => {
+                    tracing::warn!(args = args.join(" "), attempt, error = ?e, "ddc attempt failed");
+                    last_err = Some(e);
+                }
+            }
+        }
+        Err(last_err.expect("at least one attempt ran"))
+    }
+
     async fn read_value(&self, args: &[&str]) -> Result<i64, DdcError> {
-        let out = self.run(args).await?;
+        let out = self.run_with_retry(args).await?;
         out.parse().map_err(|_| {
             DdcError::BadOutput(format!("m1ddc {} returned non-numeric: {out:?}", args.join(" ")))
         })
     }
 
+    /// Cached for the daemon's lifetime; see `max_cache`.
     pub async fn max_luminance(&self) -> Result<i64, DdcError> {
+        if let Some(max) = *self.max_cache.lock().await {
+            return Ok(max);
+        }
         let max = self.read_value(&["max", "luminance"]).await?;
         if !MAX_LUMINANCE_RANGE.contains(&max) {
             return Err(DdcError::BadOutput(format!(
                 "max luminance {max} outside sane range - broken m1ddc build or monitor?"
             )));
         }
+        *self.max_cache.lock().await = Some(max);
+        tracing::info!(max, "cached max luminance");
         Ok(max)
     }
 
+    async fn invalidate_max(&self) {
+        *self.max_cache.lock().await = None;
+    }
+
     pub async fn get_luminance(&self) -> Result<i64, DdcError> {
-        self.read_value(&["get", "luminance"]).await
+        let result = self.read_value(&["get", "luminance"]).await;
+        if result.is_err() {
+            // The monitor may have changed (or gone away) - don't trust the
+            // cached max on the next operation.
+            self.invalidate_max().await;
+        }
+        result
     }
 
     pub async fn set_luminance(&self, value: i64) -> Result<(), DdcError> {
-        self.run(&["set", "luminance", &value.to_string()]).await?;
-        Ok(())
+        let result = self.run_with_retry(&["set", "luminance", &value.to_string()]).await;
+        if result.is_err() {
+            self.invalidate_max().await;
+        }
+        result.map(|_| ())
     }
 }
 

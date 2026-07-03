@@ -45,10 +45,19 @@ impl Fake {
     /// Generous per-call timeout: tests run in parallel and bash spawn under
     /// contention can take hundreds of ms. The timeout PATH is exercised by
     /// wedged_m1ddc_times_out_instead_of_hanging with its own short config.
+    /// No retries by default - retry behavior has dedicated tests.
     fn config(&self) -> Config {
         Config {
             m1ddc_path: self.path(),
             timeout: Duration::from_secs(3),
+            retry_delays: vec![],
+        }
+    }
+
+    fn config_with_retries(&self) -> Config {
+        Config {
+            retry_delays: vec![Duration::from_millis(10), Duration::from_millis(10)],
+            ..self.config()
         }
     }
 }
@@ -217,6 +226,7 @@ async fn wedged_m1ddc_times_out_instead_of_hanging() {
     let config = Config {
         m1ddc_path: fake.path(),
         timeout: Duration::from_millis(500),
+        retry_delays: vec![],
     };
     let started = std::time::Instant::now();
     let response = app(config)
@@ -246,6 +256,85 @@ async fn m1ddc_failure_surfaces_as_bad_gateway() {
 }
 
 #[tokio::test]
+async fn max_luminance_is_cached_across_requests() {
+    let fake = healthy_fake();
+    let app = app(fake.config());
+
+    for _ in 0..2 {
+        let response = app
+            .clone()
+            .oneshot(request(Method::GET, "/brightness", None))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    let calls = fake.calls();
+    assert_eq!(
+        calls.iter().filter(|l| *l == "max luminance").count(),
+        1,
+        "max should be read once and cached: {calls:?}"
+    );
+    assert_eq!(calls.iter().filter(|l| *l == "get luminance").count(), 2);
+}
+
+#[tokio::test]
+async fn transient_failure_is_retried_and_succeeds() {
+    // Fails the first "get luminance" (the AV service just came back from
+    // panel sleep), succeeds on retry.
+    let fake = Fake::new(
+        r#"echo "$@" >> "$LOG"
+case "$1 $2" in
+  "max luminance") echo 100 ;;
+  "get luminance")
+    if [ ! -f "$LOG.once" ]; then touch "$LOG.once"; echo "DDC no reply"; exit 1; fi
+    echo 43 ;;
+esac"#,
+    );
+    let response = app(fake.config_with_retries())
+        .oneshot(request(Method::GET, "/brightness", None))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let calls = fake.calls();
+    assert_eq!(
+        calls.iter().filter(|l| *l == "get luminance").count(),
+        2,
+        "expected one retry: {calls:?}"
+    );
+}
+
+#[tokio::test]
+async fn operation_failure_invalidates_the_max_cache() {
+    // max reads fine; get always fails -> the failure must drop the cached
+    // max so a monitor swap can heal on the next request.
+    let fake = Fake::new(
+        r#"echo "$@" >> "$LOG"
+case "$1 $2" in
+  "max luminance") echo 100 ;;
+  "get luminance") echo "DDC no reply"; exit 1 ;;
+esac"#,
+    );
+    let app = app(fake.config());
+
+    for _ in 0..2 {
+        let response = app
+            .clone()
+            .oneshot(request(Method::GET, "/brightness", None))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::BAD_GATEWAY);
+    }
+
+    let calls = fake.calls();
+    assert_eq!(
+        calls.iter().filter(|l| *l == "max luminance").count(),
+        2,
+        "cache should be invalidated after the get failure: {calls:?}"
+    );
+}
+
+#[tokio::test]
 async fn concurrent_requests_never_interleave_on_the_bus() {
     // DDC/I2C is single-master: the mutex must serialize transactions. The
     // fake records begin/end markers; interleaving shows as nested begins.
@@ -267,7 +356,10 @@ esac"#,
     assert_eq!(r2.unwrap().status(), StatusCode::OK);
 
     let calls = fake.calls();
-    assert_eq!(calls.iter().filter(|l| *l == "begin").count(), 4, "{calls:?}");
+    // 3 or 4 bus transactions: both racing requests read max on a cold cache,
+    // or the second wins the cache and skips it.
+    let begins = calls.iter().filter(|l| *l == "begin").count();
+    assert!((3..=4).contains(&begins), "{calls:?}");
     let mut depth = 0i32;
     for line in &calls {
         match line.as_str() {
