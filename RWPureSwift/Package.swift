@@ -199,7 +199,8 @@ let package = Package(
                     .target(name: "AppTypes"),
                     .target(name: "Dao"),
                     .target(name: "TagScanner"),
-                ]),
+                ],
+                resources: [.process("Resources")]),
         .testTarget(name: "TagScanLoaderTests", dependencies: [
             "TagScanLoader",
             .product(name: "DependenciesTestSupport", package: "swift-dependencies"),

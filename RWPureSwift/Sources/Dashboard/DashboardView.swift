@@ -73,7 +73,9 @@ public struct DashboardFeature: Sendable {
 
             case .onDisappear:
                 cursorClient.unhide()
-                return .none
+                // The scan loop must not keep consuming taps while settings is up —
+                // it would falsely mark meds taken during tag association.
+                return .send(.tagScanLoader(.stopMonitoring))
 
             case .slideshow(.delegate(.tapReturnToSettings)):
                 return .send(.delegate(.returnToSettings))

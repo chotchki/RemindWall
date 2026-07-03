@@ -49,7 +49,7 @@ struct DashboardTests {
         await store.finish()
     }
 
-    @Test("onDisappear unhides cursor")
+    @Test("onDisappear unhides cursor and stops the scan loop")
     func onDisappear() async {
         let unhideCalled = LockIsolated(false)
 
@@ -62,6 +62,9 @@ struct DashboardTests {
         await store.send(.onDisappear)
 
         #expect(unhideCalled.value == true)
+
+        // The scan loop must not keep consuming taps while settings is up.
+        await store.receive(\.tagScanLoader.stopMonitoring)
     }
 
     @Test("slideshow tapReturnToSettings propagates delegate")

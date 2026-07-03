@@ -52,6 +52,8 @@ public struct AssociateTagFeature : Sendable{
                     state.errorMessage = nil
                 case .readerError(let message):
                     state.errorMessage = message
+                case .tagUnreadable(let message):
+                    state.errorMessage = message
                 case .noTag:
                     state.errorMessage = "No tag detected. Please try again."
                 }

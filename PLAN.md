@@ -713,3 +713,39 @@ Each phase ends in a green `swift test` run.
 - `RWPureSwift/Sources/AppTypes/SettingConstants.swift` — new keys.
 - `RWPureSwift/Sources/Dashboard/DashboardView.swift` — wire in `BusArrivalsFeature`.
 - `RWPureSwift/Sources/EditSettingsNew/TopLevel/Settings.swift` — wire in `BusSettingsFeature` section.
+
+---
+
+# RemindWall Active Phases
+
+Phase N1 (NFC scan reliability) completed 2026-07-03 → swept to PLAN_ARCHIVE.md.
+
+Context that outlives N1: screen-off findings from the scan audit are LIVE on current deploys (ScreenOffMonitor works on the iPads and the unsandboxed Mac) — a scan during the off-window renders its overlay on a dark panel, and scanning a late reminder at night triggers re-dim within 0-35s of the tap. N1.11's sounds cover the feedback gap; wake-on-scan sits in Backlog until T1 lands displayOn().
+
+## Phase T1 - Sandboxed Mac TestFlight via local DDC daemon
+
+Why this phase: TestFlight for Mac hard-rejects unsandboxed builds at upload (ITMS-90296, before any human review), and no exception entitlement gets a DDC path through the sandbox — every shipping DDC app (MonitorControl, Lunar, BetterDisplay) distributes outside the store for exactly this reason. So the DDC work moves OUT of the app into `ddcd/`, a small Rust daemon living as a new top-level crate in this repo; the sandboxed app talks to it over 127.0.0.1 (needs only `network.client`, which bus arrivals already requires). Every device stays on TestFlight's update pipeline, and the daemon rides launchd next to the other servers already on the kiosk box.
+
+NSUserUnixTask was the first candidate and IS workable (audit prototype proved runtime reachability from Catalyst and review-cleanliness), but it taxes every call with bash-watchdog + ObjC-runtime glue: no timeout/kill API on a hung task, execute-at-most-once instances that crash uncatchably on reuse, exit statuses collapsed into a localized string, parallel XPC execution colliding on the single-master I2C bus. The daemon turns all of that into ordinary server code (URLSession timeout, a mutex, HTTP statuses, KeepAlive). Review note: App Review's machines won't have the daemon, so the app must present fully functional without it — availability gating covers this. Honest cost of the TestFlight route on an always-on kiosk: builds EXPIRE after 90 days, and an expired build refuses to relaunch — a crash past day 90 with no fresh build shipped means a dead kiosk (the iPads already live on this treadmill, so it's a known cadence, but the Mac's KeepAlive relaunch agent turns "app crashed" into "app relaunched with an expired build" if the treadmill slips). Last-resort fallback: Developer ID + notarization (sandbox optional, but loses TestFlight updates).
+
+The daemon also unblocks TRUE monitor off/on — the original goal, tried three times before (git: IODisplayConnect via dlsym, dead API on Apple Silicon; in-process IOAVService, flagged by App Review; m1ddc spawn, luminance only). The new option: OS-level display sleep (`pmset displaysleepnow`) with an OS-level wake (IOPMAssertionDeclareUserActivity) — the panel enters real standby on signal loss and wakes on signal return, so the wake path never depends on a DDC command reaching a sleeping monitor. Ordering constraint either way: DDC is dead while the panel sleeps, so wake -> wait for the AV service -> reassert luminance. T1.2 probes the kiosk monitor to pick the mechanism.
+
+- [ ] T1.1 - `ddcd/` Rust crate: axum bound to 127.0.0.1 (configurable port — the box also runs hotchkiss.io and friends), GET /health, GET /brightness, PUT /brightness (0.0-1.0); require a custom request header + reject CORS preflight (localhost is NOT a trust boundary on a box serving public traffic — this kills browser CSRF outright); m1ddc invocations behind a mutex with a per-call process timeout (~5s kill); unit tests against a fake m1ddc
+- [ ] T1.2 - Hardware probe on the kiosk monitor (decides T1.3's mechanism): (a) `pmset displaysleepnow` + `caffeinate -u -t 2` wake — verify unprivileged, panel truly off, wake latency; (b) VCP D6 standby via m1ddc + DDC wake — does the monitor ACK while asleep; measure how long the AV service takes to return after wake either way
+- [ ] T1.3 - Display power endpoints: PUT /display on|off using the probe winner; wake sequence = assert user activity -> poll AV service back -> reassert luminance
+- [ ] T1.4 - Daemon hardening: cache max luminance at startup (validate 1...1000, re-probe on failure), retry-with-backoff when the DCP AV service drops (panel sleep does this by design now), structured logs to stdout for launchd capture
+- [ ] T1.5 - Kiosk install: LaunchAgent plist with KeepAlive (user session — the box is always on and unlocked, and IOPMAssertionDeclareUserActivity wants the GUI session; no LaunchDaemon/root needed) + a second KeepAlive agent relaunching RemindWall itself (no reboots means login items never re-fire; an app crash otherwise leaves the kiosk dead until someone notices) + install doc + `brew pin m1ddc` (stable v1.2.0 is the known-good; HEAD builds Apr 2025-Jun 2026 read max luminance from the wrong byte)
+- [ ] T1.6 - ScreenControl rework: replace M1DDCBrightness/posix_spawn with a URLSession client (request timeout, Result-based errors — kill the `?? 1.0` failure masking that breaks restore), add displayOn/displayOff alongside brightness, os.Logger for postmortems; client tests against a stubbed daemon
+- [ ] T1.7 - ScreenOffMonitor: off-window uses true display off on the Mac (brightness path stays for iOS), restore honors the wake ordering; consults availability; in-flight guard so a slow call can't stack ticks
+- [ ] T1.8 - Availability rework: available = /health reachable, re-checked periodically (no forever-negative cache); fix the Settings caption (still says `brew install m1ddc`)
+- [ ] T1.9 - Enable App Sandbox on the Mac target + companion entitlements (network.client, personal-information.photos-library, personal-information.calendars; smartcard already present — the old device.usb/disable-library-validation were libnfc-era, not needed)
+- [ ] T1.10 - Container migration check: CloudKit re-sync covers the DB; verify @Shared(.appStorage) settings survive or document the one-time kiosk reconfigure
+- [ ] T1.11 - Upload to TestFlight internal: processing passes clean (no ITMS-90296/90338), end-to-end kiosk test (scan, off-window true-off + late-reminder force-on, calendar, photos)
+- [ ] T1.12 - CI lane for `ddcd/` — Xcode Cloud only builds the Swift side, so cargo test + clippy need their own hook (GitHub Actions or a ci_scripts addition)
+
+## Backlog
+- Wake the screen during scan overlays — post-T1 this is one ScreenControl.displayOn() call from TagScanLoader feedback (iPads: restore UIScreen.brightness); pairs with N1.11's beep so scans register even mid-wake
+- Harden slot subscription against a nil `slotNamed(_:)` (async `getSlot(withName:)` + rebuild on failure) — audit refuted the transient-nil trigger but the pipeline is one nil from dead-until-replug
+- `associatedTag` uniqueness constraint (schema migration) — N1.9 fixes the read side only
+- Sound policy for per-tap DB errors: `.error` is deliberately silent (a dead reader on the 30s backoff cycle must not buzz all night), so a DB-write failure in the dark gives no audio — the absent success ding is the only signal. Splitting infrastructure vs per-tap error cases would fix it; conscious tradeoff for now
+- Test seam for the decode path: N1.4's retry-while-validCard and N1.3's muteCard pipeline branch have no unit coverage — needs a protocol abstraction over TKSmartCardSlot/TKSmartCard to fake card behavior
