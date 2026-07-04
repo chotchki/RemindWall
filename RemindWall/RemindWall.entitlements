@@ -14,6 +14,18 @@
 	<array>
 		<string>CloudKit</string>
 	</array>
+	<!-- App Sandbox: hard requirement for TestFlight/MAS Mac delivery
+	     (ITMS-90296 fires at upload without it). DDC lives in the external
+	     ddcd daemon reached via network.client, so nothing here needs the
+	     unsandboxed powers the old m1ddc-spawn path required. -->
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	<key>com.apple.security.network.client</key>
+	<true/>
+	<key>com.apple.security.personal-information.calendars</key>
+	<true/>
+	<key>com.apple.security.personal-information.photos-library</key>
+	<true/>
 	<key>com.apple.security.smartcard</key>
 	<true/>
 </dict>

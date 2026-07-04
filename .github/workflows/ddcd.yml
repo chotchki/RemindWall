@@ -1,0 +1,32 @@
+# CI for the ddcd daemon crate. Xcode Cloud only builds the Swift side, so
+# the Rust tests need their own lane. Runs on ubuntu even though the daemon
+# targets macOS: the code is platform-neutral (paths + process spawning, and
+# the test fakes are bash scripts), and macOS runners burn 10x the minutes on
+# private repos. The release binary is built on a real Mac anyway (INSTALL.md).
+name: ddcd
+
+on:
+  push:
+    paths:
+      - "ddcd/**"
+      - ".github/workflows/ddcd.yml"
+  pull_request:
+    paths:
+      - "ddcd/**"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ddcd
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ddcd
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo test

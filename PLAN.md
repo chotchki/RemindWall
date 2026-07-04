@@ -740,10 +740,10 @@ The daemon also unblocks TRUE monitor off/on — the original goal, tried three 
 - [x] T1.6 - ScreenControl rework: replace M1DDCBrightness/posix_spawn with a URLSession client (request timeout, Result-based errors — kill the `?? 1.0` failure masking that breaks restore), add displayOn/displayOff alongside brightness, os.Logger for postmortems; client tests against a stubbed daemon
 - [x] T1.7 - ScreenOffMonitor: off-window uses true display off on the Mac (brightness path stays for iOS), restore honors the wake ordering; in-flight guard (cancelInFlight on the work id) so a slow call can't stack ticks. Availability-consult dropped deliberately: ops THROW when the daemon's down and failed transitions self-retry next tick, so a per-tick /health round-trip adds nothing
 - [x] T1.8 - Availability rework: available = /health reachable, re-checked periodically (no forever-negative cache); fix the Settings caption (still says `brew install m1ddc`)
-- [ ] T1.9 - Enable App Sandbox on the Mac target + companion entitlements (network.client, personal-information.photos-library, personal-information.calendars; smartcard already present — the old device.usb/disable-library-validation were libnfc-era, not needed)
+- [x] T1.9 - Enable App Sandbox on the Mac target + companion entitlements (network.client, personal-information.photos-library, personal-information.calendars; smartcard already present — the old device.usb/disable-library-validation were libnfc-era, not needed)
 - [ ] T1.10 - Container migration check: CloudKit re-sync covers the DB; verify @Shared(.appStorage) settings survive or document the one-time kiosk reconfigure
 - [ ] T1.11 - Upload to TestFlight internal: processing passes clean (no ITMS-90296/90338), end-to-end kiosk test (scan, off-window true-off + late-reminder force-on, calendar, photos)
-- [ ] T1.12 - CI lane for `ddcd/` — Xcode Cloud only builds the Swift side, so cargo test + clippy need their own hook (GitHub Actions or a ci_scripts addition)
+- [x] T1.12 - CI lane for `ddcd/` — Xcode Cloud only builds the Swift side, so cargo test + clippy need their own hook (GitHub Actions or a ci_scripts addition)
 
 ## Backlog
 - Wake the screen during scan overlays — post-T1 this is one ScreenControl.displayOn() call from TagScanLoader feedback (iPads: restore UIScreen.brightness); pairs with N1.11's beep so scans register even mid-wake
