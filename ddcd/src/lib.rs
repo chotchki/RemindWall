@@ -183,11 +183,49 @@ impl Ddc {
         Err(last_err.expect("at least one attempt ran"))
     }
 
-    async fn read_value(&self, args: &[&str]) -> Result<i64, DdcError> {
-        let out = self.run_with_retry(args).await?;
-        out.parse().map_err(|_| {
-            DdcError::BadOutput(format!("m1ddc {} returned non-numeric: {out:?}", args.join(" ")))
-        })
+    /// Reads a numeric value, retrying attempts whose output fails the
+    /// plausibility check. DDC reads on flaky panels (LG especially) return
+    /// corrupted values without any checksum protection — the kiosk's monitor
+    /// has produced `luminance -51 / max 62` in the field. A corrupted read
+    /// is a transient failure, not an answer.
+    async fn read_validated(
+        &self,
+        args: &[&str],
+        valid: impl Fn(i64) -> bool,
+    ) -> Result<i64, DdcError> {
+        let mut last_err = None;
+        for (attempt, delay) in std::iter::once(None)
+            .chain(self.retry_delays.iter().map(Some))
+            .enumerate()
+        {
+            if let Some(delay) = delay {
+                tokio::time::sleep(*delay).await;
+            }
+            match self.run(args).await {
+                Ok(out) => match out.parse::<i64>() {
+                    Ok(value) if valid(value) => return Ok(value),
+                    Ok(value) => {
+                        tracing::warn!(args = args.join(" "), attempt, value, "implausible DDC read");
+                        last_err = Some(DdcError::BadOutput(format!(
+                            "m1ddc {} returned implausible value {value} (corrupted DDC read?)",
+                            args.join(" ")
+                        )));
+                    }
+                    Err(_) => {
+                        last_err = Some(DdcError::BadOutput(format!(
+                            "m1ddc {} returned non-numeric: {out:?}",
+                            args.join(" ")
+                        )));
+                    }
+                },
+                Err(e @ (DdcError::Timeout | DdcError::Unavailable(_))) => return Err(e),
+                Err(e) => {
+                    tracing::warn!(args = args.join(" "), attempt, error = ?e, "ddc attempt failed");
+                    last_err = Some(e);
+                }
+            }
+        }
+        Err(last_err.expect("at least one attempt ran"))
     }
 
     /// Cached for the daemon's lifetime; see `max_cache`.
@@ -195,12 +233,9 @@ impl Ddc {
         if let Some(max) = *self.max_cache.lock().await {
             return Ok(max);
         }
-        let max = self.read_value(&["max", "luminance"]).await?;
-        if !MAX_LUMINANCE_RANGE.contains(&max) {
-            return Err(DdcError::BadOutput(format!(
-                "max luminance {max} outside sane range - broken m1ddc build or monitor?"
-            )));
-        }
+        let max = self
+            .read_validated(&["max", "luminance"], |v| MAX_LUMINANCE_RANGE.contains(&v))
+            .await?;
         *self.max_cache.lock().await = Some(max);
         tracing::info!(max, "cached max luminance");
         Ok(max)
@@ -210,8 +245,12 @@ impl Ddc {
         *self.max_cache.lock().await = None;
     }
 
-    pub async fn get_luminance(&self) -> Result<i64, DdcError> {
-        let result = self.read_value(&["get", "luminance"]).await;
+    /// `max` bounds the plausibility check — a current reading outside
+    /// 0..=max is a corrupted read, never a real panel state.
+    pub async fn get_luminance(&self, max: i64) -> Result<i64, DdcError> {
+        let result = self
+            .read_validated(&["get", "luminance"], |v| (0..=max).contains(&v))
+            .await;
         if result.is_err() {
             // The monitor may have changed (or gone away) - don't trust the
             // cached max on the next operation.
@@ -285,7 +324,7 @@ struct Brightness {
 
 async fn get_brightness(State(state): State<Arc<AppState>>) -> Result<Json<Brightness>, DdcError> {
     let max = state.ddc.max_luminance().await?;
-    let raw = state.ddc.get_luminance().await?;
+    let raw = state.ddc.get_luminance(max).await?;
     Ok(Json(Brightness {
         brightness: (raw as f64 / max as f64).clamp(0.0, 1.0),
         raw,

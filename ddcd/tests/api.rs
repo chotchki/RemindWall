@@ -256,6 +256,62 @@ async fn m1ddc_failure_surfaces_as_bad_gateway() {
 }
 
 #[tokio::test]
+async fn corrupted_negative_read_is_rejected_not_served() {
+    // Field data from the kiosk's LG: "luminance: -51 / max 62". A negative
+    // luminance is impossible - serving it would clamp to brightness 0 and
+    // poison the app's restore level.
+    let fake = Fake::new(
+        r#"echo "$@" >> "$LOG"
+case "$1 $2" in
+  "max luminance") echo 100 ;;
+  "get luminance") echo -51 ;;
+esac"#,
+    );
+    let response = app(fake.config())
+        .oneshot(request(Method::GET, "/brightness", None))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::BAD_GATEWAY);
+    let body = json_body(response).await;
+    assert!(body["error"].as_str().unwrap().contains("implausible"));
+}
+
+#[tokio::test]
+async fn corrupted_read_recovers_via_retry() {
+    let fake = Fake::new(
+        r#"echo "$@" >> "$LOG"
+case "$1 $2" in
+  "max luminance") echo 100 ;;
+  "get luminance")
+    if [ ! -f "$LOG.once" ]; then touch "$LOG.once"; echo -51; else echo 43; fi ;;
+esac"#,
+    );
+    let response = app(fake.config_with_retries())
+        .oneshot(request(Method::GET, "/brightness", None))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = json_body(response).await;
+    assert_eq!(body["raw"], 43);
+}
+
+#[tokio::test]
+async fn reading_above_max_is_rejected_as_corruption() {
+    let fake = Fake::new(
+        r#"echo "$@" >> "$LOG"
+case "$1 $2" in
+  "max luminance") echo 100 ;;
+  "get luminance") echo 3200 ;;
+esac"#,
+    );
+    let response = app(fake.config())
+        .oneshot(request(Method::GET, "/brightness", None))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::BAD_GATEWAY);
+}
+
+#[tokio::test]
 async fn max_luminance_is_cached_across_requests() {
     let fake = healthy_fake();
     let app = app(fake.config());
