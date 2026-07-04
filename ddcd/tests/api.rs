@@ -62,6 +62,7 @@ impl Fake {
             m1ddc_path: self.path(),
             pmset_path: self.dir.path().join("pmset"),
             caffeinate_path: self.dir.path().join("caffeinate"),
+            max_luminance: 100,
             timeout: Duration::from_secs(3),
             retry_delays: vec![],
         }
@@ -190,7 +191,8 @@ async fn put_brightness_scales_against_max() {
         .await
         .unwrap();
     assert_eq!(response.status(), StatusCode::NO_CONTENT);
-    assert_eq!(fake.calls(), vec!["max luminance", "set luminance 50"]);
+    // Pure write: the panel is never asked for max.
+    assert_eq!(fake.calls(), vec!["set luminance 50"]);
 }
 
 #[tokio::test]
@@ -215,23 +217,6 @@ async fn put_brightness_rejects_out_of_range() {
     }
 }
 
-#[tokio::test]
-async fn insane_max_luminance_is_rejected_not_used() {
-    // The Apr 2025 - Jun 2026 m1ddc HEAD bug: max read from the wrong byte
-    // offset returns e.g. 25600 and every computed brightness is garbage.
-    let fake = Fake::new(
-        r#"echo "$@" >> "$LOG"
-case "$1 $2" in
-  "max luminance") echo 25600 ;;
-  *) echo 43 ;;
-esac"#,
-    );
-    let response = app(fake.config())
-        .oneshot(request(Method::GET, "/brightness", None))
-        .await
-        .unwrap();
-    assert_eq!(response.status(), StatusCode::BAD_GATEWAY);
-}
 
 #[tokio::test]
 async fn wedged_m1ddc_times_out_instead_of_hanging() {
@@ -370,28 +355,6 @@ esac"#,
     assert_eq!(response.status(), StatusCode::BAD_GATEWAY);
 }
 
-#[tokio::test]
-async fn max_luminance_is_cached_across_requests() {
-    let fake = healthy_fake();
-    let app = app(fake.config());
-
-    for _ in 0..2 {
-        let response = app
-            .clone()
-            .oneshot(request(Method::GET, "/brightness", None))
-            .await
-            .unwrap();
-        assert_eq!(response.status(), StatusCode::OK);
-    }
-
-    let calls = fake.calls();
-    assert_eq!(
-        calls.iter().filter(|l| *l == "max luminance").count(),
-        1,
-        "max should be read once and cached: {calls:?}"
-    );
-    assert_eq!(calls.iter().filter(|l| *l == "get luminance").count(), 2);
-}
 
 #[tokio::test]
 async fn transient_failure_is_retried_and_succeeds() {
@@ -419,35 +382,6 @@ esac"#,
     );
 }
 
-#[tokio::test]
-async fn operation_failure_invalidates_the_max_cache() {
-    // max reads fine; get always fails -> the failure must drop the cached
-    // max so a monitor swap can heal on the next request.
-    let fake = Fake::new(
-        r#"echo "$@" >> "$LOG"
-case "$1 $2" in
-  "max luminance") echo 100 ;;
-  "get luminance") echo "DDC no reply"; exit 1 ;;
-esac"#,
-    );
-    let app = app(fake.config());
-
-    for _ in 0..2 {
-        let response = app
-            .clone()
-            .oneshot(request(Method::GET, "/brightness", None))
-            .await
-            .unwrap();
-        assert_eq!(response.status(), StatusCode::BAD_GATEWAY);
-    }
-
-    let calls = fake.calls();
-    assert_eq!(
-        calls.iter().filter(|l| *l == "max luminance").count(),
-        2,
-        "cache should be invalidated after the get failure: {calls:?}"
-    );
-}
 
 #[tokio::test]
 async fn concurrent_requests_never_interleave_on_the_bus() {
@@ -471,10 +405,9 @@ esac"#,
     assert_eq!(r2.unwrap().status(), StatusCode::OK);
 
     let calls = fake.calls();
-    // 3 or 4 bus transactions: both racing requests read max on a cold cache,
-    // or the second wins the cache and skips it.
+    // One bus transaction per GET now - max is configuration, never read.
     let begins = calls.iter().filter(|l| *l == "begin").count();
-    assert!((3..=4).contains(&begins), "{calls:?}");
+    assert_eq!(begins, 2, "{calls:?}");
     let mut depth = 0i32;
     for line in &calls {
         match line.as_str() {

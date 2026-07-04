@@ -44,6 +44,12 @@ pub struct Config {
     /// depends on a DDC command reaching a sleeping panel.
     pub pmset_path: PathBuf,
     pub caffeinate_path: PathBuf,
+    /// CONFIGURED, never read from the panel. The kiosk's LG corrupts every
+    /// DDC read — and corrupted max values can pass any plausibility check
+    /// (a garbage "62" reads as sane) and then mis-scale every write. The
+    /// DDC standard value is 100; override with DDCD_MAX_LUMINANCE for the
+    /// rare monitor that differs.
+    pub max_luminance: i64,
     pub timeout: Duration,
     pub retry_delays: Vec<Duration>,
 }
@@ -64,6 +70,11 @@ impl Config {
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(5_000u64);
+        let max_luminance = std::env::var("DDCD_MAX_LUMINANCE")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .filter(|v| MAX_LUMINANCE_RANGE.contains(v))
+            .unwrap_or(100);
         Self {
             m1ddc_path,
             pmset_path: std::env::var("DDCD_PMSET")
@@ -72,6 +83,7 @@ impl Config {
             caffeinate_path: std::env::var("DDCD_CAFFEINATE")
                 .map(PathBuf::from)
                 .unwrap_or_else(|_| PathBuf::from("/usr/bin/caffeinate")),
+            max_luminance,
             timeout: Duration::from_millis(timeout_ms),
             retry_delays: Self::default_retry_delays(),
         }
@@ -114,12 +126,10 @@ pub struct Ddc {
     path: PathBuf,
     pmset_path: PathBuf,
     caffeinate_path: PathBuf,
+    /// Configured, never read - see Config::max_luminance.
+    max_luminance: i64,
     timeout: Duration,
     lock: Mutex<()>,
-    /// Max luminance survives for the daemon's lifetime (it's a monitor
-    /// property) - re-reading it doubled the DDC traffic of every operation.
-    /// Invalidated when an operation fails, so a monitor swap heals itself.
-    max_cache: Mutex<Option<i64>>,
     /// Backoff schedule for transient failures - the DCP AV service takes a
     /// few seconds to return after display wake, and a restore issued right
     /// after wake shouldn't fail spuriously. Timeouts are NOT retried (a
@@ -133,9 +143,9 @@ impl Ddc {
             path: config.m1ddc_path.clone(),
             pmset_path: config.pmset_path.clone(),
             caffeinate_path: config.caffeinate_path.clone(),
+            max_luminance: config.max_luminance,
             timeout: config.timeout,
             lock: Mutex::new(()),
-            max_cache: Mutex::new(None),
             retry_delays: config.retry_delays.clone(),
         }
     }
@@ -265,43 +275,22 @@ impl Ddc {
         Err(last_err.expect("at least one attempt ran"))
     }
 
-    /// Cached for the daemon's lifetime; see `max_cache`.
-    pub async fn max_luminance(&self) -> Result<i64, DdcError> {
-        if let Some(max) = *self.max_cache.lock().await {
-            return Ok(max);
-        }
-        let max = self
-            .read_validated(&["max", "luminance"], |v| MAX_LUMINANCE_RANGE.contains(&v))
-            .await?;
-        *self.max_cache.lock().await = Some(max);
-        tracing::info!(max, "cached max luminance");
-        Ok(max)
+    pub fn max_luminance(&self) -> i64 {
+        self.max_luminance
     }
 
-    async fn invalidate_max(&self) {
-        *self.max_cache.lock().await = None;
-    }
-
-    /// `max` bounds the plausibility check — a current reading outside
-    /// 0..=max is a corrupted read, never a real panel state.
-    pub async fn get_luminance(&self, max: i64) -> Result<i64, DdcError> {
-        let result = self
-            .read_validated(&["get", "luminance"], |v| (0..=max).contains(&v))
-            .await;
-        if result.is_err() {
-            // The monitor may have changed (or gone away) - don't trust the
-            // cached max on the next operation.
-            self.invalidate_max().await;
-        }
-        result
+    /// Diagnostic only — the plausibility check bounds readings to the
+    /// configured max, and the write path never depends on this.
+    pub async fn get_luminance(&self) -> Result<i64, DdcError> {
+        let max = self.max_luminance;
+        self.read_validated(&["get", "luminance"], |v| (0..=max).contains(&v))
+            .await
     }
 
     pub async fn set_luminance(&self, value: i64) -> Result<(), DdcError> {
-        let result = self.run_with_retry(&["set", "luminance", &value.to_string()]).await;
-        if result.is_err() {
-            self.invalidate_max().await;
-        }
-        result.map(|_| ())
+        self.run_with_retry(&["set", "luminance", &value.to_string()])
+            .await
+            .map(|_| ())
     }
 }
 
@@ -361,8 +350,8 @@ struct Brightness {
 }
 
 async fn get_brightness(State(state): State<Arc<AppState>>) -> Result<Json<Brightness>, DdcError> {
-    let max = state.ddc.max_luminance().await?;
-    let raw = state.ddc.get_luminance(max).await?;
+    let max = state.ddc.max_luminance();
+    let raw = state.ddc.get_luminance().await?;
     Ok(Json(Brightness {
         brightness: (raw as f64 / max as f64).clamp(0.0, 1.0),
         raw,
@@ -401,7 +390,10 @@ async fn put_brightness(
             .into_response());
     }
 
-    let max = state.ddc.max_luminance().await.map_err(IntoResponse::into_response)?;
+    // Pure write: max is configuration, the panel is never asked. On the
+    // kiosk's LG every read is corrupted, and a write path that reads first
+    // fails every write (found live, 2026-07-03).
+    let max = state.ddc.max_luminance();
     let target = (body.brightness * max as f64).round() as i64;
     state
         .ddc
