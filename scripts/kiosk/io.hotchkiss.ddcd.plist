@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>io.hotchkiss.ddcd</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/bin/ddcd</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/tmp/ddcd.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/ddcd.log</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>RUST_LOG</key>
+        <string>ddcd=info</string>
+    </dict>
+</dict>
+</plist>

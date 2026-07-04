@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>io.hotchkiss.remindwall-keepalive</string>
+    <!-- Launching the binary inside the .app (not `open`) lets KeepAlive
+         track the actual process - a crash relaunches it. The box never
+         reboots, so login items alone would never re-fire. -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Applications/RemindWall.app/Contents/MacOS/RemindWall</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <!-- A crash-looping app (e.g. expired TestFlight build) relaunches at
+         most every 60s instead of hot-looping. -->
+    <key>ThrottleInterval</key>
+    <integer>60</integer>
+</dict>
+</plist>

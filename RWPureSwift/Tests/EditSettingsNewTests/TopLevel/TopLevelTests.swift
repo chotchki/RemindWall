@@ -179,11 +179,13 @@ struct SettingsFeatureTests {
         #expect(state.path.count == 0)
     }
 
-    @Test("onAppear checks brightness control availability")
+    @Test("onAppear checks brightness control availability and polls while visible")
     func onAppearChecksBrightness() async {
+        let clock = TestClock()
         let store = TestStore(initialState: SettingsFeature.State()) {
             SettingsFeature()
         } withDependencies: {
+            $0.continuousClock = clock
             $0.screenControl.isAvailable = { false }
         }
 
@@ -191,19 +193,31 @@ struct SettingsFeatureTests {
         await store.receive(\._brightnessCheckCompleted) {
             $0.isBrightnessControlAvailable = false
         }
+
+        // Polls again while visible - the warning clears live once fixed.
+        await clock.advance(by: .seconds(15))
+        await store.receive(\._brightnessCheckCompleted)
+
+        await store.send(.onDisappear)
+        await store.finish()
     }
 
     @Test("onAppear with available brightness control")
     func onAppearBrightnessAvailable() async {
+        let clock = TestClock()
         let store = TestStore(initialState: SettingsFeature.State()) {
             SettingsFeature()
         } withDependencies: {
+            $0.continuousClock = clock
             $0.screenControl.isAvailable = { true }
         }
 
         await store.send(.onAppear)
         // isBrightnessControlAvailable defaults to true, so no state change
         await store.receive(\._brightnessCheckCompleted)
+
+        await store.send(.onDisappear)
+        await store.finish()
     }
 
     @Test("quitApplication fires effect")

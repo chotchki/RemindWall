@@ -20,6 +20,7 @@ extension DependencyValues {
 @Reducer
 public struct SettingsFeature {
 
+    @Dependency(\.continuousClock) var clock
     @Dependency(\.fireAndForget) var fireAndForget
     @Dependency(\.screenControl) var screenControl
     @Dependency(\.terminateApp) var terminateApp
@@ -49,6 +50,7 @@ public struct SettingsFeature {
         case _brightnessCheckCompleted(Bool)
         case calendarToggled(Bool)
         case onAppear
+        case onDisappear
         case quitApplication
         case screenOffToggled(Bool)
         case slideshowToggled(Bool)
@@ -59,6 +61,8 @@ public struct SettingsFeature {
             case startSlideshow
         }
     }
+
+    enum CancelID { case availabilityLoop }
     
     public init() {}
     
@@ -98,10 +102,18 @@ public struct SettingsFeature {
                 }
                 return .none
             case .onAppear:
-                return .run { [screenControl] send in
-                    let available = await screenControl.isAvailable()
-                    await send(._brightnessCheckCompleted(available))
+                // Poll while settings is visible so the warning clears live as
+                // the operator fixes the daemon; cancelled on disappear (the
+                // dashboard runs 24/7 - a leaked poll would run forever).
+                return .run { [screenControl, clock] send in
+                    await send(._brightnessCheckCompleted(screenControl.isAvailable()))
+                    for await _ in clock.timer(interval: .seconds(15)) {
+                        await send(._brightnessCheckCompleted(screenControl.isAvailable()))
+                    }
                 }
+                .cancellable(id: CancelID.availabilityLoop, cancelInFlight: true)
+            case .onDisappear:
+                return .cancel(id: CancelID.availabilityLoop)
             case let ._brightnessCheckCompleted(available):
                 state.isBrightnessControlAvailable = available
                 return .none
@@ -185,7 +197,7 @@ public struct SettingsView: View {
                         HStack {
                             Image(systemName: "exclamationmark.triangle.fill")
                                 .foregroundStyle(.yellow)
-                            Text("External brightness control requires m1ddc. Install via: brew install m1ddc")
+                            Text("Screen control daemon (ddcd) unreachable — brightness and panel power are disabled. Setup: scripts/kiosk/INSTALL.md in the repo")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -242,6 +254,7 @@ public struct SettingsView: View {
                 #endif
             }
             .onAppear { store.send(.onAppear) }
+            .onDisappear { store.send(.onDisappear) }
             .navigationTitle("Settings")
             .toolbar {
                 ToolbarItem {
