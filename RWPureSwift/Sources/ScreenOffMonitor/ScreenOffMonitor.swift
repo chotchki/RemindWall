@@ -7,6 +7,13 @@ import ScreenControl
 
 private let logger = Logger(subsystem: "RemindWall", category: "ScreenOffMonitor")
 
+/// Write-only display control. The kiosk's LG returns 100% corrupted DDC reads
+/// (probe 2026-07-03: 26/26 garbage, values like -121...120 varying per
+/// second), so state NEVER derives from reading the panel: `isDimmed` flips
+/// only when a write sequence CONFIRMS, ticks are idempotent drivers that
+/// re-issue the failed direction until it lands, and the restore level is a
+/// known value — the level saved at dim time where reads work (iOS), a fixed
+/// full-bright fallback where they don't (the Mac).
 @Reducer
 public struct ScreenOffMonitorFeature: Sendable {
     @Dependency(\.continuousClock) var clock
@@ -15,12 +22,18 @@ public struct ScreenOffMonitorFeature: Sendable {
     @Dependency(\.calendar) var calendar
 
     static let checkInterval = Duration.seconds(30)
+    /// Restore target when no brightness could be saved at dim time.
+    /// A kiosk wants full bright; make this a setting if that ever changes.
+    static let fallbackRestoreLevel: CGFloat = 1.0
 
     @ObservableState
     public struct State: Equatable {
         @Shared(.appStorage(SCREEN_OFF_SETTING_KEY)) var schedule: ScreenOffSchedule?
 
+        /// Confirmed-dimmed: set only after the dim writes succeeded.
         public var isDimmed: Bool = false
+        /// Brightness read at dim time, when readable (iOS). nil on the Mac —
+        /// its DDC reads are garbage and must never become a restore target.
         public var savedBrightness: CGFloat?
         public var isMonitoring: Bool = false
         public var isSlideshowPlaying: Bool = false
@@ -33,10 +46,13 @@ public struct ScreenOffMonitorFeature: Sendable {
         case startMonitoring
         case stopMonitoring
         case tick
-        case _evaluated(shouldDim: Bool, currentBrightness: CGFloat)
+        case _dim
+        case _restore
+        case _dimConfirmed(savedBrightness: CGFloat?)
+        case _restoreConfirmed
     }
 
-    enum CancelID { case monitorLoop }
+    enum CancelID { case monitorLoop, work }
 
     public init() {}
 
@@ -56,80 +72,84 @@ public struct ScreenOffMonitorFeature: Sendable {
 
             case .stopMonitoring:
                 state.isMonitoring = false
-                if let saved = state.savedBrightness {
-                    let brightness = saved
-                    state.isDimmed = false
-                    state.savedBrightness = nil
-                    return .merge(
-                        .cancel(id: CancelID.monitorLoop),
-                        .run { [screenControl] _ in
-                            try await screenControl.setBrightness(brightness)
+                let wasDimmed = state.isDimmed
+                let restoreLevel = state.savedBrightness ?? Self.fallbackRestoreLevel
+                state.isDimmed = false
+                state.savedBrightness = nil
+                return .merge(
+                    .cancel(id: CancelID.monitorLoop),
+                    .cancel(id: CancelID.work),
+                    wasDimmed
+                        ? .run { [screenControl] _ in
+                            // Ceding control: best effort, nothing retries after this.
+                            try? await screenControl.setDisplayPower(true)
+                            try await screenControl.setBrightness(restoreLevel)
                         } catch: { error, _ in
                             logger.warning("restore on stop failed: \(error.localizedDescription, privacy: .public)")
                         }
-                    )
-                }
-                return .cancel(id: CancelID.monitorLoop)
+                        : .none
+                )
 
             case .tick:
-                let schedule = state.schedule
-                let isSlideshowPlaying = state.isSlideshowPlaying
-                let hasLateReminders = state.hasLateReminders
-                return .run { [screenControl, now, calendar] send in
-                    let shouldDim: Bool
-                    if let schedule, isSlideshowPlaying, !hasLateReminders {
-                        let hour = calendar.component(.hour, from: now)
-                        let minute = calendar.component(.minute, from: now)
-                        let currentTotalMinutes = hour * 60 + minute
-                        shouldDim = schedule.isInOffWindow(currentTotalMinutes: currentTotalMinutes)
-                    } else {
-                        shouldDim = false
-                    }
-                    let currentBrightness = try await screenControl.getBrightness()
-                    await send(._evaluated(shouldDim: shouldDim, currentBrightness: currentBrightness))
-                } catch: { error, _ in
-                    // DDC unreachable (daemon down, panel asleep): skip the tick and
-                    // let the 30s loop retry. NEVER fabricate a brightness — the old
-                    // `?? 1.0` here made a failed read look like a bright screen and
-                    // corrupted the restore level.
-                    logger.warning("tick skipped, brightness unreadable: \(error.localizedDescription, privacy: .public)")
+                // Pure decision - no hardware reads. The tick just re-issues
+                // whichever direction the confirmed state disagrees with.
+                let shouldDim: Bool
+                if let schedule = state.schedule, state.isSlideshowPlaying, !state.hasLateReminders {
+                    let hour = calendar.component(.hour, from: now)
+                    let minute = calendar.component(.minute, from: now)
+                    shouldDim = schedule.isInOffWindow(currentTotalMinutes: hour * 60 + minute)
+                } else {
+                    shouldDim = false
                 }
 
-            case let ._evaluated(shouldDim, currentBrightness):
                 if shouldDim && !state.isDimmed {
-                    state.isDimmed = true
-                    state.savedBrightness = currentBrightness
-                    return .run { [screenControl] _ in
-                        try await screenControl.setBrightness(0.0)
-                    } catch: { error, _ in
-                        logger.warning("dim failed: \(error.localizedDescription, privacy: .public)")
-                    }
-                } else if !shouldDim && state.isDimmed {
-                    // Transition out of dim: attempt restore but keep savedBrightness
-                    // so we can retry if setBrightness silently fails on iOS.
-                    let saved = state.savedBrightness ?? 1.0
-                    state.isDimmed = false
-                    return .run { [screenControl] _ in
-                        try await screenControl.setBrightness(saved)
-                    } catch: { error, _ in
-                        // savedBrightness stays set - the enforcement branch below
-                        // retries on subsequent ticks.
-                        logger.warning("restore failed, will retry: \(error.localizedDescription, privacy: .public)")
-                    }
-                } else if !shouldDim && !state.isDimmed, let saved = state.savedBrightness {
-                    // Brightness enforcement: verify restore actually took effect.
-                    // If current brightness is still near zero, re-apply.
-                    if currentBrightness < 0.01 {
-                        return .run { [screenControl] _ in
-                            try await screenControl.setBrightness(saved)
-                        } catch: { error, _ in
-                            logger.warning("restore retry failed: \(error.localizedDescription, privacy: .public)")
-                        }
-                    } else {
-                        // Brightness confirmed restored, clear saved value.
-                        state.savedBrightness = nil
-                    }
+                    return .send(._dim)
                 }
+                if !shouldDim && state.isDimmed {
+                    return .send(._restore)
+                }
+                return .none
+
+            case ._dim:
+                return .run { [screenControl] send in
+                    // Save the current level where reads work (iOS). On the Mac
+                    // this throws (corrupted reads are rejected downstream) and
+                    // nil selects the fallback at restore time - a garbage read
+                    // must never become the restore target.
+                    let saved = try? await screenControl.getBrightness()
+                    // Brightness first (an awake-panel op), then true power-off.
+                    try await screenControl.setBrightness(0.0)
+                    try await screenControl.setDisplayPower(false)
+                    await send(._dimConfirmed(savedBrightness: saved))
+                } catch: { error, _ in
+                    // Not confirmed - the next tick re-issues ._dim.
+                    logger.warning("dim failed, will retry next tick: \(error.localizedDescription, privacy: .public)")
+                }
+                .cancellable(id: CancelID.work, cancelInFlight: true)
+
+            case let ._dimConfirmed(savedBrightness):
+                state.isDimmed = true
+                state.savedBrightness = savedBrightness
+                return .none
+
+            case ._restore:
+                let restoreLevel = state.savedBrightness ?? Self.fallbackRestoreLevel
+                return .run { [screenControl] send in
+                    // Wake first, then set - the reverse of the dim order.
+                    try await screenControl.setDisplayPower(true)
+                    try await screenControl.setBrightness(restoreLevel)
+                    await send(._restoreConfirmed)
+                } catch: { error, _ in
+                    // Not confirmed - the next tick re-issues ._restore. On the
+                    // late-reminder force-on path this retry is what guarantees
+                    // the screen eventually comes back.
+                    logger.warning("restore failed, will retry next tick: \(error.localizedDescription, privacy: .public)")
+                }
+                .cancellable(id: CancelID.work, cancelInFlight: true)
+
+            case ._restoreConfirmed:
+                state.isDimmed = false
+                state.savedBrightness = nil
                 return .none
             }
         }
