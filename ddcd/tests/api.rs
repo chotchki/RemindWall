@@ -20,14 +20,25 @@ impl Fake {
     /// Writes an executable fake m1ddc with the given body. `$LOG` expands to
     /// a per-fake log file path the script can append argv to.
     fn new(script_body: &str) -> Self {
-        use std::os::unix::fs::PermissionsExt;
         let dir = tempfile::tempdir().expect("tempdir");
-        let log = dir.path().join("calls.log");
-        let path = dir.path().join("m1ddc");
-        let script = format!("#!/bin/bash\nLOG={}\n{}\n", log.display(), script_body);
+        let fake = Self { dir };
+        fake.write_tool("m1ddc", script_body);
+        fake
+    }
+
+    /// Adds another fake tool (pmset, caffeinate) sharing the same call log.
+    fn write_tool(&self, name: &str, script_body: &str) {
+        use std::os::unix::fs::PermissionsExt;
+        let log = self.dir.path().join("calls.log");
+        let path = self.dir.path().join(name);
+        let script = format!(
+            "#!/bin/bash\nLOG={}\nTOOL={}\n{}\n",
+            log.display(),
+            name,
+            script_body
+        );
         std::fs::write(&path, script).expect("write fake");
         std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755)).expect("chmod");
-        Self { dir }
     }
 
     fn path(&self) -> PathBuf {
@@ -49,6 +60,8 @@ impl Fake {
     fn config(&self) -> Config {
         Config {
             m1ddc_path: self.path(),
+            pmset_path: self.dir.path().join("pmset"),
+            caffeinate_path: self.dir.path().join("caffeinate"),
             timeout: Duration::from_secs(3),
             retry_delays: vec![],
         }
@@ -224,9 +237,8 @@ esac"#,
 async fn wedged_m1ddc_times_out_instead_of_hanging() {
     let fake = Fake::new(r#"sleep 30"#);
     let config = Config {
-        m1ddc_path: fake.path(),
         timeout: Duration::from_millis(500),
-        retry_delays: vec![],
+        ..fake.config()
     };
     let started = std::time::Instant::now();
     let response = app(config)
@@ -253,6 +265,53 @@ async fn m1ddc_failure_surfaces_as_bad_gateway() {
         body["error"].as_str().unwrap().contains("DDC communication failure"),
         "m1ddc's stdout error text should surface: {body}"
     );
+}
+
+#[tokio::test]
+async fn display_off_calls_pmset_displaysleepnow() {
+    let fake = healthy_fake();
+    fake.write_tool("pmset", r#"echo "$TOOL $@" >> "$LOG""#);
+    let response = app(fake.config())
+        .oneshot(request(
+            Method::PUT,
+            "/display",
+            Some(serde_json::json!({ "on": false })),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::NO_CONTENT);
+    assert_eq!(fake.calls(), vec!["pmset displaysleepnow"]);
+}
+
+#[tokio::test]
+async fn display_on_wakes_via_caffeinate_user_activity() {
+    let fake = healthy_fake();
+    fake.write_tool("caffeinate", r#"echo "$TOOL $@" >> "$LOG""#);
+    let response = app(fake.config())
+        .oneshot(request(
+            Method::PUT,
+            "/display",
+            Some(serde_json::json!({ "on": true })),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::NO_CONTENT);
+    assert_eq!(fake.calls(), vec!["caffeinate -u -t 2"]);
+}
+
+#[tokio::test]
+async fn display_power_failure_surfaces() {
+    let fake = healthy_fake();
+    fake.write_tool("pmset", r#"echo "not permitted"; exit 1"#);
+    let response = app(fake.config())
+        .oneshot(request(
+            Method::PUT,
+            "/display",
+            Some(serde_json::json!({ "on": false })),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::BAD_GATEWAY);
 }
 
 #[tokio::test]

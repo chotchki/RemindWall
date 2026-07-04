@@ -39,6 +39,11 @@ const MAX_LUMINANCE_RANGE: std::ops::RangeInclusive<i64> = 1..=1000;
 #[derive(Clone)]
 pub struct Config {
     pub m1ddc_path: PathBuf,
+    /// Display power: probe-verified mechanism on the kiosk (2026-07-03) —
+    /// `pmset displaysleepnow` for off, `caffeinate -u` for wake. Wake never
+    /// depends on a DDC command reaching a sleeping panel.
+    pub pmset_path: PathBuf,
+    pub caffeinate_path: PathBuf,
     pub timeout: Duration,
     pub retry_delays: Vec<Duration>,
 }
@@ -61,6 +66,12 @@ impl Config {
             .unwrap_or(5_000u64);
         Self {
             m1ddc_path,
+            pmset_path: std::env::var("DDCD_PMSET")
+                .map(PathBuf::from)
+                .unwrap_or_else(|_| PathBuf::from("/usr/bin/pmset")),
+            caffeinate_path: std::env::var("DDCD_CAFFEINATE")
+                .map(PathBuf::from)
+                .unwrap_or_else(|_| PathBuf::from("/usr/bin/caffeinate")),
             timeout: Duration::from_millis(timeout_ms),
             retry_delays: Self::default_retry_delays(),
         }
@@ -101,6 +112,8 @@ impl IntoResponse for DdcError {
 /// bus; concurrent transactions corrupt each other.
 pub struct Ddc {
     path: PathBuf,
+    pmset_path: PathBuf,
+    caffeinate_path: PathBuf,
     timeout: Duration,
     lock: Mutex<()>,
     /// Max luminance survives for the daemon's lifetime (it's a monitor
@@ -118,6 +131,8 @@ impl Ddc {
     pub fn new(config: &Config) -> Self {
         Self {
             path: config.m1ddc_path.clone(),
+            pmset_path: config.pmset_path.clone(),
+            caffeinate_path: config.caffeinate_path.clone(),
             timeout: config.timeout,
             lock: Mutex::new(()),
             max_cache: Mutex::new(None),
@@ -129,16 +144,16 @@ impl Ddc {
         self.path.exists()
     }
 
-    async fn run(&self, args: &[&str]) -> Result<String, DdcError> {
-        let _guard = self.lock.lock().await;
-
-        let child = Command::new(&self.path)
+    /// Spawns a tool with the hard timeout; kill_on_drop reaps a wedged child.
+    /// Callers hold the hardware lock — one physical display, one op at a time.
+    async fn run_tool(&self, path: &PathBuf, args: &[&str]) -> Result<String, DdcError> {
+        let child = Command::new(path)
             .args(args)
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped())
             .kill_on_drop(true)
             .spawn()
-            .map_err(|e| DdcError::Unavailable(format!("cannot spawn {}: {e}", self.path.display())))?;
+            .map_err(|e| DdcError::Unavailable(format!("cannot spawn {}: {e}", path.display())))?;
 
         let output = match tokio::time::timeout(self.timeout, child.wait_with_output()).await {
             // Dropping the future kills the child via kill_on_drop.
@@ -151,12 +166,34 @@ impl Ddc {
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
             return Err(DdcError::Failed(format!(
-                "m1ddc {} exited {}: {stdout} {stderr}",
+                "{} {} exited {}: {stdout} {stderr}",
+                path.file_name().map_or("tool".into(), |n| n.to_string_lossy()),
                 args.join(" "),
                 output.status.code().map_or("signal".to_string(), |c| c.to_string()),
             )));
         }
         Ok(stdout)
+    }
+
+    async fn run(&self, args: &[&str]) -> Result<String, DdcError> {
+        let _guard = self.lock.lock().await;
+        self.run_tool(&self.path.clone(), args).await
+    }
+
+    /// True display power. Off = OS display sleep (panel enters real standby
+    /// on signal loss); on = user-activity assertion (panel wakes on signal
+    /// return). Probe-verified on the kiosk's LG: wake works even from SSH,
+    /// and DDC transactions survive the whole transition.
+    pub async fn set_display_power(&self, on: bool) -> Result<(), DdcError> {
+        let _guard = self.lock.lock().await;
+        if on {
+            // -t 2 keeps the assertion long enough for the panel to latch on;
+            // the call blocks those ~2s, bounded by the hard timeout.
+            self.run_tool(&self.caffeinate_path.clone(), &["-u", "-t", "2"]).await?;
+        } else {
+            self.run_tool(&self.pmset_path.clone(), &["displaysleepnow"]).await?;
+        }
+        Ok(())
     }
 
     /// Bounded retry for transient failures (panel wake, marginal DDC read).
@@ -280,6 +317,7 @@ pub fn app(config: Config) -> Router {
     Router::new()
         .route("/health", get(health))
         .route("/brightness", get(get_brightness).put(put_brightness))
+        .route("/display", axum::routing::put(put_display))
         .layer(middleware::from_fn(guard))
         .with_state(state)
 }
@@ -335,6 +373,20 @@ async fn get_brightness(State(state): State<Arc<AppState>>) -> Result<Json<Brigh
 #[derive(Deserialize)]
 struct SetBrightness {
     brightness: f64,
+}
+
+#[derive(Deserialize)]
+struct SetDisplayPower {
+    on: bool,
+}
+
+async fn put_display(
+    State(state): State<Arc<AppState>>,
+    Json(body): Json<SetDisplayPower>,
+) -> Result<StatusCode, DdcError> {
+    state.ddc.set_display_power(body.on).await?;
+    tracing::info!(on = body.on, "display power");
+    Ok(StatusCode::NO_CONTENT)
 }
 
 async fn put_brightness(
