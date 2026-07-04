@@ -742,7 +742,9 @@ The daemon also unblocks TRUE monitor off/on — the original goal, tried three 
 - [x] T1.8 - Availability rework: available = /health reachable, re-checked periodically (no forever-negative cache); fix the Settings caption (still says `brew install m1ddc`)
 - [x] T1.9 - Enable App Sandbox on the Mac target + companion entitlements (network.client, personal-information.photos-library, personal-information.calendars; smartcard already present — the old device.usb/disable-library-validation were libnfc-era, not needed)
 - [ ] T1.10 - Container migration check: CloudKit re-sync covers the DB; verify @Shared(.appStorage) settings survive or document the one-time kiosk reconfigure
+  - Happens at first sandboxed launch on Hearthstone (testing night of 2026-07-03). Expect: album/schedule/calendar/bus-window need re-picking; trackees/reminders/stops return via CloudKit; bus API key may survive (iCloud Keychain)
 - [ ] T1.11 - Upload to TestFlight internal: processing passes clean (no ITMS-90296/90338), end-to-end kiosk test (scan, off-window true-off + late-reminder force-on, calendar, photos)
+  - Upload + processing PASSED 2026-07-03 (both ITMS gates cleared - first sandboxed Mac build accepted). Kiosk e2e pending: reconfigure settings, bootstrap io.hotchkiss.remindwall-keepalive AFTER confirming launch, audio output = built-in speakers, watch /tmp/ddcd.log overnight (off-window true-off + late-reminder force-on)
 - [x] T1.12 - CI lane for `ddcd/` — Xcode Cloud only builds the Swift side, so cargo test + clippy need their own hook (GitHub Actions or a ci_scripts addition)
 
 ## Backlog
