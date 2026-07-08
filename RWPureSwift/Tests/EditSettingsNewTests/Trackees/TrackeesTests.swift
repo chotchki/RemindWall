@@ -88,6 +88,8 @@ struct TrackeesFeatureTests {
         }
         #expect(saved != nil)
         #expect(saved?.name == "New Person")
+        // New trackees come in with reminders enabled — nothing to un-pause.
+        #expect(saved?.remindersEnabled == true)
     }
 
     @Test("initial state has no destination and empty path")

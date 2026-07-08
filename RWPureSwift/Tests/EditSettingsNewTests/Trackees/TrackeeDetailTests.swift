@@ -117,6 +117,66 @@ struct TrackeeDetailTests {
         await store.send(.remindersFeature(.addReminderButtonTapped))
     }
 
+    @Test("setRemindersEnabled updates state and persists to the database")
+    func setRemindersEnabledPersists() async {
+        @Dependency(\.defaultDatabase) var defaultDatabase
+        let trackee = try! await defaultDatabase.read { db in
+            try! Trackee.all.fetchOne(db)!
+        }
+        // Seed trackees start enabled — the toggle has somewhere to move.
+        #expect(trackee.remindersEnabled == true)
+
+        let store = TestStore(
+            initialState: TrackeeDetailFeature.State(trackee: trackee)
+        ) {
+            TrackeeDetailFeature()
+        }
+
+        await store.send(.setRemindersEnabled(false)) {
+            $0.trackee.remindersEnabled = false
+        }
+        await store.finish()
+
+        let persisted = try! await defaultDatabase.read { db in
+            try! Trackee.find(trackee.id).fetchOne(db)
+        }
+        #expect(persisted?.remindersEnabled == false)
+    }
+
+    @Test("setRemindersEnabled(true) re-enables a paused trackee and persists")
+    func setRemindersEnabledReenables() async {
+        @Dependency(\.defaultDatabase) var defaultDatabase
+        let seeded = try! await defaultDatabase.read { db in
+            try! Trackee.all.fetchOne(db)!
+        }
+        // Start from the paused state in the DB.
+        try! await defaultDatabase.write { db in
+            try Trackee.find(seeded.id)
+                .update { $0.remindersEnabled = false }
+                .execute(db)
+        }
+        let paused = try! await defaultDatabase.read { db in
+            try! Trackee.find(seeded.id).fetchOne(db)!
+        }
+        #expect(paused.remindersEnabled == false)
+
+        let store = TestStore(
+            initialState: TrackeeDetailFeature.State(trackee: paused)
+        ) {
+            TrackeeDetailFeature()
+        }
+
+        await store.send(.setRemindersEnabled(true)) {
+            $0.trackee.remindersEnabled = true
+        }
+        await store.finish()
+
+        let persisted = try! await defaultDatabase.read { db in
+            try! Trackee.find(seeded.id).fetchOne(db)
+        }
+        #expect(persisted?.remindersEnabled == true)
+    }
+
     @Test("state initializes with trackee and nil alert")
     func stateInitializes() async {
         @Dependency(\.defaultDatabase) var defaultDatabase

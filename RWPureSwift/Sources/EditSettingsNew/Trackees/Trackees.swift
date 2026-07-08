@@ -114,6 +114,34 @@ public struct TrackeesView: View {
             standaloneContent
         }
     }
+
+    @ViewBuilder
+    private func trackeeRow(_ trackee: Trackee) -> some View {
+        HStack {
+            Text(trackee.name)
+            Spacer()
+            statusBadge(enabled: trackee.remindersEnabled)
+        }
+    }
+
+    /// A pill that names the reminder state outright — "Active" (green) vs
+    /// "Paused" (orange) — so a paused trackee pops in a list of active ones
+    /// without opening the detail.
+    private func statusBadge(enabled: Bool) -> some View {
+        let tint: Color = enabled ? .green : .orange
+        return Label(
+            enabled ? "Active" : "Paused",
+            systemImage: enabled ? "bell.fill" : "bell.slash.fill"
+        )
+        .labelStyle(.titleAndIcon)
+        .font(.caption.weight(.semibold))
+        .foregroundStyle(tint)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 3)
+        .background(Capsule().fill(tint.opacity(0.15)))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(enabled ? "Reminders active" : "Reminders paused")
+    }
     
     @ViewBuilder
     private var embeddedContent: some View {
@@ -122,7 +150,7 @@ public struct TrackeesView: View {
         } else {
             ForEach(store.trackees){ trackee in
                 NavigationLink(state: TrackeeDetailFeature.State(trackee: trackee)) {
-                    Text(trackee.name)
+                    trackeeRow(trackee)
                 }
             }
         }
@@ -149,10 +177,7 @@ public struct TrackeesView: View {
                 } else {
                     ForEach(store.trackees){ trackee in
                         NavigationLink(state: TrackeeDetailFeature.State(trackee: trackee)) {
-                            HStack {
-                                Text(trackee.name)
-                                Spacer()
-                            }
+                            trackeeRow(trackee)
                         }
                         .buttonStyle(.borderless)
                     }

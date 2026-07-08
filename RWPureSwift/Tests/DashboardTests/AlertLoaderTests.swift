@@ -136,4 +136,104 @@ struct AlertLoaderTests {
             $0.lateTrackeeNames = []
         }
     }
+
+    @Test("soft-disabled trackee is excluded from late alerts")
+    func disabledTrackeeExcludedFromAlerts() async throws {
+        @Dependency(\.defaultDatabase) var database
+
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "UTC")!
+
+        // Sunday 1:00 PM sits inside the late window of a Sunday-noon reminder.
+        let duringLate = cal.date(from: DateComponents(
+            year: 2026, month: 4, day: 5, hour: 13, minute: 0
+        ))!
+
+        let alice = try await database.read { db in
+            try Trackee.all.fetchOne(db)!
+        }
+
+        // Alice has a late (unscanned) reminder, but is soft-disabled.
+        try await database.write { db in
+            try ReminderTime.insert {
+                ReminderTime.Draft(
+                    weekDay: 1, hour: 12, minute: 0,
+                    associatedTag: nil, lastScan: nil, trackeeId: alice.id
+                )
+            }.execute(db)
+            try Trackee.find(alice.id)
+                .update { $0.remindersEnabled = false }
+                .execute(db)
+        }
+
+        let store = TestStore(initialState: AlertLoaderFeature.State()) {
+            AlertLoaderFeature()
+        } withDependencies: {
+            $0.date = .constant(duringLate)
+            $0.calendar = cal
+        }
+
+        // Late by the clock, but disabled → no nag.
+        await store.send(.tick) {
+            $0.dayOfWeek = cal.weekdaySymbols[0]
+        }
+        #expect(store.state.lateTrackeeNames == [])
+
+        // Re-enabling brings her back into the alert.
+        try await database.write { db in
+            try Trackee.find(alice.id)
+                .update { $0.remindersEnabled = true }
+                .execute(db)
+        }
+        await store.send(.tick) {
+            $0.lateTrackeeNames = [alice.name]
+        }
+    }
+
+    @Test("with two late trackees, only the enabled one nags")
+    func disabledIsFilteredPerTrackee() async throws {
+        @Dependency(\.defaultDatabase) var database
+
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "UTC")!
+
+        let duringLate = cal.date(from: DateComponents(
+            year: 2026, month: 4, day: 5, hour: 13, minute: 0
+        ))!
+
+        // Seed data has Alice and Bob; give each a late (unscanned) reminder.
+        let trackees = try await database.read { db in
+            try Trackee.all.fetchAll(db)
+        }
+        let alice = trackees.first { $0.name == "Alice" }!
+        let bob = trackees.first { $0.name == "Bob" }!
+
+        try await database.write { db in
+            for id in [alice.id, bob.id] {
+                try ReminderTime.insert {
+                    ReminderTime.Draft(
+                        weekDay: 1, hour: 12, minute: 0,
+                        associatedTag: nil, lastScan: nil, trackeeId: id
+                    )
+                }.execute(db)
+            }
+            // Pause only Bob.
+            try Trackee.find(bob.id)
+                .update { $0.remindersEnabled = false }
+                .execute(db)
+        }
+
+        let store = TestStore(initialState: AlertLoaderFeature.State()) {
+            AlertLoaderFeature()
+        } withDependencies: {
+            $0.date = .constant(duringLate)
+            $0.calendar = cal
+        }
+
+        // Both are late by the clock; only Alice (enabled) surfaces.
+        await store.send(.tick) {
+            $0.lateTrackeeNames = ["Alice"]
+            $0.dayOfWeek = cal.weekdaySymbols[0]
+        }
+    }
 }

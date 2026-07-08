@@ -341,6 +341,68 @@ struct TagScanLoaderTests {
         }
     }
 
+    @Test("a soft-disabled trackee's tag still scans successfully — pausing gates the nag, not the scan")
+    func disabledTrackeeStillScans() async throws {
+        @Dependency(\.defaultDatabase) var database
+
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "UTC")!
+
+        let clock = TestClock()
+
+        // Sunday 12:30 PM -- inside scan window for a Sunday 12:00 PM reminder.
+        let insideWindow = cal.date(from: DateComponents(
+            year: 2026, month: 4, day: 5, hour: 12, minute: 30
+        ))!
+
+        let testTag = TagSerial([0xD1, 0x5A, 0xB1])
+
+        let alice = try await database.read { db in
+            try Trackee.all.fetchOne(db)!
+        }
+
+        try await database.write { db in
+            try ReminderTime.insert {
+                ReminderTime.Draft(
+                    weekDay: 1,  // Sunday
+                    hour: 12,
+                    minute: 0,
+                    associatedTag: testTag,
+                    lastScan: nil,
+                    trackeeId: alice.id
+                )
+            }.execute(db)
+            // Soft-disable Alice: no dashboard nag, but her tag must still credit.
+            try Trackee.find(alice.id)
+                .update { $0.remindersEnabled = false }
+                .execute(db)
+        }
+
+        let store = TestStore(initialState: TagScanLoaderFeature.State()) {
+            TagScanLoaderFeature()
+        } withDependencies: {
+            $0.continuousClock = clock
+            $0.date = DateGenerator { insideWindow }
+            $0.calendar = cal
+        }
+
+        await store.send(._tagScanned(.tagPresent(testTag)))
+        await store.receive(\._scanProcessed) {
+            $0.scanResult = .success(alice.name)
+        }
+
+        // The dose is still recorded even though Alice is paused.
+        let updatedReminder = try await database.read { db in
+            try ReminderTime.all.fetchAll(db).first { $0.associatedTag == testTag }
+        }
+        #expect(updatedReminder?.lastScan == insideWindow)
+
+        await clock.advance(by: .seconds(5))
+        await store.receive(\.dismissResult) {
+            $0.scanResult = nil
+        }
+    }
+
     @Test("two reminders sharing one tag: the currently-scannable one gets credited")
     func duplicateTagPrefersScannable() async throws {
         @Dependency(\.defaultDatabase) var database

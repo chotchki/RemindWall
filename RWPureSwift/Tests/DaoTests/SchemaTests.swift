@@ -220,6 +220,39 @@ struct SchemaTests {
         }
     }
 
+    @Test("Trackee defaults to remindersEnabled and can be soft-disabled")
+    func trackeeRemindersEnabledDefaultAndToggle() async throws {
+        await withDependencies {
+            $0.uuid = .incrementing
+            $0.defaultDatabase = try! $0.appDatabase()
+        } operation: {
+            @Dependency(\.defaultDatabase) var defaultDatabase
+            @Dependency(\.uuid) var uuid
+
+            let trackeeId = Trackee.ID(uuid())
+
+            // A trackee inserted without naming the flag comes back enabled.
+            try! await defaultDatabase.write { db in
+                try Trackee.insert { Trackee(id: trackeeId, name: "Alice") }.execute(db)
+            }
+            let inserted = try! await defaultDatabase.read { db in
+                try Trackee.find(trackeeId).fetchOne(db)
+            }
+            #expect(inserted?.remindersEnabled == true)
+
+            // Soft-disable persists.
+            try! await defaultDatabase.write { db in
+                try Trackee.find(trackeeId)
+                    .update { $0.remindersEnabled = false }
+                    .execute(db)
+            }
+            let disabled = try! await defaultDatabase.read { db in
+                try Trackee.find(trackeeId).fetchOne(db)
+            }
+            #expect(disabled?.remindersEnabled == false)
+        }
+    }
+
     @Test("Setting with same key uses last modified for conflict resolution")
     func settingLastModifiedConflict() async throws {
         await withDependencies {

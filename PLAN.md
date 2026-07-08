@@ -747,6 +747,20 @@ The daemon also unblocks TRUE monitor off/on — the original goal, tried three 
   - Upload + processing PASSED 2026-07-03 (both ITMS gates cleared - first sandboxed Mac build accepted). Kiosk e2e pending: reconfigure settings, bootstrap io.hotchkiss.remindwall-keepalive AFTER confirming launch, audio output = built-in speakers, watch /tmp/ddcd.log overnight (off-window true-off + late-reminder force-on)
 - [x] T1.12 - CI lane for `ddcd/` — Xcode Cloud only builds the Swift side, so cargo test + clippy need their own hook (GitHub Actions or a ci_scripts addition)
 
+## Phase R1 - Soft-disable a trackee's reminders
+
+Why this phase: someone goes on a trip or pauses a med for a week, and today the only way to stop the dashboard nagging "Bob is late for meds" is to DELETE Bob — which throws away every reminder time and NFC-tag mapping, then you rebuild it all by hand when they're back. Add a per-trackee soft-disable that keeps the rows.
+
+Scope decision (chotchki, 2026-07-08): disable is a per-trackee flag (`Trackee.remindersEnabled`), not per-reminder-time — "someone's reminders" = the whole person. It gates the late-alert surface ONLY: a disabled trackee never appears in `AlertLoader.lateTrackeeNames`. The tag-scan path stays UNTOUCHED — scanning a disabled trackee's tag still credits the dose and shows the green "Thank you" (the scan is the "did they do it" surface, not the "nag" surface, and recording a real tap is never wrong). Hence the name `remindersEnabled`, not `isActive` — scans are not gated, only the reminders/nagging is.
+
+CloudKit note: `remindersEnabled` is a new column on the already-synced `trackees` table. Old CKRecords lack the field; the local `DEFAULT 1` + struct default cover the gap so a trackee synced from a pre-R1 device reads back enabled. No backfill needed.
+
+- [x] R1.1 - Schema: add `remindersEnabled: Bool = true` to `Trackee` (init param defaulted last so every existing `Trackee(id:name:)` site still compiles) + a `"Add remindersEnabled to trackees"` migration (`ALTER TABLE "trackees" ADD COLUMN "remindersEnabled" INTEGER NOT NULL DEFAULT 1`); DaoTests cover the default
+- [x] R1.2 - AlertLoader: drop late reminders whose trackee is disabled — intersect `lateTrackeeIds` with the enabled trackees before mapping to names; test proves a late-but-disabled trackee stays out of the alert
+- [x] R1.3 - TrackeeDetail: a "Reminders enabled" toggle at the top of the form that writes the flag through `defaultDatabase` (mirror RemindersFeature's `withErrorReporting`+write pattern); footer states scans still work; reducer test on the write + state update
+- [x] R1.4 - Trackees list: an explicit status badge per row — "Active" (green) / "Paused" (orange) capsule — so a paused trackee pops in a list of active ones without opening the detail
+- [ ] R1.5 - `swift test` green (288 passing, incl. 6 new: Dao default+toggle, AlertLoader single + per-trackee filter, disabled-tag-still-scans, TrackeeDetail disable + re-enable, new-trackee-defaults-enabled) — DONE; sweep R1 to PLAN_ARCHIVE.md after in-app confirmation on the next kiosk session (toggle flips the dashboard nag off; migration lands cleanly on the live CloudKit-synced DB). TestFlight build kicked off 2026-07-08.
+
 ## Backlog
 - Wake the screen during scan overlays — post-T1 this is one ScreenControl.displayOn() call from TagScanLoader feedback (iPads: restore UIScreen.brightness); pairs with N1.11's beep so scans register even mid-wake
 - Harden slot subscription against a nil `slotNamed(_:)` (async `getSlot(withName:)` + rebuild on failure) — audit refuted the transient-nil trigger but the pipeline is one nil from dead-until-replug

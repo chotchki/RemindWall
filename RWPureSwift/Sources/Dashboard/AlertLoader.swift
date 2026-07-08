@@ -59,8 +59,9 @@ public struct AlertLoaderFeature: Sendable {
                         .filter { $0.isLate(date: now, calendar: cal) }
                         .map { $0.trackeeId }
                 )
+                // A soft-disabled trackee keeps its reminder rows but never nags.
                 state.lateTrackeeNames = state.allTrackees
-                    .filter { lateTrackeeIds.contains($0.id) }
+                    .filter { $0.remindersEnabled && lateTrackeeIds.contains($0.id) }
                     .map { $0.name }
                 state.dayOfWeek = cal.weekdaySymbols[cal.component(.weekday, from: now) - 1]
                 return .none

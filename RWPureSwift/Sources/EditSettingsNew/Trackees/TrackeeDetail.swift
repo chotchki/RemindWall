@@ -1,6 +1,7 @@
 import ComposableArchitecture
 import Dao
 import EditSettingsNew_Reminders
+import SQLiteData
 import SwiftUI
 
 @Reducer
@@ -8,22 +9,23 @@ public struct TrackeeDetailFeature {
     @ObservableState
     public struct State: Equatable {
         @Presents var alert: AlertState<Action.Alert>?
-        public let trackee: Trackee
-        
+        public var trackee: Trackee
+
         var reminders: RemindersFeature.State
-        
+
         public init(trackee: Trackee) {
             self.trackee = trackee
-            
+
             reminders = RemindersFeature.State(trackee: trackee)
         }
     }
-    
+
     public enum Action {
         case alert(PresentationAction<Alert>)
         case delegate(Delegate)
         case deleteButtonTapped
         case remindersFeature(RemindersFeature.Action)
+        case setRemindersEnabled(Bool)
         public enum Alert: Sendable {
             case confirmDeletion
         }
@@ -31,8 +33,9 @@ public struct TrackeeDetailFeature {
             case confirmDeletion
         }
     }
-    
+
     @Dependency(\.dismiss) var dismiss
+    @Dependency(\.defaultDatabase) var defaultDatabase
     public var body: some ReducerOf<Self> {
         Reduce { state, action in
           switch action {
@@ -50,6 +53,17 @@ public struct TrackeeDetailFeature {
             return .none
           case .remindersFeature:
               return .none
+          case let .setRemindersEnabled(enabled):
+            state.trackee.remindersEnabled = enabled
+            return .run { [defaultDatabase, id = state.trackee.id] _ in
+                _ = await withErrorReporting {
+                    try await defaultDatabase.write { db in
+                        try Trackee.find(id)
+                            .update { $0.remindersEnabled = enabled }
+                            .execute(db)
+                    }
+                }
+            }
           }
         }
         
@@ -86,6 +100,17 @@ public struct TrackeeDetailView: View {
     
   public var body: some View {
       Form {
+          Section {
+              Toggle(
+                "Reminders enabled",
+                isOn: Binding(
+                    get: { store.trackee.remindersEnabled },
+                    set: { store.send(.setRemindersEnabled($0)) }
+                )
+              )
+          } footer: {
+              Text("When off, \(store.trackee.name) won't show up in the late-reminder alerts. Scanning their tag still works.")
+          }
           Section {
               RemindersView(
                 store: store.scope(state: \.reminders, action: \.remindersFeature)

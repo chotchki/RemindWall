@@ -14,10 +14,15 @@ public nonisolated struct Trackee: Equatable, Identifiable, Sendable {
     
     public let id: ID
     public var name: String = ""
-    
-    public init(id: ID, name: String) {
+    /// Soft-disable: when false the trackee is skipped by the dashboard late-alert
+    /// surface (no "X is late" nag). The tag-scan path is deliberately NOT gated —
+    /// a real tap still credits the dose — so this is "remindersEnabled", not "isActive".
+    public var remindersEnabled: Bool = true
+
+    public init(id: ID, name: String, remindersEnabled: Bool = true) {
         self.id = id
         self.name = name
+        self.remindersEnabled = remindersEnabled
     }
     
     //public static let all = Self.order(by: \.name)
@@ -223,6 +228,15 @@ extension DependencyValues {
               "routeShortName" TEXT NOT NULL,
               "sortOrder" INTEGER NOT NULL DEFAULT 0
             )
+            """
+            )
+            .execute(db)
+        }
+
+        migrator.registerMigration("Add remindersEnabled to trackees") { db in
+            try #sql(
+            """
+            ALTER TABLE "trackees" ADD COLUMN "remindersEnabled" INTEGER NOT NULL DEFAULT 1
             """
             )
             .execute(db)
