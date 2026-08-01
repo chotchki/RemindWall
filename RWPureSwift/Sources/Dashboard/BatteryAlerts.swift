@@ -9,21 +9,29 @@ import HomeKitAsync
 public struct BatteryAlertsFeature: Sendable {
     @Dependency(\.homeKitAsync) var homeKitAsync
     @Dependency(\.continuousClock) var clock
+    @Dependency(\.date.now) var now
+    @Dependency(\.calendar) var calendar
 
     /// Batteries move over days - 30 minutes, not seconds.
     static let refreshInterval = Duration.seconds(60 * 30)
+    /// The window edge needs to land within a minute, not within a poll.
+    static let windowCheckInterval = Duration.seconds(60)
 
     @ObservableState
     public struct State: Equatable {
         @Shared(.syncedSetting(BATTERY_ALERTS_ENABLED_SETTING_KEY)) public var enabled: Bool = false
         @Shared(.syncedSetting(BATTERY_THRESHOLD_SETTING_KEY)) public var thresholdPercent: Int = 20
+        /// nil = chips show whenever a battery is low (H1.6 review decision).
+        @Shared(.syncedSetting(BATTERY_WINDOW_SETTING_KEY)) public var window: AlertWindow?
 
         public var statuses: [BatteryStatus] = []
+        /// Evaluated on the fast windowTick; nil window is always-in.
+        public var isInWindow: Bool = true
 
         /// The Tier 2 chips: only alertable batteries surface, lowest level
         /// first so the most urgent chore reads first.
         public var ambientChips: [AmbientChip] {
-            guard enabled else { return [] }
+            guard enabled, isInWindow else { return [] }
             return statuses
                 .filter { $0.isAlertable(belowPercent: thresholdPercent) }
                 .sorted {
@@ -47,10 +55,11 @@ public struct BatteryAlertsFeature: Sendable {
     public enum Action: Equatable {
         case startMonitoring
         case tick
+        case windowTick
         case _statusesLoaded([BatteryStatus])
     }
 
-    enum CancelID { case pollLoop, fetch }
+    enum CancelID { case pollLoop, windowLoop, fetch }
 
     public init() {}
 
@@ -58,13 +67,27 @@ public struct BatteryAlertsFeature: Sendable {
         Reduce { state, action in
             switch action {
             case .startMonitoring:
-                return .run { send in
-                    await send(.tick)
-                    for await _ in self.clock.timer(interval: Self.refreshInterval) {
+                return .merge(
+                    .run { send in
                         await send(.tick)
+                        for await _ in self.clock.timer(interval: Self.refreshInterval) {
+                            await send(.tick)
+                        }
                     }
-                }
-                .cancellable(id: CancelID.pollLoop, cancelInFlight: true)
+                    .cancellable(id: CancelID.pollLoop, cancelInFlight: true),
+                    .run { send in
+                        await send(.windowTick)
+                        for await _ in self.clock.timer(interval: Self.windowCheckInterval) {
+                            await send(.windowTick)
+                        }
+                    }
+                    .cancellable(id: CancelID.windowLoop, cancelInFlight: true)
+                )
+
+            case .windowTick:
+                state.isInWindow = state.window
+                    .map { $0.isInWindow(date: now, calendar: calendar) } ?? true
+                return .none
 
             case .tick:
                 guard state.enabled else {

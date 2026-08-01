@@ -34,10 +34,7 @@ public struct SettingsFeature {
         public var busSettingsState = BusSettingsFeature.State()
         public var path = StackState<TrackeeDetailFeature.State>()
         public var isBrightnessControlAvailable: Bool = true
-
-        // Battery alerts are two synced values, no child feature needed.
-        @Shared(.syncedSetting(BATTERY_ALERTS_ENABLED_SETTING_KEY)) public var batteryAlertsEnabled: Bool = false
-        @Shared(.syncedSetting(BATTERY_THRESHOLD_SETTING_KEY)) public var batteryThresholdPercent: Int = 20
+        public var batterySettingsState = BatterySettingsFeature.State()
 
         public init(){}
     }
@@ -45,7 +42,7 @@ public struct SettingsFeature {
     public enum Action {
         case albumPicker(AlbumPickerFeature.Action)
         case batteryAlertsToggled(Bool)
-        case batteryThresholdChanged(Int)
+        case batterySettings(BatterySettingsFeature.Action)
         case busAlertsToggled(Bool)
         case busSettings(BusSettingsFeature.Action)
         case calendarPicker(CalendarPickerFeature.Action)
@@ -77,6 +74,10 @@ public struct SettingsFeature {
             AlbumPickerFeature()
         }
 
+        Scope(state: \.batterySettingsState, action: \.batterySettings) {
+            BatterySettingsFeature()
+        }
+
         Scope(state: \.busSettingsState, action: \.busSettings) {
             BusSettingsFeature()
         }
@@ -95,10 +96,7 @@ public struct SettingsFeature {
         Reduce { state, action in
             switch action {
             case let .batteryAlertsToggled(isOn):
-                state.$batteryAlertsEnabled.withLock { $0 = isOn }
-                return .none
-            case let .batteryThresholdChanged(percent):
-                state.$batteryThresholdPercent.withLock { $0 = min(max(percent, 5), 50) }
+                state.batterySettingsState.$enabled.withLock { $0 = isOn }
                 return .none
             case let .busAlertsToggled(isOn):
                 state.busSettingsState.$enabled.withLock { $0 = isOn }
@@ -157,7 +155,7 @@ public struct SettingsFeature {
                 guard let detailState = state.path[id: id]
                 else { return .none }
                 return .send(.trackees(.deleteTrackee(detailState.trackee.id)))
-            case .busSettings, .trackees, .albumPicker, .calendarPicker, .screenOffSetting, .path:
+            case .batterySettings, .busSettings, .trackees, .albumPicker, .calendarPicker, .screenOffSetting, .path:
                 return .none
             }
         }.forEach(\.path, action: \.path) {
@@ -236,20 +234,14 @@ public struct SettingsView: View {
                 }
 
                 Section {
-                    if store.batteryAlertsEnabled {
-                        Stepper(
-                            "Alert below \(store.batteryThresholdPercent)% (or when the accessory flags itself low)",
-                            value: Binding(
-                                get: { store.batteryThresholdPercent },
-                                set: { store.send(.batteryThresholdChanged($0)) }
-                            ),
-                            in: 5...50,
-                            step: 5
+                    if store.batterySettingsState.enabled {
+                        BatterySettingsView(
+                            store: store.scope(state: \.batterySettingsState, action: \.batterySettings)
                         )
                     }
                 } header: {
                     Toggle("Battery Alerts", isOn: Binding(
-                        get: { store.batteryAlertsEnabled },
+                        get: { store.batterySettingsState.enabled },
                         set: { store.send(.batteryAlertsToggled($0)) }
                     ))
                 }

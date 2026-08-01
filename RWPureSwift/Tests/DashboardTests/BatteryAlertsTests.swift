@@ -12,8 +12,10 @@ import Testing
 @Suite("BatteryAlerts Feature Tests", .dependencies {
     $0.defaultDatabase = try! $0.appDatabase()
     $0.uuid = .incrementing
-    // .syncedSetting stamps lastModified when tests flip enabled/threshold.
+    // .syncedSetting stamps lastModified when tests flip enabled/threshold;
+    // windowTick reads the calendar.
     $0.date = .constant(Date(timeIntervalSince1970: 0))
+    $0.calendar = Calendar(identifier: .gregorian)
 })
 struct BatteryAlertsTests {
     private func status(
@@ -117,6 +119,38 @@ struct BatteryAlertsTests {
         state.statuses = [status("Front Door Sensor", level: 8)]
 
         #expect(state.ambientChips.isEmpty)
+    }
+
+    @Test("out-of-window hides chips even with alertable batteries on hand")
+    func windowGatesChips() async {
+        var utc = Calendar(identifier: .gregorian)
+        utc.timeZone = TimeZone(identifier: "UTC")!
+        // April 5, 2026 is a Sunday - outside a Mon-Fri default window.
+        let sunday = utc.date(from: DateComponents(year: 2026, month: 4, day: 5, hour: 7))!
+
+        let store = TestStore(initialState: {
+            var state = BatteryAlertsFeature.State()
+            state.statuses = [status("Front Door Sensor", level: 8)]
+            return state
+        }()) {
+            BatteryAlertsFeature()
+        } withDependencies: {
+            $0.date = .constant(sunday)
+            $0.calendar = utc
+        }
+        store.exhaustivity = .off
+        store.state.$enabled.withLock { $0 = true }
+        store.state.$window.withLock { $0 = .default }
+
+        await store.send(.windowTick)
+        #expect(store.state.isInWindow == false)
+        #expect(store.state.ambientChips.isEmpty)
+
+        // No window means always-in (H1.6 decision).
+        store.state.$window.withLock { $0 = nil }
+        await store.send(.windowTick)
+        #expect(store.state.isInWindow)
+        #expect(store.state.ambientChips.count == 1)
     }
 
     @Test("chips sort lowest level first")

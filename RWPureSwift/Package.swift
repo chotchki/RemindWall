@@ -136,6 +136,7 @@ let package = Package(
             .target(name: "Dao"),
             .target(name: "EditSettingsNew_BusSettings"),
             .target(name: "EditSettingsNew_Trackees"),
+            .target(name: "HomeKitAsync"),
             .target(name: "PhotoKitAsync"),
             .target(name: "ScreenControl"),
         ], path: "Sources/EditSettingsNew/TopLevel"),

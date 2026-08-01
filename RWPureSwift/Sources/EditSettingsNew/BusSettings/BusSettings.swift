@@ -175,48 +175,12 @@ public struct BusSettingsView: View {
 
     @ViewBuilder
     private var windowRows: some View {
-        let window = store.window ?? .default
-        VStack(alignment: .leading, spacing: 8) {
-            DatePicker(
-                "Start",
-                selection: Binding(
-                    get: { time(hour: window.startHour, minute: window.startMinute) },
-                    set: { newDate in
-                        let comps = Calendar.current.dateComponents([.hour, .minute], from: newDate)
-                        store.send(.setStartTime(hour: comps.hour ?? 0, minute: comps.minute ?? 0))
-                    }
-                ),
-                displayedComponents: .hourAndMinute
-            )
-            DatePicker(
-                "End",
-                selection: Binding(
-                    get: { time(hour: window.endHour, minute: window.endMinute) },
-                    set: { newDate in
-                        let comps = Calendar.current.dateComponents([.hour, .minute], from: newDate)
-                        store.send(.setEndTime(hour: comps.hour ?? 0, minute: comps.minute ?? 0))
-                    }
-                ),
-                displayedComponents: .hourAndMinute
-            )
-            HStack {
-                ForEach(DaysOfWeek.allCases, id: \.rawValue) { day in
-                    Button {
-                        store.send(.toggleWeekday(day))
-                    } label: {
-                        Text(initial(day))
-                            .font(.callout)
-                            .frame(width: 32, height: 32)
-                            .background(window.weekdays.contains(day) ? Color.accentColor : Color.gray.opacity(0.2))
-                            .foregroundStyle(window.weekdays.contains(day) ? Color.white : Color.primary)
-                            .clipShape(Circle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(String(describing: day))
-                    .accessibilityValue(window.weekdays.contains(day) ? "active" : "inactive")
-                }
-            }
-        }
+        AlertWindowEditorView(
+            window: store.window ?? .default,
+            onSetStart: { hour, minute in store.send(.setStartTime(hour: hour, minute: minute)) },
+            onSetEnd: { hour, minute in store.send(.setEndTime(hour: hour, minute: minute)) },
+            onToggleWeekday: { day in store.send(.toggleWeekday(day)) }
+        )
     }
 
     @ViewBuilder
@@ -255,22 +219,5 @@ public struct BusSettingsView: View {
         }
     }
 
-    private func time(hour: Int, minute: Int) -> Date {
-        var comps = DateComponents()
-        comps.hour = hour
-        comps.minute = minute
-        return Calendar.current.date(from: comps) ?? Date()
-    }
 
-    private func initial(_ day: DaysOfWeek) -> String {
-        switch day {
-        case .Sunday: return "S"
-        case .Monday: return "M"
-        case .Tuesday: return "T"
-        case .Wednesday: return "W"
-        case .Thursday: return "T"
-        case .Friday: return "F"
-        case .Saturday: return "S"
-        }
-    }
 }

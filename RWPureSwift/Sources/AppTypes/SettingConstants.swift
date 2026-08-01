@@ -13,9 +13,11 @@ public let BUS_ALERTS_ENABLED_SETTING_KEY = "busAlertsEnabled"
 // The drive origin, synced (TR1). Windows are per-watch columns on the
 // MonitoredStop/MonitoredRoute rows (TR1.7) - never per-mode keys.
 public let HOME_ORIGIN_SETTING_KEY = "homeOrigin"
-// HomeKit low-battery alerts (H1).
+// HomeKit low-battery alerts (H1). Battery keeps per-mode settings - chips
+// aren't per-watch, and the window is optional (nil = always show).
 public let BATTERY_ALERTS_ENABLED_SETTING_KEY = "batteryAlertsEnabled"
 public let BATTERY_THRESHOLD_SETTING_KEY = "batteryThresholdPercent"
+public let BATTERY_WINDOW_SETTING_KEY = "batteryWindow"
 // Synced descriptors for the device-local pair above; see Descriptors.swift.
 public let ALBUM_DESCRIPTOR_SETTING_KEY = "albumDescriptor"
 public let CALENDAR_DESCRIPTOR_SETTING_KEY = "calendarDescriptor"
