@@ -121,6 +121,13 @@ private final class HomeKitStore: NSObject, HMHomeManagerDelegate {
     private var homesLoaded = false
     private var waiters: [CheckedContinuation<Void, Never>] = []
 
+    /// liveValue is nonisolated and constructs the store synchronously; safe
+    /// because init touches no actor state - the HMHomeManager itself is
+    /// created lazily on the main actor at first use.
+    nonisolated override init() {
+        super.init()
+    }
+
     private func ensureManager() -> HMHomeManager {
         if let manager { return manager }
         let created = HMHomeManager()
