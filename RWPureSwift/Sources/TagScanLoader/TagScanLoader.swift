@@ -197,7 +197,7 @@ public struct TagScanLoaderView: View {
             }
             .padding()
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.green.opacity(0.5))
+            .background(Color.green.opacity(0.8))
 
         case .unknownTag:
             VStack(spacing: 20) {
@@ -212,7 +212,7 @@ public struct TagScanLoaderView: View {
             }
             .padding()
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.red.opacity(0.5))
+            .background(Color.red.opacity(0.8))
 
         case .wrongScanWindow:
             VStack(spacing: 20) {
@@ -227,7 +227,7 @@ public struct TagScanLoaderView: View {
             }
             .padding()
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.red.opacity(0.5))
+            .background(Color.red.opacity(0.8))
 
         case .tryAgain:
             VStack(spacing: 20) {
@@ -242,7 +242,7 @@ public struct TagScanLoaderView: View {
             }
             .padding()
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.orange.opacity(0.5))
+            .background(Color.orange.opacity(0.8))
 
         case let .error(message):
             VStack(spacing: 20) {
@@ -257,7 +257,7 @@ public struct TagScanLoaderView: View {
             }
             .padding()
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.red.opacity(0.5))
+            .background(Color.red.opacity(0.8))
         }
     }
 }

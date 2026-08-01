@@ -48,11 +48,23 @@ graph TD
   in-progress event title, battery chips (a AAA dying over three days is not an
   emergency, it's a chore reminder).
 
+## Decided at the D1.2 gate (2026-08-01)
+
+- **Layout: Candidate A — the priority stack.** One vertical rail, urgency =
+  height, most urgent card at the bottom (eye level); up-next is a card like
+  any other. Exactly what D1.3's model emits, rendered verbatim.
+- **Tier 0 wash goes near-opaque.** Today's 50% alpha makes the alert text
+  hard to read on the live kiosk (chotchki, at review). Readability of the
+  emergency text beats seeing the rail through it — start at 80%, D1.5 tunes
+  the number at distance.
+
 ## Interruption rules
 
-1. Tier 0 renders OVER everything at half-alpha — the rail and slideshow stay
-   mounted and visible through the wash (today's behavior, keep it: the wash
-   says LOOK AT ME without hiding the bus you're also about to miss).
+1. Tier 0 renders OVER everything, near-opaque (80% starting bid — see the
+   gate decision above; the earlier "see the bus through the wash" instinct
+   lost to being able to READ the alert at all). The rail and slideshow stay
+   MOUNTED and updating beneath — hidden for the duration, current the moment
+   the wash clears.
 2. Scan feedback stacks above the med alert. Tapping the tag is the ACT of
    resolving the alert — the thank-you must win the screen for its moment.
    (Today's ZStack order already does this; the spec makes it law.)
@@ -122,9 +134,8 @@ numbers here are the starting bid, the couch is the judge.
 
 ## What this spec does NOT cover
 
-- Layout geometry, card visuals, corner assignments — D1.2 mockups (REVIEW
-  GATE with chotchki; nothing below the gate starts until a candidate is
-  picked).
+- Card visual styling beyond the type scale — D1.3/D1.4 build to the picked
+  Candidate A geometry (see the gate decision above).
 - The card model's Swift API — D1.3, constrained by: typed cards carrying
   (content, tier, priority, gate) with the dashboard owning render order.
 - Whether the Mac renders battery cards at all — H1.1's probe decides.

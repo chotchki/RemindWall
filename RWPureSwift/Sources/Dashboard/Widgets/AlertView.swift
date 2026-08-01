@@ -16,7 +16,7 @@ public struct AlertView: View {
                 Spacer()
             }
         }
-        .background(Color.red.opacity(0.5))
+        .background(Color.red.opacity(0.8))
     }
 }
 
