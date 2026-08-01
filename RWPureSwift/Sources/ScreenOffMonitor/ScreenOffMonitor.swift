@@ -1,5 +1,6 @@
 import AppTypes
 import ComposableArchitecture
+import Dao
 import Dependencies
 import Foundation
 import os
@@ -28,7 +29,7 @@ public struct ScreenOffMonitorFeature: Sendable {
 
     @ObservableState
     public struct State: Equatable {
-        @Shared(.appStorage(SCREEN_OFF_SETTING_KEY)) var schedule: ScreenOffSchedule?
+        @Shared(.syncedSetting(SCREEN_OFF_SETTING_KEY)) var schedule: ScreenOffSchedule?
 
         /// Confirmed-dimmed: set only after the dim writes succeeded.
         public var isDimmed: Bool = false

@@ -5,6 +5,7 @@ import Dependencies
 import Foundation
 import IssueReporting
 import OSLog
+import Sharing
 import SQLiteData
 import Tagged
 
@@ -249,6 +250,12 @@ extension DependencyValues {
                 #if DEBUG
                 let _ = try db.seedSampleData()
                 #endif
+            } else {
+                // One-time migration of appStorage settings into the synced
+                // table; no-op once rows exist (locally or via CloudKit).
+                @Dependency(\.defaultAppStorage) var defaults
+                @Dependency(\.date.now) var now
+                try seedSyncedSettings(from: defaults, now: now, in: db)
             }
         }
         

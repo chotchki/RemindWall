@@ -12,6 +12,8 @@ import TransitAPI
 @Suite("BusSettings Feature Tests", .dependencies {
     $0.defaultDatabase = try! $0.appDatabase()
     $0.uuid = .incrementing
+    // .syncedSetting stamps lastModified on every enabled/window write.
+    $0.date = .constant(Date(timeIntervalSince1970: 0))
 })
 struct BusSettingsFeatureTests {
 

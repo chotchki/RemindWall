@@ -12,6 +12,8 @@ import Testing
 @Suite("Settings Feature Tests", .dependencies {
     $0.defaultDatabase = try! $0.appDatabase()
     $0.uuid = .incrementing
+    // .syncedSetting stamps lastModified on every schedule write.
+    $0.date = .constant(Date(timeIntervalSince1970: 0))
 })
 struct SettingsFeatureTests {
 

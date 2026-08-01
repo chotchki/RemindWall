@@ -1,5 +1,6 @@
 import AppTypes
 import ComposableArchitecture
+import Dao
 import os
 import ScreenControl
 import SwiftUI
@@ -13,7 +14,7 @@ public struct ScreenOffSettingFeature {
 
     @ObservableState
     public struct State: Equatable {
-        @Shared(.appStorage(SCREEN_OFF_SETTING_KEY)) var schedule: ScreenOffSchedule?
+        @Shared(.syncedSetting(SCREEN_OFF_SETTING_KEY)) var schedule: ScreenOffSchedule?
         public var isTesting: Bool = false
         public var testStatus: String?
 

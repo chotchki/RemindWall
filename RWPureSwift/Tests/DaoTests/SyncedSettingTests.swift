@@ -194,6 +194,120 @@ struct SyncedSettingTests {
     }
 }
 
+@MainActor
+@Suite("Synced Setting Seed Tests")
+struct SyncedSettingSeedTests {
+    @Test("Seeds appStorage values, skipping unset keys")
+    func seedsFromDefaults() async throws {
+        try await withDependencies {
+            $0.uuid = .incrementing
+            $0.defaultDatabase = try! $0.appDatabase()
+        } operation: {
+            @Dependency(\.defaultDatabase) var defaultDatabase
+            let suiteName = "seed-test-\(UUID())"
+            let defaults = UserDefaults(suiteName: suiteName)!
+            defer { defaults.removePersistentDomain(forName: suiteName) }
+            defaults.set("22:0-6:0", forKey: SCREEN_OFF_SETTING_KEY)
+            defaults.set(true, forKey: BUS_ALERTS_ENABLED_SETTING_KEY)
+            // busWindow deliberately unset: an unconfigured key must not seed.
+
+            let now = Date(timeIntervalSince1970: 1000)
+            try await defaultDatabase.write { db in
+                // UserDefaults isn't Sendable; re-open the suite by name.
+                try seedSyncedSettings(
+                    from: UserDefaults(suiteName: suiteName)!, now: now, in: db
+                )
+            }
+
+            let rows = try await defaultDatabase.read { db in
+                try Setting.all.fetchAll(db)
+            }
+            #expect(rows.count == 2)
+            #expect(
+                rows.first { $0.key == SCREEN_OFF_SETTING_KEY }?.value == "22:0-6:0"
+            )
+            #expect(
+                rows.first { $0.key == BUS_ALERTS_ENABLED_SETTING_KEY }?.value == "true"
+            )
+            #expect(rows.allSatisfy { $0.lastModified == now })
+            #expect(!rows.contains { $0.key == BUS_WINDOW_SETTING_KEY })
+        }
+    }
+
+    @Test("Never overwrites an existing row")
+    func seedRespectsExistingRow() async throws {
+        try await withDependencies {
+            $0.uuid = .incrementing
+            $0.defaultDatabase = try! $0.appDatabase()
+        } operation: {
+            @Dependency(\.defaultDatabase) var defaultDatabase
+            @Dependency(\.uuid) var uuid
+            let suiteName = "seed-test-\(UUID())"
+            let defaults = UserDefaults(suiteName: suiteName)!
+            defer { defaults.removePersistentDomain(forName: suiteName) }
+            defaults.set("9:0-17:0", forKey: SCREEN_OFF_SETTING_KEY)
+
+            try await defaultDatabase.write { db in
+                try Setting.insert {
+                    Setting(
+                        id: Setting.ID(uuid()),
+                        key: SCREEN_OFF_SETTING_KEY,
+                        value: "synced-from-another-device",
+                        lastModified: Date(timeIntervalSince1970: 500)
+                    )
+                }.execute(db)
+                try seedSyncedSettings(
+                    from: UserDefaults(suiteName: suiteName)!,
+                    now: Date(timeIntervalSince1970: 1000),
+                    in: db
+                )
+            }
+
+            let rows = try await defaultDatabase.read { db in
+                try Setting.where { $0.key.eq(SCREEN_OFF_SETTING_KEY) }.fetchAll(db)
+            }
+            #expect(rows.count == 1)
+            #expect(rows.first?.value == "synced-from-another-device")
+        }
+    }
+
+    @Test("A seeded row is readable and updatable through .syncedSetting")
+    func seededRowFlowsIntoSharedKey() async throws {
+        try await withDependencies {
+            $0.uuid = .incrementing
+            $0.date = .constant(Date(timeIntervalSince1970: 2000))
+            $0.defaultDatabase = try! $0.appDatabase()
+        } operation: {
+            @Dependency(\.defaultDatabase) var defaultDatabase
+            let suiteName = "seed-test-\(UUID())"
+            let defaults = UserDefaults(suiteName: suiteName)!
+            defer { defaults.removePersistentDomain(forName: suiteName) }
+            defaults.set("22:0-6:0", forKey: SCREEN_OFF_SETTING_KEY)
+
+            try await defaultDatabase.write { db in
+                try seedSyncedSettings(
+                    from: UserDefaults(suiteName: suiteName)!,
+                    now: Date(timeIntervalSince1970: 1000),
+                    in: db
+                )
+            }
+
+            @Shared(.syncedSetting(SCREEN_OFF_SETTING_KEY)) var schedule: ScreenOffSchedule?
+            #expect(schedule?.rawValue == "22:0-6:0")
+
+            // The seeded row carries the key-derived id, so a save updates it
+            // in place instead of adding a second row.
+            $schedule.withLock { $0 = .default }
+            try await $schedule.save()
+            let rows = try await defaultDatabase.read { db in
+                try Setting.where { $0.key.eq(SCREEN_OFF_SETTING_KEY) }.fetchAll(db)
+            }
+            #expect(rows.count == 1)
+            #expect(rows.first?.value == ScreenOffSchedule.default.rawValue)
+        }
+    }
+}
+
 /// Polls until `condition` passes; records an issue on timeout. Observation
 /// deliveries arrive from the database writer queue, so tests can't assert
 /// them synchronously.

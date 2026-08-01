@@ -12,6 +12,9 @@ import TransitAPI
 @Suite("BusArrivals Feature Tests", .dependencies {
     $0.defaultDatabase = try! $0.appDatabase()
     $0.uuid = .incrementing
+    // .syncedSetting stamps lastModified when test bodies write enabled/window;
+    // per-store date overrides still win inside each reducer.
+    $0.date = .constant(Date(timeIntervalSince1970: 0))
 })
 struct BusArrivalsTests {
 

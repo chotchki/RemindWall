@@ -1,14 +1,22 @@
 import AppTypes
 import ComposableArchitecture
 import CoreGraphics
+import Dao
 import DependenciesTestSupport
+import Foundation
 import ScreenControl
 import Testing
 
 @testable import EditSettingsNew_TopLevel
 
 @MainActor
-@Suite("ScreenOffSetting Feature Tests")
+@Suite("ScreenOffSetting Feature Tests", .dependencies {
+    // .syncedSetting reads the database at State init and stamps lastModified
+    // on every schedule write.
+    $0.defaultDatabase = try! $0.appDatabase()
+    $0.uuid = .incrementing
+    $0.date = .constant(Date(timeIntervalSince1970: 0))
+})
 struct ScreenOffSettingTests {
 
     @Test("initial state has nil schedule")

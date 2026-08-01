@@ -179,6 +179,7 @@ let package = Package(
             .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
             .product(name: "Dependencies", package: "swift-dependencies"),
             .target(name: "AppTypes"),
+            .target(name: "Dao"),
             .target(name: "ScreenControl"),
         ]),
         .testTarget(name: "ScreenOffMonitorTests", dependencies: [

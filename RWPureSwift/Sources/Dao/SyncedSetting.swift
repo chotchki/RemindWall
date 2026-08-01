@@ -1,6 +1,7 @@
 // Observation plumbing mirrors sqlite-data's internal FetchKey:
 // https://github.com/pointfreeco/sqlite-data/blob/main/Sources/SQLiteData/Internal/FetchKey.swift
 @preconcurrency import Combine
+import AppTypes
 import CryptoKit
 import Dependencies
 import Foundation
@@ -213,6 +214,52 @@ public struct SyncedSettingKey<Value: Sendable>: SharedKey {
             .order { $0.lastModified.desc() }
             .fetchOne(db)?
             .value
+    }
+}
+
+/// The portable settings replicated across devices; albumId/calendarId stay
+/// local (their identifiers don't travel between photo/calendar stores).
+public let SYNCED_SETTING_SEED_KEYS = [
+    SCREEN_OFF_SETTING_KEY,
+    BUS_WINDOW_SETTING_KEY,
+    BUS_ALERTS_ENABLED_SETTING_KEY,
+]
+
+/// One-time migration of appStorage-held settings into the synced settings
+/// table. Seeds only keys with no existing row: an already-synced value beats
+/// the local legacy one, and a seeded row never re-seeds.
+public func seedSyncedSettings(
+    from defaults: UserDefaults,
+    keys: [String] = SYNCED_SETTING_SEED_KEYS,
+    now: Date,
+    in db: Database
+) throws {
+    for key in keys {
+        guard
+            try Setting.where({ $0.key.eq(key) }).fetchOne(db) == nil,
+            let object = defaults.object(forKey: key)
+        else { continue }
+        let encoded: String
+        switch object {
+        case let string as String:
+            encoded = string
+        case let number as NSNumber:
+            // appStorage stores Bool as a CFBoolean (objCType "c"); other
+            // numbers keep their digits.
+            encoded = String(cString: number.objCType) == "c"
+                ? (number.boolValue ? "true" : "false")
+                : number.stringValue
+        default:
+            continue
+        }
+        try Setting.insert {
+            Setting(
+                id: Setting.ID(.v5(name: key)),
+                key: key,
+                value: encoded,
+                lastModified: now
+            )
+        }.execute(db)
     }
 }
 

@@ -1,5 +1,6 @@
 import AppTypes
 import ComposableArchitecture
+import Dao
 import Dependencies
 import DependenciesTestSupport
 import Foundation
@@ -31,7 +32,13 @@ private func applyNightSchedule(
 }
 
 @MainActor
-@Suite("ScreenOffMonitor Feature Tests")
+@Suite("ScreenOffMonitor Feature Tests", .dependencies {
+    // .syncedSetting reads the database at State init and stamps lastModified
+    // on every schedule write; per-store date overrides still win in reducers.
+    $0.defaultDatabase = try! $0.appDatabase()
+    $0.uuid = .incrementing
+    $0.date = .constant(Date(timeIntervalSince1970: 0))
+})
 struct ScreenOffMonitorTests {
 
     @Test("startMonitoring sets isMonitoring and fires immediate tick")

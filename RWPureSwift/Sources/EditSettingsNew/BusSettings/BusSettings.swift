@@ -13,8 +13,8 @@ public struct BusSettingsFeature: Sendable {
 
     @ObservableState
     public struct State: Equatable {
-        @Shared(.appStorage(BUS_ALERTS_ENABLED_SETTING_KEY)) public var enabled: Bool = false
-        @Shared(.appStorage(BUS_WINDOW_SETTING_KEY)) public var window: BusWindow?
+        @Shared(.syncedSetting(BUS_ALERTS_ENABLED_SETTING_KEY)) public var enabled: Bool = false
+        @Shared(.syncedSetting(BUS_WINDOW_SETTING_KEY)) public var window: BusWindow?
 
         public var apiKeyDraft: String = ""
         public var hasStoredApiKey: Bool = false
