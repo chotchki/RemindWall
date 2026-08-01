@@ -79,12 +79,15 @@ graph TD
   renders what it's handed. Gating lives with the data, layout with the
   dashboard.
 
-## Type scale — the couch is ten feet away
+## Type scale — readable from across the room
 
-Two viewing-distance classes, because the same UI serves an 86" wall panel at
-~10 ft and counter iPads at arm's length:
+Two viewing-distance classes, because the same UI serves the kiosk's 32" LG
+wall monitor at room distance and two 9th-gen iPads at arm's length. EVERY panel runs PORTRAIT — width is
+the scarce axis, height is plentiful, so the "rail" is a vertical stack and
+vertical position carries meaning: ambient lives up high (glanceable), the
+time-sensitive stack sits in the lower half (eye level from the couch):
 
-| Role | Wall (pt) | iPad (pt) | Today |
+| Role | Wall 32" (pt) | iPad (pt) | Today |
 |---|---|---|---|
 | Tier 0 overlay headline | 200 | 80 | 200 ✓ |
 | Tier 0 overlay body | 80 | 44 | 80 ✓ |
@@ -92,7 +95,10 @@ Two viewing-distance classes, because the same UI serves an 86" wall panel at
 | Rail card secondary (label, "in 4 min") | 32 | 20 | 12-16 ✗ (`.caption`) |
 | Ambient chip / floor for ANY text | 24 | 14 | 12 ✗ |
 
-The current `BusArrivalsBar` was designed at desk distance and its captions are
+The 200pt overlay headline is the empirically-validated anchor — it ships on
+the live kiosk today and reads from anywhere in the room; the rail numbers are
+derived relative to it. The current `BusArrivalsBar` was designed at desk
+distance and its captions are
 unreadable from the couch (the ✗ column is why D1.4 re-renders it through the
 card model instead of restyling in place). Hard rule going forward: nothing
 below the 24pt floor ships to the wall. D1.5 verifies the scale AT distance —
@@ -100,15 +106,17 @@ numbers here are the starting bid, the couch is the judge.
 
 ## Rail capacity and overflow
 
-- Max 4 simultaneous cards on the wall, 3 on iPad. Past that, ETAs stop being
-  readable at distance and the wall becomes a departures board.
+- Max 4 simultaneous cards on the wall, 3 on iPad — capacity is STACK DEPTH
+  (portrait panels), not rail width. Past that, ETAs stop being readable at
+  distance and the wall becomes a departures board.
 - Priority order: late/degraded things first — (1) late bus, (2) slow route,
   (3) on-time bus, (4) on-time route, (5) up-next event, (6) error chip.
   Ties break by soonest ETA.
 - Overflow: render the top N by priority plus a "+2 more" chip — dropped
   silently is a lie, and a wall that lies gets ignored. The chip is not
-  interactive (it's a TV); it exists so a missing card reads as "over
-  capacity", never "broken".
+  interactive (the wall monitor takes no touches; a tap anywhere exits to
+  settings); it exists so a missing card reads as "over capacity", never
+  "broken".
 - Unit tests on ordering and overflow are D1.3's exit criteria, not this
   spec's.
 
