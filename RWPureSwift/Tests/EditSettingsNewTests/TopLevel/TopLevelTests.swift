@@ -259,4 +259,42 @@ struct SettingsFeatureTests {
         }
         #expect(deleted == nil, "Trackee should be deleted from database")
     }
+
+    @Test("battery alerts default off with a 20% threshold")
+    func batteryDefaults() async {
+        let state = SettingsFeature.State()
+        #expect(state.batteryAlertsEnabled == false)
+        #expect(state.batteryThresholdPercent == 20)
+    }
+
+    @Test("battery toggle writes the synced setting")
+    func batteryToggle() async {
+        let store = TestStore(initialState: SettingsFeature.State()) {
+            SettingsFeature()
+        }
+
+        await store.send(.batteryAlertsToggled(true)) {
+            $0.$batteryAlertsEnabled.withLock { $0 = true }
+        }
+        await store.send(.batteryAlertsToggled(false)) {
+            $0.$batteryAlertsEnabled.withLock { $0 = false }
+        }
+    }
+
+    @Test("battery threshold writes and clamps to 5-50")
+    func batteryThreshold() async {
+        let store = TestStore(initialState: SettingsFeature.State()) {
+            SettingsFeature()
+        }
+
+        await store.send(.batteryThresholdChanged(35)) {
+            $0.$batteryThresholdPercent.withLock { $0 = 35 }
+        }
+        await store.send(.batteryThresholdChanged(0)) {
+            $0.$batteryThresholdPercent.withLock { $0 = 5 }
+        }
+        await store.send(.batteryThresholdChanged(95)) {
+            $0.$batteryThresholdPercent.withLock { $0 = 50 }
+        }
+    }
 }

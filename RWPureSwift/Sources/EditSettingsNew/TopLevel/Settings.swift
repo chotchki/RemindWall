@@ -35,11 +35,17 @@ public struct SettingsFeature {
         public var path = StackState<TrackeeDetailFeature.State>()
         public var isBrightnessControlAvailable: Bool = true
 
+        // Battery alerts are two synced values, no child feature needed.
+        @Shared(.syncedSetting(BATTERY_ALERTS_ENABLED_SETTING_KEY)) public var batteryAlertsEnabled: Bool = false
+        @Shared(.syncedSetting(BATTERY_THRESHOLD_SETTING_KEY)) public var batteryThresholdPercent: Int = 20
+
         public init(){}
     }
 
     public enum Action {
         case albumPicker(AlbumPickerFeature.Action)
+        case batteryAlertsToggled(Bool)
+        case batteryThresholdChanged(Int)
         case busAlertsToggled(Bool)
         case busSettings(BusSettingsFeature.Action)
         case calendarPicker(CalendarPickerFeature.Action)
@@ -88,6 +94,12 @@ public struct SettingsFeature {
         }
         Reduce { state, action in
             switch action {
+            case let .batteryAlertsToggled(isOn):
+                state.$batteryAlertsEnabled.withLock { $0 = isOn }
+                return .none
+            case let .batteryThresholdChanged(percent):
+                state.$batteryThresholdPercent.withLock { $0 = min(max(percent, 5), 50) }
+                return .none
             case let .busAlertsToggled(isOn):
                 state.busSettingsState.$enabled.withLock { $0 = isOn }
                 if isOn, state.busSettingsState.window == nil {
@@ -220,6 +232,25 @@ public struct SettingsView: View {
                     Toggle("Bus Alerts", isOn: Binding(
                         get: { store.busSettingsState.enabled },
                         set: { store.send(.busAlertsToggled($0)) }
+                    ))
+                }
+
+                Section {
+                    if store.batteryAlertsEnabled {
+                        Stepper(
+                            "Alert below \(store.batteryThresholdPercent)% (or when the accessory flags itself low)",
+                            value: Binding(
+                                get: { store.batteryThresholdPercent },
+                                set: { store.send(.batteryThresholdChanged($0)) }
+                            ),
+                            in: 5...50,
+                            step: 5
+                        )
+                    }
+                } header: {
+                    Toggle("Battery Alerts", isOn: Binding(
+                        get: { store.batteryAlertsEnabled },
+                        set: { store.send(.batteryAlertsToggled($0)) }
                     ))
                 }
 
