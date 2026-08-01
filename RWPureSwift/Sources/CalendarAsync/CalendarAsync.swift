@@ -22,6 +22,10 @@ public struct CalendarAsync: Sendable {
     public var getCalendars: @Sendable () -> [EKCalendar] = { [] }
     public var getActiveEvent: @Sendable (CalendarId, Date) -> EKEvent?
     public var getNextEvent: @Sendable (CalendarId, Date) -> EKEvent?
+    /// First calendar matching the synced descriptor (title AND source), if any.
+    public var findCalendar: @Sendable (CalendarDescriptor) -> CalendarId?
+    /// Descriptor for a locally-cached id; nil when the calendar no longer exists.
+    public var calendarDescriptor: @Sendable (CalendarId) -> CalendarDescriptor?
 }
 
 extension CalendarAsync: DependencyKey {
@@ -97,6 +101,17 @@ extension CalendarAsync: DependencyKey {
                     }
                 }
                 return nextEvent
+            }, findCalendar: { descriptor in
+                store.calendars(for: .event)
+                    .first {
+                        $0.title == descriptor.title
+                            && ($0.source?.title ?? "") == descriptor.sourceTitle
+                    }
+                    .map { CalendarId($0.calendarIdentifier) }
+            }, calendarDescriptor: { calendarId in
+                store.calendar(withIdentifier: calendarId.rawValue).map {
+                    CalendarDescriptor(title: $0.title, sourceTitle: $0.source?.title ?? "")
+                }
             }
         )
     }
@@ -120,6 +135,10 @@ extension CalendarAsync: TestDependencyKey {
                 return nil
             }, getNextEvent: {
                 cal, date in
+                return nil
+            }, findCalendar: { _ in
+                return nil
+            }, calendarDescriptor: { _ in
                 return nil
             }
         )

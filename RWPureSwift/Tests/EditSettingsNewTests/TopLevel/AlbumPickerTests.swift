@@ -1,6 +1,8 @@
 import AppTypes
 import ComposableArchitecture
+import Dao
 import DependenciesTestSupport
+import Foundation
 import Photos
 import PhotoKitAsync
 import Testing
@@ -8,7 +10,13 @@ import Testing
 @testable import EditSettingsNew_TopLevel
 
 @MainActor
-@Suite("AlbumPicker Feature Tests")
+@Suite("AlbumPicker Feature Tests", .dependencies {
+    // .syncedSetting backs the album descriptor: reads the database at State
+    // init, stamps lastModified on descriptor writes.
+    $0.defaultDatabase = try! $0.appDatabase()
+    $0.uuid = .incrementing
+    $0.date = .constant(Date(timeIntervalSince1970: 0))
+})
 struct AlbumPickerTests {
 
     @Test("onAppear when not authorized shows authorize button state")
@@ -131,5 +139,45 @@ struct AlbumPickerTests {
         await store.send(.selectAlbum(AlbumLocalId("test-album-id"))) {
             $0.$selectedAlbum.withLock { $0 = AlbumLocalId("test-album-id") }
         }
+    }
+
+    @Test("selectAlbum with a loaded list syncs the album title")
+    func selectAlbumWritesDescriptor() async {
+        let album = PHAssetCollectionMock(title: "Wall Photos")
+        let albums = PHFetchResultCollectionMock<PHAssetCollection>([album])
+
+        let store = TestStore(initialState: AlbumPickerFeature.State()) {
+            AlbumPickerFeature()
+        }
+
+        await store.send(.loadListComplete(albums)) {
+            $0.availibleAlbums = albums
+        }
+        await store.send(.selectAlbum(AlbumLocalId(album.localIdentifier))) {
+            $0.$selectedAlbum.withLock { $0 = AlbumLocalId(album.localIdentifier) }
+            $0.$albumDescriptor.withLock { $0 = AlbumDescriptor("Wall Photos") }
+        }
+    }
+
+    @Test("selectAlbum(nil) clears the synced descriptor")
+    func selectAlbumNilClearsDescriptor() async {
+        let store = TestStore(initialState: AlbumPickerFeature.State()) {
+            AlbumPickerFeature()
+        }
+        store.state.$albumDescriptor.withLock { $0 = AlbumDescriptor("Old Pick") }
+
+        await store.send(.selectAlbum(nil)) {
+            $0.$albumDescriptor.withLock { $0 = nil }
+        }
+    }
+
+    @Test("needsRePick flags a descriptor with no local resolution")
+    func needsRePick() async {
+        let state = AlbumPickerFeature.State()
+        #expect(!state.needsRePick)
+        state.$albumDescriptor.withLock { $0 = AlbumDescriptor("Wall Photos") }
+        #expect(state.needsRePick)
+        state.$selectedAlbum.withLock { $0 = AlbumLocalId("resolved") }
+        #expect(!state.needsRePick)
     }
 }

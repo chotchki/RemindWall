@@ -22,6 +22,10 @@ public struct PhotoKitAlbums: Sendable {
     public var requestAuthorization: @Sendable () async -> ()
     public var availableAlbums: @Sendable () async -> PHFetchResultCollection<PHAssetCollection>?
     public var loadAlbumAssets: @Sendable (AlbumLocalId) async -> [PHAsset]?
+    /// First album whose title matches the synced descriptor, if any.
+    public var findAlbum: @Sendable (AlbumDescriptor) async -> AlbumLocalId?
+    /// Descriptor for a locally-cached id; nil when the album no longer exists.
+    public var albumDescriptor: @Sendable (AlbumLocalId) async -> AlbumDescriptor?
 }
 
 extension PhotoKitAlbums: DependencyKey {
@@ -81,6 +85,32 @@ extension PhotoKitAlbums: DependencyKey {
                 }.value
 
                 return result
+            },
+            findAlbum: { descriptor in
+                if PHPhotoLibrary.authorizationStatus(for: .readWrite) != .authorized {
+                    return nil
+                }
+                let albums = PHAssetCollection.fetchAssetCollections(
+                    with: PHAssetCollectionType.album,
+                    subtype: PHAssetCollectionSubtype.any,
+                    options: baseFetchOptions())
+                var match: AlbumLocalId?
+                albums.enumerateObjects { album, _, stop in
+                    if album.localizedTitle == descriptor.rawValue {
+                        match = AlbumLocalId(album.localIdentifier)
+                        stop.pointee = true
+                    }
+                }
+                return match
+            },
+            albumDescriptor: { albumId in
+                if PHPhotoLibrary.authorizationStatus(for: .readWrite) != .authorized {
+                    return nil
+                }
+                return PHAssetCollection.fetchAssetCollections(
+                    withLocalIdentifiers: [albumId.rawValue],
+                    options: baseFetchOptions()
+                ).firstObject?.localizedTitle.map(AlbumDescriptor.init(rawValue:))
             }
         )
 
@@ -108,6 +138,12 @@ extension PhotoKitAlbums: TestDependencyKey {
                 return [
                     //TODO Add some placeholders
                 ]
+            },
+            findAlbum: { _ in
+                return nil
+            },
+            albumDescriptor: { _ in
+                return nil
             }
         )
     }

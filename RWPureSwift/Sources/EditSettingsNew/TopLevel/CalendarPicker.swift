@@ -8,6 +8,7 @@
 import AppTypes
 import CalendarAsync
 import ComposableArchitecture
+import Dao
 import Dependencies
 @preconcurrency import EventKit
 import SwiftUI
@@ -19,8 +20,16 @@ public struct CalendarPickerFeature {
     @ObservableState
     public struct State: Equatable {
         @Shared(.appStorage(CALENDAR_SETTING_KEY)) var selectedCalendar: CalendarId?
+        @Shared(.syncedSetting(CALENDAR_DESCRIPTOR_SETTING_KEY)) var calendarDescriptor: CalendarDescriptor?
         var calendarStatus: EKAuthorizationStatus = .notDetermined
         var availableCalendars: [EKCalendar]?
+
+        /// A synced pick exists but no local calendar matched it.
+        public var needsRePick: Bool {
+            selectedCalendar == nil
+                && calendarDescriptor != nil
+                && calendarDescriptor != .noSelection
+        }
 
         public init() {}
     }
@@ -44,6 +53,23 @@ public struct CalendarPickerFeature {
                 return loadList(state: &state)
             case let .selectCalendar(calendar):
                 state.$selectedCalendar.withLock { $0 = calendar }
+                // Sync title+source so other devices can resolve the same
+                // calendar; an explicit "None" pick syncs as .noSelection.
+                // A failed lookup writes nothing - never clobber a synced
+                // descriptor with a guess.
+                if let calendar {
+                    if let matched = state.availableCalendars?
+                        .first(where: { $0.calendarIdentifier == calendar.rawValue }) {
+                        state.$calendarDescriptor.withLock {
+                            $0 = CalendarDescriptor(
+                                title: matched.title,
+                                sourceTitle: matched.source?.title ?? ""
+                            )
+                        }
+                    }
+                } else {
+                    state.$calendarDescriptor.withLock { $0 = .noSelection }
+                }
                 return .none
             case .tapOpenSettings:
                 return .run { [calendarAsync] send in
@@ -106,18 +132,28 @@ public struct CalendarPickerView: View {
             } else if store.availableCalendars == nil {
                 ContentUnavailableView("No Calendars Found", systemImage: "calendar")
             } else {
-                Picker("Calendars", selection: Binding(
-                    get: { store.selectedCalendar },
-                    set: { store.send(.selectCalendar($0)) }
-                )) {
-                    Text("None").tag(nil as CalendarId?)
-                    ForEach(store.availableCalendars!, id: \.calendarIdentifier) { calendar in
-                        Text(calendar.title).tag(CalendarId(calendar.calendarIdentifier) as CalendarId?)
+                VStack(alignment: .leading) {
+                    if store.needsRePick {
+                        Label(
+                            "Synced calendar \"\(store.calendarDescriptor?.title ?? "")\" isn't on this device — pick again.",
+                            systemImage: "exclamationmark.triangle"
+                        )
+                        .foregroundStyle(.orange)
+                        .accessibilityIdentifier("CalendarNeedsRePick")
                     }
+                    Picker("Calendars", selection: Binding(
+                        get: { store.selectedCalendar },
+                        set: { store.send(.selectCalendar($0)) }
+                    )) {
+                        Text("None").tag(nil as CalendarId?)
+                        ForEach(store.availableCalendars!, id: \.calendarIdentifier) { calendar in
+                            Text(calendar.title).tag(CalendarId(calendar.calendarIdentifier) as CalendarId?)
+                        }
+                    }
+                    #if !os(macOS)
+                    .pickerStyle(.navigationLink)
+                    #endif
                 }
-                #if !os(macOS)
-                .pickerStyle(.navigationLink)
-                #endif
             }
         }.onAppear {
             store.send(.onAppear)

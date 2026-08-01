@@ -1,14 +1,22 @@
 import AppTypes
 import CalendarAsync
 import ComposableArchitecture
+import Dao
 import DependenciesTestSupport
 @preconcurrency import EventKit
+import Foundation
 import Testing
 
 @testable import EditSettingsNew_TopLevel
 
 @MainActor
-@Suite("CalendarPicker Feature Tests")
+@Suite("CalendarPicker Feature Tests", .dependencies {
+    // .syncedSetting backs the calendar descriptor: reads the database at
+    // State init, stamps lastModified on descriptor writes.
+    $0.defaultDatabase = try! $0.appDatabase()
+    $0.uuid = .incrementing
+    $0.date = .constant(Date(timeIntervalSince1970: 0))
+})
 struct CalendarPickerTests {
 
     @Test("onAppear when not authorized shows authorize button state")
@@ -120,6 +128,57 @@ struct CalendarPickerTests {
         await store.send(.selectCalendar(CalendarId("test-cal-id"))) {
             $0.$selectedCalendar.withLock { $0 = CalendarId("test-cal-id") }
         }
+    }
+
+    @Test("selectCalendar with a loaded list syncs title and source")
+    func selectCalendarWritesDescriptor() async {
+        let calendar = EKCalendar(for: .event, eventStore: EKEventStore())
+        calendar.title = "Family"
+
+        let store = TestStore(initialState: {
+            var state = CalendarPickerFeature.State()
+            state.availableCalendars = [calendar]
+            return state
+        }()) {
+            CalendarPickerFeature()
+        }
+
+        // An unsaved EKCalendar has no source, so the descriptor's source
+        // half is empty here; live picks carry the real source title.
+        await store.send(.selectCalendar(CalendarId(calendar.calendarIdentifier))) {
+            $0.$selectedCalendar.withLock { $0 = CalendarId(calendar.calendarIdentifier) }
+            $0.$calendarDescriptor.withLock {
+                $0 = CalendarDescriptor(title: "Family", sourceTitle: "")
+            }
+        }
+    }
+
+    @Test("selectCalendar(nil) syncs a deliberate None")
+    func selectCalendarNilSyncsNoSelection() async {
+        let store = TestStore(initialState: CalendarPickerFeature.State()) {
+            CalendarPickerFeature()
+        }
+        store.state.$selectedCalendar.withLock { $0 = CalendarId("was-picked") }
+        store.state.$calendarDescriptor.withLock {
+            $0 = CalendarDescriptor(title: "Family", sourceTitle: "iCloud")
+        }
+
+        await store.send(.selectCalendar(nil)) {
+            $0.$selectedCalendar.withLock { $0 = nil }
+            $0.$calendarDescriptor.withLock { $0 = .noSelection }
+        }
+    }
+
+    @Test("needsRePick flags an unresolved descriptor but never a synced None")
+    func needsRePick() async {
+        let state = CalendarPickerFeature.State()
+        #expect(!state.needsRePick)
+        state.$calendarDescriptor.withLock {
+            $0 = CalendarDescriptor(title: "Family", sourceTitle: "iCloud")
+        }
+        #expect(state.needsRePick)
+        state.$calendarDescriptor.withLock { $0 = .noSelection }
+        #expect(!state.needsRePick)
     }
 
     @Test("restricted status shows restricted state")

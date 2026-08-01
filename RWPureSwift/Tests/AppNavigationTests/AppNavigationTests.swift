@@ -32,6 +32,10 @@ struct AppNavigationFeatureTests {
             $0.calendar = .current
             $0.screenControl.getBrightness = { 0.75 }
             $0.screenControl.setBrightness = { _ in }
+            // onAppear starts the settings resolver; unauthorized access
+            // makes its initial reconcile a no-op.
+            $0.photoKitAlbums.libraryAccess = { .notDetermined }
+            $0.calendarAsync.calendarAccess = { .notDetermined }
         }
 
         store.exhaustivity = .off
@@ -56,6 +60,10 @@ struct AppNavigationFeatureTests {
             $0.calendar = .current
             $0.screenControl.getBrightness = { 0.75 }
             $0.screenControl.setBrightness = { _ in }
+            // onAppear starts the settings resolver; unauthorized access
+            // makes its initial reconcile a no-op.
+            $0.photoKitAlbums.libraryAccess = { .notDetermined }
+            $0.calendarAsync.calendarAccess = { .notDetermined }
         }
 
         store.exhaustivity = .off
@@ -80,6 +88,10 @@ struct AppNavigationFeatureTests {
             $0.calendar = .current
             $0.screenControl.getBrightness = { 0.75 }
             $0.screenControl.setBrightness = { _ in }
+            // onAppear starts the settings resolver; unauthorized access
+            // makes its initial reconcile a no-op.
+            $0.photoKitAlbums.libraryAccess = { .notDetermined }
+            $0.calendarAsync.calendarAccess = { .notDetermined }
         }
 
         store.exhaustivity = .off

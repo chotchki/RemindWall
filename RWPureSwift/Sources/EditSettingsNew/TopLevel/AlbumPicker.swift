@@ -1,5 +1,6 @@
 import AppTypes
 import ComposableArchitecture
+import Dao
 import Dependencies
 import Photos
 import PhotoKitAsync
@@ -8,13 +9,19 @@ import SwiftUI
 @Reducer
 public struct AlbumPickerFeature {
     @Dependency(\.photoKitAlbums) var photoKitAlbums
-    
+
     @ObservableState
     public struct State: Equatable {
         @Shared(.appStorage(ALBUM_SETTING_KEY)) public var selectedAlbum: AlbumLocalId?
+        @Shared(.syncedSetting(ALBUM_DESCRIPTOR_SETTING_KEY)) public var albumDescriptor: AlbumDescriptor?
         var photoStatus: PHAuthorizationStatus = .notDetermined
         var availibleAlbums: PHFetchResultCollection<PHAssetCollection>?
-        
+
+        /// A synced pick exists but no local album matched it.
+        public var needsRePick: Bool {
+            selectedAlbum == nil && albumDescriptor != nil
+        }
+
         public init(){}
     }
     
@@ -41,6 +48,18 @@ public struct AlbumPickerFeature {
                 }
             case let .selectAlbum(album):
                 state.$selectedAlbum.withLock { $0 = album }
+                // Sync the title so other devices can resolve the same album.
+                // A failed lookup writes nothing - never clobber a synced
+                // descriptor with a guess.
+                if let album {
+                    if let title = state.availibleAlbums?
+                        .first(where: { $0.localIdentifier == album.rawValue })?
+                        .localizedTitle {
+                        state.$albumDescriptor.withLock { $0 = AlbumDescriptor(title) }
+                    }
+                } else {
+                    state.$albumDescriptor.withLock { $0 = nil }
+                }
                 return .none
             case .tapAuthorizeAccess:
                 return .run { [photoKitAlbums] send in
@@ -96,17 +115,27 @@ public struct AlbumPickerView: View {
             } else if store.availibleAlbums == nil {
                 ContentUnavailableView("No Albums Found", image: "photo")
             } else {
-                Picker("Albums", selection: Binding(
-                    get: { store.selectedAlbum },
-                    set: { store.send(.selectAlbum($0)) }
-                )){
-                    ForEach(store.availibleAlbums!, id: \.localIdentifier) { album in
-                        Text(album.localizedTitle ?? "Unknown Album").tag(AlbumLocalId(album.localIdentifier) as AlbumLocalId?)
+                VStack(alignment: .leading) {
+                    if store.needsRePick {
+                        Label(
+                            "Synced album \"\(store.albumDescriptor?.rawValue ?? "")\" isn't in this device's library — pick again.",
+                            systemImage: "exclamationmark.triangle"
+                        )
+                        .foregroundStyle(.orange)
+                        .accessibilityIdentifier("AlbumNeedsRePick")
                     }
+                    Picker("Albums", selection: Binding(
+                        get: { store.selectedAlbum },
+                        set: { store.send(.selectAlbum($0)) }
+                    )){
+                        ForEach(store.availibleAlbums!, id: \.localIdentifier) { album in
+                            Text(album.localizedTitle ?? "Unknown Album").tag(AlbumLocalId(album.localIdentifier) as AlbumLocalId?)
+                        }
+                    }
+                    #if !os(macOS)
+                    .pickerStyle(.navigationLink)
+                    #endif
                 }
-                #if !os(macOS)
-                .pickerStyle(.navigationLink)
-                #endif
             }
         }.onAppear(perform:{
             store.send(.onAppear)

@@ -13,6 +13,7 @@ public struct AppNavigationFeature {
         public var settingsState = SettingsFeature.State()
         public var dashboardState = DashboardFeature.State()
         public var screenOffMonitorState = ScreenOffMonitorFeature.State()
+        public var settingsResolverState = SettingsResolverFeature.State()
 
         public init() {}
 
@@ -27,6 +28,7 @@ public struct AppNavigationFeature {
         case dashboard(DashboardFeature.Action)
         case screenOffMonitor(ScreenOffMonitorFeature.Action)
         case settings(SettingsFeature.Action)
+        case settingsResolver(SettingsResolverFeature.Action)
         case showDashboard
         case showSettings
     }
@@ -46,6 +48,10 @@ public struct AppNavigationFeature {
             SettingsFeature()
         }
 
+        Scope(state: \.settingsResolverState, action: \.settingsResolver) {
+            SettingsResolverFeature()
+        }
+
         Reduce { state, action in
             switch action {
             case .onAppear:
@@ -53,7 +59,10 @@ public struct AppNavigationFeature {
                     state.screen = .dashboard
                     state.screenOffMonitorState.isSlideshowPlaying = true
                 }
-                return .send(.screenOffMonitor(.startMonitoring))
+                return .merge(
+                    .send(.screenOffMonitor(.startMonitoring)),
+                    .send(.settingsResolver(.start))
+                )
 
             case .settings(.delegate(.startSlideshow)):
                 state.screen = .dashboard
@@ -79,7 +88,7 @@ public struct AppNavigationFeature {
                 state.screenOffMonitorState.hasLateReminders = !state.dashboardState.alertLoaderState.lateTrackeeNames.isEmpty
                 return .none
 
-            case .settings, .screenOffMonitor, .dashboard:
+            case .settings, .screenOffMonitor, .dashboard, .settingsResolver:
                 return .none
             }
         }
