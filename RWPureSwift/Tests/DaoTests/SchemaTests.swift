@@ -253,6 +253,60 @@ struct SchemaTests {
         }
     }
 
+    @Test("Insert, fetch, order and delete a MonitoredRoute")
+    func monitoredRouteCrud() async throws {
+        await withDependencies {
+            $0.uuid = .incrementing
+            $0.defaultDatabase = try! $0.appDatabase()
+        } operation: {
+            @Dependency(\.defaultDatabase) var defaultDatabase
+            @Dependency(\.uuid) var uuid
+
+            let second = MonitoredRoute.ID(uuid())
+            let first = MonitoredRoute.ID(uuid())
+
+            try! await defaultDatabase.write { db in
+                try MonitoredRoute.insert {
+                    MonitoredRoute(
+                        id: second,
+                        label: "Ferry run",
+                        destinationLatitude: 47.6026,
+                        destinationLongitude: -122.3393,
+                        destinationName: "Colman Dock",
+                        normalMinutes: 25,
+                        sortOrder: 1
+                    )
+                    MonitoredRoute(
+                        id: first,
+                        label: "School run",
+                        destinationLatitude: 47.5423,
+                        destinationLongitude: -122.3866,
+                        destinationName: "Maple Elementary",
+                        normalMinutes: 12,
+                        sortOrder: 0
+                    )
+                }.execute(db)
+            }
+
+            let ordered = try! await defaultDatabase.read { db in
+                try MonitoredRoute.all.order(by: \.sortOrder).fetchAll(db)
+            }
+            #expect(ordered.map(\.label) == ["School run", "Ferry run"])
+            #expect(ordered.first?.destinationName == "Maple Elementary")
+            #expect(ordered.first?.normalMinutes == 12)
+            #expect(ordered.first?.destinationLatitude == 47.5423)
+            #expect(ordered.first?.destinationLongitude == -122.3866)
+
+            try! await defaultDatabase.write { db in
+                try MonitoredRoute.find(second).delete().execute(db)
+            }
+            let remaining = try! await defaultDatabase.read { db in
+                try MonitoredRoute.all.fetchAll(db)
+            }
+            #expect(remaining.map(\.id) == [first])
+        }
+    }
+
     @Test("Setting with same key uses last modified for conflict resolution")
     func settingLastModifiedConflict() async throws {
         await withDependencies {

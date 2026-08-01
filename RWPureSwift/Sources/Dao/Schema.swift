@@ -110,6 +110,41 @@ public nonisolated struct MonitoredStop: Equatable, Identifiable, Sendable {
 
 extension MonitoredStop.Draft: Equatable, Sendable {}
 
+@Table
+public nonisolated struct MonitoredRoute: Equatable, Identifiable, Sendable {
+    public typealias ID = Tagged<Self, UUID>
+
+    public let id: ID
+    public var label: String
+    public var destinationLatitude: Double
+    public var destinationLongitude: Double
+    public var destinationName: String
+    /// The commute's baseline; TR1.5 styles the card late when the live ETA
+    /// exceeds this plus the threshold.
+    public var normalMinutes: Int
+    public var sortOrder: Int
+
+    public init(
+        id: ID,
+        label: String,
+        destinationLatitude: Double,
+        destinationLongitude: Double,
+        destinationName: String,
+        normalMinutes: Int,
+        sortOrder: Int
+    ) {
+        self.id = id
+        self.label = label
+        self.destinationLatitude = destinationLatitude
+        self.destinationLongitude = destinationLongitude
+        self.destinationName = destinationName
+        self.normalMinutes = normalMinutes
+        self.sortOrder = sortOrder
+    }
+}
+
+extension MonitoredRoute.Draft: Equatable, Sendable {}
+
 extension DependencyValues {
     public mutating func appDatabase() throws -> any DatabaseWriter {
         @Dependency(\.context) var context
@@ -243,6 +278,25 @@ extension DependencyValues {
             .execute(db)
         }
 
+        // Registered after remindersEnabled deliberately: the live kiosk DB
+        // has everything above applied - new migrations only ever APPEND.
+        migrator.registerMigration("Create monitoredRoutes table") { db in
+            try #sql(
+            """
+            CREATE TABLE "monitoredRoutes" (
+              "id" TEXT PRIMARY KEY NOT NULL ON CONFLICT REPLACE DEFAULT (uuid()),
+              "label" TEXT NOT NULL,
+              "destinationLatitude" REAL NOT NULL,
+              "destinationLongitude" REAL NOT NULL,
+              "destinationName" TEXT NOT NULL,
+              "normalMinutes" INTEGER NOT NULL DEFAULT 0,
+              "sortOrder" INTEGER NOT NULL DEFAULT 0
+            )
+            """
+            )
+            .execute(db)
+        }
+
         try migrator.migrate(database)
         
         try database.write { db in
@@ -265,7 +319,8 @@ extension DependencyValues {
     public mutating func appSyncEngine(for database: any DatabaseWriter) throws -> SyncEngine {
         try SyncEngine(
             for: database,
-            tables: Trackee.self, ReminderTime.self, Setting.self, MonitoredStop.self
+            tables: Trackee.self, ReminderTime.self, Setting.self,
+            MonitoredStop.self, MonitoredRoute.self
         )
     }
 }
