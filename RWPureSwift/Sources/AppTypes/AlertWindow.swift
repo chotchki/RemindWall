@@ -24,6 +24,15 @@ extension AlertWindow {
         self.init(rawValue: "\(mask)|\(startHour):\(startMinute)-\(endHour):\(endMinute)")
     }
 
+    /// "MTWTF · 6:30 AM–9:00 AM" - dense enough for a settings row.
+    public var summary: String {
+        let initials = DaysOfWeek.allCases
+            .filter { weekdays.contains($0) }
+            .map { String(String(describing: $0).prefix(1)) }
+            .joined()
+        return "\(initials) · \(startTimeDisplay)–\(endTimeDisplay)"
+    }
+
     /// Mon–Fri, 06:30 to 09:00.
     public static let `default` = AlertWindow(
         weekdays: [.Monday, .Tuesday, .Wednesday, .Thursday, .Friday],

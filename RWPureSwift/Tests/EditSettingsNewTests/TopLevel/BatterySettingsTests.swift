@@ -75,6 +75,30 @@ struct BatterySettingsTests {
         }
     }
 
+    @Test("summary compresses the config into one row")
+    func summaryLine() async {
+        let state = BatterySettingsFeature.State()
+        #expect(state.summary == "Below 20% · always")
+
+        state.$window.withLock { $0 = .default }
+        state.$ignored.withLock { $0 = BatteryIgnoreList.empty.toggling("Doorbell") }
+        #expect(state.summary == "Below 20% · MTWTF · 6:30 AM–9:00 AM · 1 ignored")
+    }
+
+    @Test("detail sheet presentation round-trips")
+    func detailPresentation() async {
+        let store = TestStore(initialState: BatterySettingsFeature.State()) {
+            BatterySettingsFeature()
+        }
+
+        await store.send(.setDetailPresented(true)) {
+            $0.isDetailPresented = true
+        }
+        await store.send(.setDetailPresented(false)) {
+            $0.isDetailPresented = false
+        }
+    }
+
     @Test("ignore toggling round-trips through the synced list")
     func ignoreToggle() async {
         let store = TestStore(initialState: BatterySettingsFeature.State()) {

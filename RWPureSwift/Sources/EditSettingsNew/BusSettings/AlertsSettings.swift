@@ -61,12 +61,7 @@ public enum Watch: Equatable, Identifiable, Sendable {
 
     /// "MTWTF · 6:30 AM–9:00 AM" - the row self-describes when it matters.
     public var windowSummary: String {
-        let window = self.window ?? .default
-        let initials = DaysOfWeek.allCases
-            .filter { window.weekdays.contains($0) }
-            .map { String(String(describing: $0).prefix(1)) }
-            .joined()
-        return "\(initials) · \(window.startTimeDisplay)–\(window.endTimeDisplay)"
+        (window ?? .default).summary
     }
 }
 

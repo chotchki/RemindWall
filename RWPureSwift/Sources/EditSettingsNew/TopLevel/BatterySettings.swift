@@ -24,12 +24,25 @@ public struct BatterySettingsFeature: Sendable {
         /// reporting is vendor-soup, so the browser shows the raw truth.
         public var discovered: [BatteryStatus] = []
         public var isLoadingBatteries: Bool = false
+        public var isDetailPresented: Bool = false
+
+        /// The one line the settings form shows; everything else lives in
+        /// the sheet (H1.8 - a 15-accessory browser was eating the form).
+        public var summary: String {
+            var parts = ["Below \(thresholdPercent)%", window?.summary ?? "always"]
+            let ignoredCount = ignored.names.count
+            if ignoredCount > 0 {
+                parts.append("\(ignoredCount) ignored")
+            }
+            return parts.joined(separator: " · ")
+        }
 
         public init() {}
     }
 
     public enum Action: Equatable {
         case onAppear
+        case setDetailPresented(Bool)
         case thresholdChanged(Int)
         case windowedToggled(Bool)
         case setWindowStart(hour: Int, minute: Int)
@@ -49,6 +62,10 @@ public struct BatterySettingsFeature: Sendable {
             switch action {
             case .onAppear:
                 return .send(.refreshBatteries)
+
+            case let .setDetailPresented(isPresented):
+                state.isDetailPresented = isPresented
+                return .none
 
             case let .thresholdChanged(percent):
                 state.$thresholdPercent.withLock { $0 = min(max(percent, 5), 50) }
@@ -108,33 +125,67 @@ public struct BatterySettingsView: View {
     }
 
     public var body: some View {
-        Group {
-            Stepper(
-                "Alert below \(store.thresholdPercent)% (or when the accessory flags itself low)",
-                value: Binding(
-                    get: { store.thresholdPercent },
-                    set: { store.send(.thresholdChanged($0)) }
-                ),
-                in: 5...50,
-                step: 5
-            )
-
-            Toggle("Only during a window", isOn: Binding(
-                get: { store.window != nil },
-                set: { store.send(.windowedToggled($0)) }
-            ))
-            if let window = store.window {
-                AlertWindowEditorView(
-                    window: window,
-                    onSetStart: { hour, minute in store.send(.setWindowStart(hour: hour, minute: minute)) },
-                    onSetEnd: { hour, minute in store.send(.setWindowEnd(hour: hour, minute: minute)) },
-                    onToggleWeekday: { day in store.send(.toggleWeekday(day)) }
-                )
+        // One row in the form; the details sheet holds everything else.
+        Button {
+            store.send(.setDetailPresented(true))
+        } label: {
+            HStack {
+                Text(store.summary)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
-
-            batteriesFound
         }
-        .onAppear { store.send(.onAppear) }
+        .buttonStyle(.plain)
+        .sheet(isPresented: Binding(
+            get: { store.isDetailPresented },
+            set: { store.send(.setDetailPresented($0)) }
+        )) {
+            detailSheet
+        }
+    }
+
+    private var detailSheet: some View {
+        NavigationStack {
+            Form {
+                Section("Alert rule") {
+                    Stepper(
+                        "Alert below \(store.thresholdPercent)% (or when the accessory flags itself low)",
+                        value: Binding(
+                            get: { store.thresholdPercent },
+                            set: { store.send(.thresholdChanged($0)) }
+                        ),
+                        in: 5...50,
+                        step: 5
+                    )
+                }
+                Section("When chips show") {
+                    Toggle("Only during a window", isOn: Binding(
+                        get: { store.window != nil },
+                        set: { store.send(.windowedToggled($0)) }
+                    ))
+                    if let window = store.window {
+                        AlertWindowEditorView(
+                            window: window,
+                            onSetStart: { hour, minute in store.send(.setWindowStart(hour: hour, minute: minute)) },
+                            onSetEnd: { hour, minute in store.send(.setWindowEnd(hour: hour, minute: minute)) },
+                            onToggleWeekday: { day in store.send(.toggleWeekday(day)) }
+                        )
+                    }
+                }
+                Section {
+                    batteriesFound
+                }
+            }
+            .navigationTitle("Battery Alerts")
+            .toolbar {
+                ToolbarItem {
+                    Button("Done") { store.send(.setDetailPresented(false)) }
+                }
+            }
+            .onAppear { store.send(.onAppear) }
+        }
     }
 
     @ViewBuilder
