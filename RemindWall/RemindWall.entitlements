@@ -18,6 +18,10 @@
 	     (ITMS-90296 fires at upload without it). DDC lives in the external
 	     ddcd daemon reached via network.client, so nothing here needs the
 	     unsandboxed powers the old m1ddc-spawn path required. -->
+	<!-- H1.1 probe: whether the sandboxed Catalyst build can enumerate the
+	     home decides if the Mac renders battery chips or the iPads only. -->
+	<key>com.apple.developer.homekit</key>
+	<true/>
 	<key>com.apple.security.app-sandbox</key>
 	<true/>
 	<key>com.apple.security.network.client</key>

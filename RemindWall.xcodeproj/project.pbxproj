@@ -543,6 +543,7 @@
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "The application shows the list of upcoming events for the household";
+				INFOPLIST_KEY_NSHomeKitUsageDescription = "The application shows a chip when a HomeKit accessory battery runs low";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "The application idles by showing a slideshow";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -595,6 +596,7 @@
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "The application shows the list of upcoming events for the household";
+				INFOPLIST_KEY_NSHomeKitUsageDescription = "The application shows a chip when a HomeKit accessory battery runs low";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "The application idles by showing a slideshow";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
