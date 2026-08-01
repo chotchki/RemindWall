@@ -1,10 +1,14 @@
 import Foundation
 import Tagged
 
-public enum BusWindowTag {}
-public typealias BusWindow = Tagged<BusWindowTag, String>
+/// A weekday-mask + time-range window gating any time-sensitive alert
+/// surface. Born as BusWindow; the typealias keeps existing call sites and
+/// the stored "busWindow" setting string valid.
+public enum AlertWindowTag {}
+public typealias AlertWindow = Tagged<AlertWindowTag, String>
+public typealias BusWindow = AlertWindow
 
-extension BusWindow {
+extension AlertWindow {
     /// Creates a window from a set of active weekdays and a start/end time.
     /// Encoding: "<mask>|<startHour>:<startMinute>-<endHour>:<endMinute>"
     /// Mask is a 7-bit field; bit (DaysOfWeek.rawValue - 1) is set when active.
@@ -21,7 +25,7 @@ extension BusWindow {
     }
 
     /// Mon–Fri, 06:30 to 09:00.
-    public static let `default` = BusWindow(
+    public static let `default` = AlertWindow(
         weekdays: [.Monday, .Tuesday, .Wednesday, .Thursday, .Friday],
         startHour: 6, startMinute: 30,
         endHour: 9, endMinute: 0
@@ -69,24 +73,24 @@ extension BusWindow {
         }
     }
 
-    public func withWeekdays(_ weekdays: Set<DaysOfWeek>) -> BusWindow {
-        BusWindow(
+    public func withWeekdays(_ weekdays: Set<DaysOfWeek>) -> AlertWindow {
+        AlertWindow(
             weekdays: weekdays,
             startHour: startHour, startMinute: startMinute,
             endHour: endHour, endMinute: endMinute
         )
     }
 
-    public func withStart(hour: Int, minute: Int) -> BusWindow {
-        BusWindow(
+    public func withStart(hour: Int, minute: Int) -> AlertWindow {
+        AlertWindow(
             weekdays: weekdays,
             startHour: hour, startMinute: minute,
             endHour: endHour, endMinute: endMinute
         )
     }
 
-    public func withEnd(hour: Int, minute: Int) -> BusWindow {
-        BusWindow(
+    public func withEnd(hour: Int, minute: Int) -> AlertWindow {
+        AlertWindow(
             weekdays: weekdays,
             startHour: startHour, startMinute: startMinute,
             endHour: hour, endMinute: minute
