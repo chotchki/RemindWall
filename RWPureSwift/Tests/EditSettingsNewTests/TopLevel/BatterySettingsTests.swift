@@ -75,6 +75,23 @@ struct BatterySettingsTests {
         }
     }
 
+    @Test("ignore toggling round-trips through the synced list")
+    func ignoreToggle() async {
+        let store = TestStore(initialState: BatterySettingsFeature.State()) {
+            BatterySettingsFeature()
+        }
+
+        await store.send(.ignoreToggled(accessoryName: "Front Door")) {
+            $0.$ignored.withLock { $0 = BatteryIgnoreList(rawValue: #"["Front Door"]"#) }
+        }
+        #expect(store.state.ignored.contains("Front Door"))
+
+        await store.send(.ignoreToggled(accessoryName: "Front Door")) {
+            $0.$ignored.withLock { $0 = .empty }
+        }
+        #expect(!store.state.ignored.contains("Front Door"))
+    }
+
     @Test("onAppear kicks off a browser refresh")
     func onAppearRefreshes() async {
         let store = TestStore(initialState: BatterySettingsFeature.State()) {

@@ -21,6 +21,7 @@ public let HOME_ORIGIN_SETTING_KEY = "homeOrigin"
 public let BATTERY_ALERTS_ENABLED_SETTING_KEY = "batteryAlertsEnabled"
 public let BATTERY_THRESHOLD_SETTING_KEY = "batteryThresholdPercent"
 public let BATTERY_WINDOW_SETTING_KEY = "batteryWindow"
+public let BATTERY_IGNORED_SETTING_KEY = "batteryIgnoredAccessories"
 // Synced descriptors for the device-local pair above; see Descriptors.swift.
 public let ALBUM_DESCRIPTOR_SETTING_KEY = "albumDescriptor"
 public let CALENDAR_DESCRIPTOR_SETTING_KEY = "calendarDescriptor"

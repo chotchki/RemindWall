@@ -23,6 +23,8 @@ public struct BatteryAlertsFeature: Sendable {
         @Shared(.syncedSetting(BATTERY_THRESHOLD_SETTING_KEY)) public var thresholdPercent: Int = 20
         /// nil = chips show whenever a battery is low (H1.6 review decision).
         @Shared(.syncedSetting(BATTERY_WINDOW_SETTING_KEY)) public var window: AlertWindow?
+        /// Accessories that lie about their batteries never chip (H1.7).
+        @Shared(.syncedSetting(BATTERY_IGNORED_SETTING_KEY)) public var ignored: BatteryIgnoreList = .empty
 
         public var statuses: [BatteryStatus] = []
         /// Evaluated on the fast windowTick; nil window is always-in.
@@ -33,7 +35,10 @@ public struct BatteryAlertsFeature: Sendable {
         public var ambientChips: [AmbientChip] {
             guard enabled, isInWindow else { return [] }
             return statuses
-                .filter { $0.isAlertable(belowPercent: thresholdPercent) }
+                .filter {
+                    !ignored.contains($0.accessoryName)
+                        && $0.isAlertable(belowPercent: thresholdPercent)
+                }
                 .sorted {
                     if $0.levelPercent != $1.levelPercent {
                         return ($0.levelPercent ?? 0) < ($1.levelPercent ?? 0)

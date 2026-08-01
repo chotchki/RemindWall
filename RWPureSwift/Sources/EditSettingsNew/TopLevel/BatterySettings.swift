@@ -17,6 +17,8 @@ public struct BatterySettingsFeature: Sendable {
         @Shared(.syncedSetting(BATTERY_THRESHOLD_SETTING_KEY)) public var thresholdPercent: Int = 20
         /// nil = chips show whenever a battery is low; a window limits WHEN.
         @Shared(.syncedSetting(BATTERY_WINDOW_SETTING_KEY)) public var window: AlertWindow?
+        /// Accessories that lie about their batteries (H1.7).
+        @Shared(.syncedSetting(BATTERY_IGNORED_SETTING_KEY)) public var ignored: BatteryIgnoreList = .empty
 
         /// Everything the house reports, alertable or not - HomeKit battery
         /// reporting is vendor-soup, so the browser shows the raw truth.
@@ -34,6 +36,7 @@ public struct BatterySettingsFeature: Sendable {
         case setWindowEnd(hour: Int, minute: Int)
         case toggleWeekday(DaysOfWeek)
         case refreshBatteries
+        case ignoreToggled(accessoryName: String)
         case _batteriesLoaded([BatteryStatus])
     }
 
@@ -70,6 +73,10 @@ public struct BatterySettingsFeature: Sendable {
                 var days = current.weekdays
                 if days.contains(day) { days.remove(day) } else { days.insert(day) }
                 state.$window.withLock { $0 = current.withWeekdays(days) }
+                return .none
+
+            case let .ignoreToggled(accessoryName):
+                state.$ignored.withLock { $0 = $0.toggling(accessoryName) }
                 return .none
 
             case .refreshBatteries:
@@ -158,17 +165,16 @@ public struct BatterySettingsView: View {
         }
 
         ForEach(store.discovered) { status in
+            let isIgnored = store.ignored.contains(status.accessoryName)
             HStack {
                 VStack(alignment: .leading) {
                     Text(status.accessoryName)
-                    if let room = status.roomName {
-                        Text(room)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
+                    Text(isIgnored ? "ignored" : (status.roomName ?? ""))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
                 Spacer()
-                if status.isLow {
+                if status.isLow, !isIgnored {
                     Text("LOW")
                         .font(.caption2)
                         .fontWeight(.bold)
@@ -181,10 +187,18 @@ public struct BatterySettingsView: View {
                 Text(status.levelPercent.map { "\($0)%" } ?? "?")
                     .monospacedDigit()
                     .foregroundStyle(
-                        status.isAlertable(belowPercent: store.thresholdPercent)
+                        !isIgnored && status.isAlertable(belowPercent: store.thresholdPercent)
                             ? .red : .secondary
                     )
+                Button {
+                    store.send(.ignoreToggled(accessoryName: status.accessoryName))
+                } label: {
+                    Image(systemName: isIgnored ? "eye" : "eye.slash")
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel(isIgnored ? "Stop ignoring \(status.accessoryName)" : "Ignore \(status.accessoryName)")
             }
+            .opacity(isIgnored ? 0.45 : 1.0)
         }
     }
 }

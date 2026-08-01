@@ -153,6 +153,23 @@ struct BatteryAlertsTests {
         #expect(store.state.ambientChips.count == 1)
     }
 
+    @Test("an ignored accessory never chips - the hardwired door at 0% case")
+    func ignoredNeverChips() async {
+        var state = BatteryAlertsFeature.State()
+        state.$enabled.withLock { $0 = true }
+        state.statuses = [
+            status("Front Door", level: 0),
+            status("Motion Sensor", level: 12),
+        ]
+        state.$ignored.withLock { $0 = BatteryIgnoreList.empty.toggling("Front Door") }
+
+        #expect(state.ambientChips.map(\.text) == ["Motion Sensor · 12%"])
+
+        // Unignoring brings it back.
+        state.$ignored.withLock { $0 = $0.toggling("Front Door") }
+        #expect(state.ambientChips.map(\.text) == ["Front Door · 0%", "Motion Sensor · 12%"])
+    }
+
     @Test("chips sort lowest level first")
     func chipOrdering() async {
         var state = BatteryAlertsFeature.State()
