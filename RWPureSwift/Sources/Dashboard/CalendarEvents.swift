@@ -21,6 +21,25 @@ public struct CalendarEventsFeature: Sendable {
         public var nextEventTitle: String?
         public var nextEventTimeUntil: String?
         public var nextEventLeadingEmoji: String?
+        public var nextEventStartsInSeconds: TimeInterval?
+
+        /// The up-next event as a rail card; the in-progress event stays
+        /// ambient (NowView), not a card.
+        public var railCards: [RailCard] {
+            guard let nextEventTitle, let nextEventTimeUntil else { return [] }
+            return [
+                RailCard(
+                    id: "upnext",
+                    priority: .upNext,
+                    etaSeconds: nextEventStartsInSeconds,
+                    content: .upNext(
+                        title: nextEventTitle,
+                        timeUntil: "in \(nextEventTimeUntil)",
+                        emoji: nextEventLeadingEmoji
+                    )
+                )
+            ]
+        }
 
         public init() {}
     }
@@ -32,7 +51,8 @@ public struct CalendarEventsFeature: Sendable {
             currentTitle: String?,
             nextTitle: String?,
             nextTimeUntil: String?,
-            nextLeadingEmoji: String?
+            nextLeadingEmoji: String?,
+            nextStartsInSeconds: TimeInterval?
         )
     }
 
@@ -58,7 +78,8 @@ public struct CalendarEventsFeature: Sendable {
                         currentTitle: nil,
                         nextTitle: nil,
                         nextTimeUntil: nil,
-                        nextLeadingEmoji: nil
+                        nextLeadingEmoji: nil,
+                        nextStartsInSeconds: nil
                     ))
                 }
                 return .run { [calendarAsync, now] send in
@@ -70,12 +91,14 @@ public struct CalendarEventsFeature: Sendable {
                     var nextTitle: String?
                     var nextTimeUntil: String?
                     var nextLeadingEmoji: String?
+                    var nextStartsInSeconds: TimeInterval?
 
                     if let next = nextEvent {
                         let formatter = DateComponentsFormatter()
                         formatter.unitsStyle = .brief
                         formatter.allowedUnits = [.hour, .minute]
                         nextTimeUntil = formatter.string(from: now, to: next.startDate)
+                        nextStartsInSeconds = next.startDate.timeIntervalSince(now)
 
                         if let title = next.title, let first = title.first, first.isSimpleEmoji {
                             nextLeadingEmoji = String(first)
@@ -89,15 +112,17 @@ public struct CalendarEventsFeature: Sendable {
                         currentTitle: currentTitle,
                         nextTitle: nextTitle,
                         nextTimeUntil: nextTimeUntil,
-                        nextLeadingEmoji: nextLeadingEmoji
+                        nextLeadingEmoji: nextLeadingEmoji,
+                        nextStartsInSeconds: nextStartsInSeconds
                     ))
                 }
 
-            case let ._eventsLoaded(currentTitle, nextTitle, nextTimeUntil, nextLeadingEmoji):
+            case let ._eventsLoaded(currentTitle, nextTitle, nextTimeUntil, nextLeadingEmoji, nextStartsInSeconds):
                 state.currentEventTitle = currentTitle
                 state.nextEventTitle = nextTitle
                 state.nextEventTimeUntil = nextTimeUntil
                 state.nextEventLeadingEmoji = nextLeadingEmoji
+                state.nextEventStartsInSeconds = nextStartsInSeconds
                 return .none
             }
         }

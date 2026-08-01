@@ -12,6 +12,7 @@ public struct DisplayArrival: Equatable, Identifiable, Sendable {
     public let label: String
     public let routeShortName: String
     public let etaText: String
+    public let etaSeconds: TimeInterval
     public let isLate: Bool
     public let isLive: Bool
 }
@@ -38,6 +39,34 @@ public struct BusArrivalsFeature: Sendable {
         public var arrivals: [DisplayArrival] = []
         public var inWindow: Bool = false
         public var lastError: String? = nil
+
+        /// One card per monitored stop; a fetch failure with nothing to show
+        /// collapses to a single error chip (lowest priority - family info,
+        /// not devops).
+        public var railCards: [RailCard] {
+            var cards = arrivals.map { arrival in
+                RailCard(
+                    id: "bus-\(arrival.id.rawValue.uuidString)",
+                    priority: arrival.isLate ? .lateBus : .onTimeBus,
+                    etaSeconds: arrival.etaSeconds,
+                    content: .transit(
+                        route: arrival.routeShortName,
+                        label: arrival.label,
+                        etaText: arrival.etaText,
+                        isLate: arrival.isLate,
+                        isLive: arrival.isLive
+                    )
+                )
+            }
+            if arrivals.isEmpty, let lastError {
+                cards.append(RailCard(
+                    id: "bus-error",
+                    priority: .errorChip,
+                    content: .errorChip(message: "Cannot reach transit API: \(lastError)")
+                ))
+            }
+            return cards
+        }
 
         public init() {
             self._monitoredStops = FetchAll(MonitoredStop.all.order(by: \.sortOrder))
@@ -153,6 +182,7 @@ func makeDisplay(
         label: stop.label,
         routeShortName: stop.routeShortName,
         etaText: etaText,
+        etaSeconds: when.timeIntervalSince(now),
         isLate: isLate,
         isLive: arrival.isLive
     )

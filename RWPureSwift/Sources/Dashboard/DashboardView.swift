@@ -14,6 +14,15 @@ public struct DashboardFeature: Sendable {
         public var busArrivalsState = BusArrivalsFeature.State()
         public var tagScanLoaderState = TagScanLoaderFeature.State()
 
+        /// The dashboard owns assembly: sources contribute cards, this orders
+        /// and caps them (SPEC-DASHBOARD; battery joins via H1, traffic via TR1).
+        public var rail: DashboardRail {
+            DashboardRail.assemble(
+                busArrivalsState.railCards + calendarEventsState.railCards,
+                capacity: DashboardRail.platformCapacity
+            )
+        }
+
         public init() {}
     }
 
@@ -110,20 +119,9 @@ public struct DashboardView: View {
                         .transition(.slide)
                 }
                 Spacer()
-                if let nextTitle = store.calendarEventsState.nextEventTitle,
-                   let timeUntil = store.calendarEventsState.nextEventTimeUntil {
-                    UpNextView(
-                        title: nextTitle,
-                        timeUntil: timeUntil,
-                        leadingEmoji: store.calendarEventsState.nextEventLeadingEmoji
-                    )
-                    .transition(.slide)
-                }
-                BusArrivalsBar(
-                    arrivals: store.busArrivalsState.arrivals,
-                    errorMessage: store.busArrivalsState.lastError
-                )
-                .transition(.move(edge: .bottom))
+                RailView(rail: store.rail)
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 24)
             }
 
             AlertView(lateTrackeeNames: store.alertLoaderState.lateTrackeeNames, dayOfWeek: store.alertLoaderState.dayOfWeek)

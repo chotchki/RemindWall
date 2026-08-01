@@ -72,6 +72,15 @@ public struct DashboardRail: Equatable, Sendable {
     public static let wallCapacity = 4
     public static let padCapacity = 3
 
+    /// The Mac target drives the wall monitor, the iOS target the iPads.
+    public static var platformCapacity: Int {
+        #if targetEnvironment(macCatalyst)
+        wallCapacity
+        #else
+        padCapacity
+        #endif
+    }
+
     /// Most urgent first; Candidate A renders this bottom-up.
     public let visible: [RailCard]
     public let overflowCount: Int

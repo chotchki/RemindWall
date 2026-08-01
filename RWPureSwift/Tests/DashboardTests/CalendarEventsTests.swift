@@ -45,7 +45,8 @@ struct CalendarEventsTests {
             currentTitle: nil,
             nextTitle: nil,
             nextTimeUntil: nil,
-            nextLeadingEmoji: nil
+            nextLeadingEmoji: nil,
+            nextStartsInSeconds: nil
         ))
     }
 
@@ -84,12 +85,14 @@ struct CalendarEventsTests {
             currentTitle: "Current Meeting",
             nextTitle: "Lunch",
             nextTimeUntil: "30min",
-            nextLeadingEmoji: "🍕"
+            nextLeadingEmoji: "🍕",
+            nextStartsInSeconds: 1800
         )) {
             $0.currentEventTitle = "Current Meeting"
             $0.nextEventTitle = "Lunch"
             $0.nextEventTimeUntil = "30min"
             $0.nextEventLeadingEmoji = "🍕"
+            $0.nextEventStartsInSeconds = 1800
         }
     }
 
@@ -100,6 +103,7 @@ struct CalendarEventsTests {
         state.nextEventTitle = "Old Next"
         state.nextEventTimeUntil = "5min"
         state.nextEventLeadingEmoji = "📅"
+        state.nextEventStartsInSeconds = 300
 
         let store = TestStore(initialState: state) {
             CalendarEventsFeature()
@@ -109,12 +113,14 @@ struct CalendarEventsTests {
             currentTitle: nil,
             nextTitle: nil,
             nextTimeUntil: nil,
-            nextLeadingEmoji: nil
+            nextLeadingEmoji: nil,
+            nextStartsInSeconds: nil
         )) {
             $0.currentEventTitle = nil
             $0.nextEventTitle = nil
             $0.nextEventTimeUntil = nil
             $0.nextEventLeadingEmoji = nil
+            $0.nextEventStartsInSeconds = nil
         }
     }
 }
