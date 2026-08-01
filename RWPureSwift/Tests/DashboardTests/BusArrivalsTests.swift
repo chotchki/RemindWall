@@ -55,13 +55,24 @@ struct BusArrivalsTests {
         await store.finish()
     }
 
-    @Test("tick outside window clears arrivals without calling api")
-    func outsideWindowClears() async {
+    @Test("tick outside the watch's window clears arrivals without calling api")
+    func outsideWindowClears() async throws {
         let apiCalled = LockIsolated(false)
 
+        @Dependency(\.defaultDatabase) var database
+        @Dependency(\.uuid) var uuid
+        try await database.write { db in
+            try MonitoredStop.insert {
+                MonitoredStop(
+                    id: MonitoredStop.ID(uuid()),
+                    label: "School", stopId: "1_1", routeId: "1_a",
+                    routeShortName: "A", sortOrder: 0
+                )
+            }.execute(db)
+        }
+
         var initial = BusArrivalsFeature.State()
-        initial.$enabled.withLock { $0 = true }
-        initial.$window.withLock { $0 = .default }
+        try await initial.$monitoredStops.load(MonitoredStop.all.order(by: \.sortOrder))
 
         let store = TestStore(initialState: initial) {
             BusArrivalsFeature()
@@ -76,18 +87,14 @@ struct BusArrivalsTests {
         }
 
         await store.send(.tick)
-        await store.receive(._arrivalsLoaded([], inWindow: false, error: nil))
+        await store.receive(._arrivalsLoaded([], error: nil))
 
         #expect(apiCalled.value == false)
     }
 
-    @Test("tick inside window with no monitored stops short-circuits")
+    @Test("tick with no monitored stops short-circuits")
     func inWindowNoStops() async {
-        var initial = BusArrivalsFeature.State()
-        initial.$enabled.withLock { $0 = true }
-        initial.$window.withLock { $0 = .default }
-
-        let store = TestStore(initialState: initial) {
+        let store = TestStore(initialState: BusArrivalsFeature.State()) {
             BusArrivalsFeature()
         } withDependencies: {
             $0.date = .constant(Self.monday0700)
@@ -96,9 +103,59 @@ struct BusArrivalsTests {
         }
 
         await store.send(.tick)
-        await store.receive(._arrivalsLoaded([], inWindow: true, error: nil)) {
-            $0.inWindow = true
+        await store.receive(._arrivalsLoaded([], error: nil))
+    }
+
+    @Test("per-watch gating: only enabled, in-window stops are fetched")
+    func perWatchGating() async throws {
+        @Dependency(\.defaultDatabase) var database
+        @Dependency(\.uuid) var uuid
+        try await database.write { db in
+            try MonitoredStop.insert {
+                MonitoredStop(
+                    id: MonitoredStop.ID(uuid()),
+                    label: "Active", stopId: "1_active", routeId: "1_a",
+                    routeShortName: "A", sortOrder: 0
+                )
+                MonitoredStop(
+                    id: MonitoredStop.ID(uuid()),
+                    label: "Switched off", stopId: "1_off", routeId: "1_b",
+                    routeShortName: "B", sortOrder: 1,
+                    enabled: false
+                )
+                MonitoredStop(
+                    id: MonitoredStop.ID(uuid()),
+                    label: "Weekend window", stopId: "1_weekend", routeId: "1_c",
+                    routeShortName: "C", sortOrder: 2,
+                    window: AlertWindow(
+                        weekdays: [.Saturday, .Sunday],
+                        startHour: 6, startMinute: 0, endHour: 12, endMinute: 0
+                    )
+                )
+            }.execute(db)
         }
+
+        let fetchedStops = LockIsolated<[String]>([])
+        var initial = BusArrivalsFeature.State()
+        try await initial.$monitoredStops.load(MonitoredStop.all.order(by: \.sortOrder))
+
+        let store = TestStore(initialState: initial) {
+            BusArrivalsFeature()
+        } withDependencies: {
+            $0.date = .constant(Self.monday0700)
+            $0.calendar = Self.utc
+            $0.transitKeyStore.read = { "key" }
+            $0.transitAPI.fetchArrivals = { _, stopId in
+                fetchedStops.withValue { $0.append(stopId) }
+                return []
+            }
+        }
+        store.exhaustivity = .off
+
+        await store.send(.tick)
+        await store.receive(\._arrivalsLoaded)
+
+        #expect(fetchedStops.value == ["1_active"])
     }
 
     @Test("dedup: two monitored entries sharing stopId trigger one api call")
@@ -130,8 +187,6 @@ struct BusArrivalsTests {
         let callCount = LockIsolated(0)
 
         var initial = BusArrivalsFeature.State()
-        initial.$enabled.withLock { $0 = true }
-        initial.$window.withLock { $0 = .default }
         try await initial.$monitoredStops.load(MonitoredStop.all.order(by: \.sortOrder))
 
         let store = TestStore(initialState: initial) {
@@ -176,8 +231,6 @@ struct BusArrivalsTests {
         let predictedB = Date(timeIntervalSince1970: 1_746_119_300)
 
         var initial = BusArrivalsFeature.State()
-        initial.$enabled.withLock { $0 = true }
-        initial.$window.withLock { $0 = .default }
         try await initial.$monitoredStops.load(MonitoredStop.all.order(by: \.sortOrder))
 
         let store = TestStore(initialState: initial) {
@@ -235,8 +288,6 @@ struct BusArrivalsTests {
         }
 
         var initial = BusArrivalsFeature.State()
-        initial.$enabled.withLock { $0 = true }
-        initial.$window.withLock { $0 = .default }
         try await initial.$monitoredStops.load(MonitoredStop.all.order(by: \.sortOrder))
 
         let store = TestStore(initialState: initial) {

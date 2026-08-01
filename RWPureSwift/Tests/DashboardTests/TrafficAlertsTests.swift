@@ -73,12 +73,12 @@ struct TrafficAlertsTests {
             $0.calendar = Self.utc
             // trafficAPI deliberately unstubbed: a call would fail the test.
         }
-        store.state.$window.withLock { $0 = .default }
         store.state.$homeOrigin.withLock { $0 = Self.home }
 
         await store.send(.tick)
-        // inWindow already defaults false; the receive proves no API call.
-        await store.receive(._routesLoaded([], inWindow: false, error: nil))
+        // The seeded route's default window excludes Sunday; the exact
+        // receive proves no API call happened.
+        await store.receive(._routesLoaded([], error: nil))
     }
 
     @Test("in-window tick builds one display route per monitored route with late math")
@@ -99,7 +99,6 @@ struct TrafficAlertsTests {
             }
         }
         store.exhaustivity = .off
-        store.state.$window.withLock { $0 = .default }
         store.state.$homeOrigin.withLock { $0 = Self.home }
 
         await store.send(.tick)
@@ -109,7 +108,6 @@ struct TrafficAlertsTests {
         #expect(routes.map(\.label) == ["School run", "Ferry run"])
         #expect(routes.map(\.etaMinutes) == [18, 20])
         #expect(routes.map(\.isLate) == [true, false])
-        #expect(store.state.inWindow)
         #expect(store.state.lastError == nil)
     }
 
@@ -123,11 +121,8 @@ struct TrafficAlertsTests {
             $0.date = .constant(Self.monday0700)
             $0.calendar = Self.utc
         }
-        store.state.$window.withLock { $0 = .default }
-
         await store.send(.tick)
-        await store.receive(._routesLoaded([], inWindow: true, error: "home origin not set")) {
-            $0.inWindow = true
+        await store.receive(._routesLoaded([], error: "home origin not set")) {
             $0.lastError = "home origin not set"
         }
         #expect(store.state.railCards.map(\.priority) == [.errorChip])
@@ -145,7 +140,6 @@ struct TrafficAlertsTests {
             $0.trafficAPI.calculateETA = { _, _ in throw TrafficAPIError.noRoute }
         }
         store.exhaustivity = .off
-        store.state.$window.withLock { $0 = .default }
         store.state.$homeOrigin.withLock { $0 = Self.home }
 
         await store.send(.tick)
@@ -155,6 +149,44 @@ struct TrafficAlertsTests {
         #expect(store.state.lastError != nil)
         #expect(store.state.railCards.count == 1)
         #expect(store.state.railCards.first?.priority == .errorChip)
+    }
+
+    @Test("per-watch gating: a disabled route never drives to the API")
+    func disabledRouteSkipped() async {
+        await seedRoute(label: "Active", normalMinutes: 12, sortOrder: 0)
+        @Dependency(\.defaultDatabase) var database
+        @Dependency(\.uuid) var uuid
+        try! await database.write { db in
+            try MonitoredRoute.insert {
+                MonitoredRoute(
+                    id: MonitoredRoute.ID(uuid()),
+                    label: "Switched off",
+                    destinationLatitude: 47.61, destinationLongitude: -122.20,
+                    destinationName: "Bellevue",
+                    normalMinutes: 30, sortOrder: 1,
+                    enabled: false
+                )
+            }.execute(db)
+        }
+
+        let fetched = LockIsolated<[Double]>([])
+        let store = TestStore(initialState: TrafficAlertsFeature.State()) {
+            TrafficAlertsFeature()
+        } withDependencies: {
+            $0.date = .constant(Self.monday0700)
+            $0.calendar = Self.utc
+            $0.trafficAPI.calculateETA = { _, destination in
+                fetched.withValue { $0.append(destination.latitude) }
+                return DriveETA(expectedTravelTime: 10 * 60, distanceMeters: 5000)
+            }
+        }
+        store.exhaustivity = .off
+        store.state.$homeOrigin.withLock { $0 = Self.home }
+
+        await store.send(.tick)
+        await store.receive(\._routesLoaded)
+
+        #expect(fetched.value == [47.5423])
     }
 
     @Test("late math: over normal-plus-threshold is late, at the boundary is not")

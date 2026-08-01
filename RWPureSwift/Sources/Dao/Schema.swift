@@ -90,6 +90,9 @@ public nonisolated struct MonitoredStop: Equatable, Identifiable, Sendable {
     public var routeId: String
     public var routeShortName: String
     public var sortOrder: Int
+    /// Per-watch gate (TR1.4 review decision): nil means AlertWindow.default.
+    public var window: AlertWindow?
+    public var enabled: Bool = true
 
     public init(
         id: ID,
@@ -97,7 +100,9 @@ public nonisolated struct MonitoredStop: Equatable, Identifiable, Sendable {
         stopId: String,
         routeId: String,
         routeShortName: String,
-        sortOrder: Int
+        sortOrder: Int,
+        window: AlertWindow? = nil,
+        enabled: Bool = true
     ) {
         self.id = id
         self.label = label
@@ -105,6 +110,8 @@ public nonisolated struct MonitoredStop: Equatable, Identifiable, Sendable {
         self.routeId = routeId
         self.routeShortName = routeShortName
         self.sortOrder = sortOrder
+        self.window = window
+        self.enabled = enabled
     }
 }
 
@@ -123,6 +130,9 @@ public nonisolated struct MonitoredRoute: Equatable, Identifiable, Sendable {
     /// exceeds this plus the threshold.
     public var normalMinutes: Int
     public var sortOrder: Int
+    /// Per-watch gate (TR1.4 review decision): nil means AlertWindow.default.
+    public var window: AlertWindow?
+    public var enabled: Bool = true
 
     public init(
         id: ID,
@@ -131,7 +141,9 @@ public nonisolated struct MonitoredRoute: Equatable, Identifiable, Sendable {
         destinationLongitude: Double,
         destinationName: String,
         normalMinutes: Int,
-        sortOrder: Int
+        sortOrder: Int,
+        window: AlertWindow? = nil,
+        enabled: Bool = true
     ) {
         self.id = id
         self.label = label
@@ -140,6 +152,8 @@ public nonisolated struct MonitoredRoute: Equatable, Identifiable, Sendable {
         self.destinationName = destinationName
         self.normalMinutes = normalMinutes
         self.sortOrder = sortOrder
+        self.window = window
+        self.enabled = enabled
     }
 }
 
@@ -297,6 +311,21 @@ extension DependencyValues {
             .execute(db)
         }
 
+        migrator.registerMigration("Add per-watch window and enabled to watches") { db in
+            try db.execute(sql: """
+                ALTER TABLE "monitoredStops" ADD COLUMN "window" TEXT
+                """)
+            try db.execute(sql: """
+                ALTER TABLE "monitoredStops" ADD COLUMN "enabled" INTEGER NOT NULL DEFAULT 1
+                """)
+            try db.execute(sql: """
+                ALTER TABLE "monitoredRoutes" ADD COLUMN "window" TEXT
+                """)
+            try db.execute(sql: """
+                ALTER TABLE "monitoredRoutes" ADD COLUMN "enabled" INTEGER NOT NULL DEFAULT 1
+                """)
+        }
+
         try migrator.migrate(database)
         
         try database.write { db in
@@ -310,6 +339,12 @@ extension DependencyValues {
                 @Dependency(\.defaultAppStorage) var defaults
                 @Dependency(\.date.now) var now
                 try seedSyncedSettings(from: defaults, now: now, in: db)
+                // One-shot per device: watches inherit the legacy per-mode
+                // bus window/toggle (TR1.7).
+                if !defaults.bool(forKey: "didSeedPerWatchSettings") {
+                    try seedPerWatchSettings(in: db)
+                    defaults.set(true, forKey: "didSeedPerWatchSettings")
+                }
             }
         }
         

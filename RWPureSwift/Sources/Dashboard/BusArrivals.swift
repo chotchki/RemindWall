@@ -30,14 +30,10 @@ public struct BusArrivalsFeature: Sendable {
 
     @ObservableState
     public struct State: Equatable {
-        @Shared(.syncedSetting(BUS_ALERTS_ENABLED_SETTING_KEY)) public var enabled: Bool = false
-        @Shared(.syncedSetting(BUS_WINDOW_SETTING_KEY)) public var window: BusWindow?
-
         @FetchAll(MonitoredStop.none)
         public var monitoredStops: [MonitoredStop]
 
         public var arrivals: [DisplayArrival] = []
-        public var inWindow: Bool = false
         public var lastError: String? = nil
 
         /// One card per monitored stop; a fetch failure with nothing to show
@@ -76,7 +72,7 @@ public struct BusArrivalsFeature: Sendable {
     public enum Action: Equatable {
         case startMonitoring
         case tick
-        case _arrivalsLoaded([DisplayArrival], inWindow: Bool, error: String?)
+        case _arrivalsLoaded([DisplayArrival], error: String?)
     }
 
     enum CancelID { case busLoop }
@@ -96,21 +92,22 @@ public struct BusArrivalsFeature: Sendable {
                 .cancellable(id: CancelID.busLoop, cancelInFlight: true)
 
             case .tick:
-                let inWindow = state.window?.isInWindow(date: now, calendar: calendar) ?? false
-                guard state.enabled, inWindow,
-                      let key = transitKeyStore.read(),
-                      !state.monitoredStops.isEmpty
-                else {
-                    return .send(._arrivalsLoaded([], inWindow: inWindow, error: nil))
+                // Per-watch gating (TR1.7): each stop carries its own window
+                // and toggle; nil window means the mode default.
+                let active = state.monitoredStops.filter { stop in
+                    stop.enabled
+                        && (stop.window ?? .default).isInWindow(date: now, calendar: calendar)
                 }
-                let stops = state.monitoredStops
-                let uniqueStopIds = Array(Set(stops.map(\.stopId)))
+                guard let key = transitKeyStore.read(), !active.isEmpty else {
+                    return .send(._arrivalsLoaded([], error: nil))
+                }
+                let uniqueStopIds = Array(Set(active.map(\.stopId)))
                 return .run { [transitAPI, now] send in
                     do {
                         let byStop = try await fetchAllArrivals(
                             api: transitAPI, key: key, stopIds: uniqueStopIds
                         )
-                        let display = stops.compactMap { stop -> DisplayArrival? in
+                        let display = active.compactMap { stop -> DisplayArrival? in
                             let arrivals = (byStop[stop.stopId] ?? [])
                                 .filter { $0.routeId == stop.routeId }
                                 .sorted {
@@ -119,15 +116,14 @@ public struct BusArrivalsFeature: Sendable {
                                 }
                             return makeDisplay(stop: stop, soonest: arrivals.first, now: now)
                         }
-                        await send(._arrivalsLoaded(display, inWindow: true, error: nil))
+                        await send(._arrivalsLoaded(display, error: nil))
                     } catch {
-                        await send(._arrivalsLoaded([], inWindow: true, error: "\(error)"))
+                        await send(._arrivalsLoaded([], error: "\(error)"))
                     }
                 }
 
-            case let ._arrivalsLoaded(arrivals, inWindow, error):
+            case let ._arrivalsLoaded(arrivals, error):
                 state.arrivals = arrivals
-                state.inWindow = inWindow
                 state.lastError = error
                 return .none
             }

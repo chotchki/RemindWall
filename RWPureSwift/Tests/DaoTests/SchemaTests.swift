@@ -1,3 +1,4 @@
+import AppTypes
 import Dao
 import Dependencies
 import DependenciesTestSupport
@@ -304,6 +305,58 @@ struct SchemaTests {
                 try MonitoredRoute.all.fetchAll(db)
             }
             #expect(remaining.map(\.id) == [first])
+        }
+    }
+
+    @Test("Per-watch seed inherits the legacy bus window and toggle")
+    func perWatchSeed() async throws {
+        await withDependencies {
+            $0.uuid = .incrementing
+            $0.defaultDatabase = try! $0.appDatabase()
+        } operation: {
+            @Dependency(\.defaultDatabase) var defaultDatabase
+            @Dependency(\.uuid) var uuid
+
+            let seeded = MonitoredStop.ID(uuid())
+            let alreadySet = MonitoredStop.ID(uuid())
+            let custom = AlertWindow(
+                weekdays: [.Saturday], startHour: 8, startMinute: 0, endHour: 10, endMinute: 0
+            )
+
+            try! await defaultDatabase.write { db in
+                try MonitoredStop.insert {
+                    MonitoredStop(
+                        id: seeded, label: "Legacy", stopId: "1_1", routeId: "1_a",
+                        routeShortName: "A", sortOrder: 0
+                    )
+                    MonitoredStop(
+                        id: alreadySet, label: "Custom", stopId: "1_2", routeId: "1_b",
+                        routeShortName: "B", sortOrder: 1, window: custom
+                    )
+                }.execute(db)
+                try Setting.insert {
+                    Setting(
+                        id: Setting.ID(uuid()), key: BUS_WINDOW_SETTING_KEY,
+                        value: BusWindow.default.rawValue,
+                        lastModified: Date(timeIntervalSince1970: 1000)
+                    )
+                    Setting(
+                        id: Setting.ID(uuid()), key: BUS_ALERTS_ENABLED_SETTING_KEY,
+                        value: "false",
+                        lastModified: Date(timeIntervalSince1970: 1000)
+                    )
+                }.execute(db)
+                try seedPerWatchSettings(in: db)
+            }
+
+            let stops = try! await defaultDatabase.read { db in
+                try MonitoredStop.all.order(by: \.sortOrder).fetchAll(db)
+            }
+            // NULL window inherits the legacy one; an explicit window is kept.
+            #expect(stops[0].window == BusWindow.default)
+            #expect(stops[1].window == custom)
+            // Legacy alerts-off disables the watches (one-shot, caller-guarded).
+            #expect(stops.allSatisfy { !$0.enabled })
         }
     }
 

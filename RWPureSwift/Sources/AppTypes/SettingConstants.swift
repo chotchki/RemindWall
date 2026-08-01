@@ -10,8 +10,8 @@ public let CALENDAR_SETTING_KEY = "calendarId"
 public let SCREEN_OFF_SETTING_KEY = "screenOffSchedule"
 public let BUS_WINDOW_SETTING_KEY = "busWindow"
 public let BUS_ALERTS_ENABLED_SETTING_KEY = "busAlertsEnabled"
-// Traffic's own AlertWindow + drive origin, synced like the bus pair (TR1).
-public let TRAFFIC_WINDOW_SETTING_KEY = "trafficWindow"
+// The drive origin, synced (TR1). Windows are per-watch columns on the
+// MonitoredStop/MonitoredRoute rows (TR1.7) - never per-mode keys.
 public let HOME_ORIGIN_SETTING_KEY = "homeOrigin"
 // HomeKit low-battery alerts (H1).
 public let BATTERY_ALERTS_ENABLED_SETTING_KEY = "batteryAlertsEnabled"

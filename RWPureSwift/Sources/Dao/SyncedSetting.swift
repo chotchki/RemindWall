@@ -274,6 +274,37 @@ public func seedSyncedSettings(
     }
 }
 
+/// One-shot inheritance of the legacy per-mode bus settings by the per-watch
+/// columns (TR1.7). Runs AFTER seedSyncedSettings so the settings table is the
+/// single source (the appStorage values have already been copied in). The
+/// caller guards with a LOCAL flag - re-running would clobber later per-watch
+/// edits.
+public func seedPerWatchSettings(in db: Database) throws {
+    let legacyWindow = try Setting
+        .where({ $0.key.eq(BUS_WINDOW_SETTING_KEY) })
+        .order { $0.lastModified.desc() }
+        .fetchOne(db)?
+        .value
+    if let legacyWindow {
+        try db.execute(
+            sql: """
+            UPDATE "monitoredStops" SET "window" = ? WHERE "window" IS NULL
+            """,
+            arguments: [legacyWindow]
+        )
+    }
+    let legacyEnabled = try Setting
+        .where({ $0.key.eq(BUS_ALERTS_ENABLED_SETTING_KEY) })
+        .order { $0.lastModified.desc() }
+        .fetchOne(db)?
+        .value
+    if legacyEnabled == "false" {
+        try db.execute(sql: """
+            UPDATE "monitoredStops" SET "enabled" = 0
+            """)
+    }
+}
+
 extension UUID {
     /// RFC 4122 v5 (SHA-1, name-based) UUID: the same setting key maps to the
     /// same row id on every device.

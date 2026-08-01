@@ -31,14 +31,12 @@ public struct TrafficAlertsFeature: Sendable {
 
     @ObservableState
     public struct State: Equatable {
-        @Shared(.syncedSetting(TRAFFIC_WINDOW_SETTING_KEY)) public var window: AlertWindow?
         @Shared(.syncedSetting(HOME_ORIGIN_SETTING_KEY)) public var homeOrigin: HomeOrigin?
 
         @FetchAll(MonitoredRoute.none)
         public var routes: [MonitoredRoute]
 
         public var displayRoutes: [DisplayRoute] = []
-        public var inWindow: Bool = false
         public var lastError: String? = nil
 
         /// One card per route; a fetch failure with nothing to show collapses
@@ -74,7 +72,7 @@ public struct TrafficAlertsFeature: Sendable {
     public enum Action: Equatable {
         case startMonitoring
         case tick
-        case _routesLoaded([DisplayRoute], inWindow: Bool, error: String?)
+        case _routesLoaded([DisplayRoute], error: String?)
     }
 
     enum CancelID { case trafficLoop, fetch }
@@ -94,25 +92,29 @@ public struct TrafficAlertsFeature: Sendable {
                 .cancellable(id: CancelID.trafficLoop, cancelInFlight: true)
 
             case .tick:
-                let inWindow = state.window?.isInWindow(date: now, calendar: calendar) ?? false
-                guard inWindow, !state.routes.isEmpty else {
-                    return .send(._routesLoaded([], inWindow: inWindow, error: nil))
+                // Per-watch gating (TR1.7): each route carries its own window
+                // and toggle; nil window means the mode default.
+                let active = state.routes.filter { route in
+                    route.enabled
+                        && (route.window ?? .default).isInWindow(date: now, calendar: calendar)
+                }
+                guard !active.isEmpty else {
+                    return .send(._routesLoaded([], error: nil))
                 }
                 guard
                     let origin = state.homeOrigin,
                     let latitude = origin.latitude,
                     let longitude = origin.longitude
                 else {
-                    // Routes exist but no origin: TR1.4's settings will fix
-                    // this; until then say so instead of a blank rail.
-                    return .send(._routesLoaded([], inWindow: true, error: "home origin not set"))
+                    // Routes exist but no origin: TR1.4's Setup screen is the
+                    // fix; until then say so instead of a blank rail.
+                    return .send(._routesLoaded([], error: "home origin not set"))
                 }
                 let originPoint = RoutePoint(latitude: latitude, longitude: longitude)
-                let routes = state.routes
                 return .run { [trafficAPI] send in
                     do {
                         var display: [DisplayRoute] = []
-                        for route in routes {
+                        for route in active {
                             let eta = try await trafficAPI.calculateETA(
                                 originPoint,
                                 RoutePoint(
@@ -122,16 +124,15 @@ public struct TrafficAlertsFeature: Sendable {
                             )
                             display.append(makeDisplayRoute(route: route, eta: eta))
                         }
-                        await send(._routesLoaded(display, inWindow: true, error: nil))
+                        await send(._routesLoaded(display, error: nil))
                     } catch {
-                        await send(._routesLoaded([], inWindow: true, error: "\(error)"))
+                        await send(._routesLoaded([], error: "\(error)"))
                     }
                 }
                 .cancellable(id: CancelID.fetch, cancelInFlight: true)
 
-            case let ._routesLoaded(display, inWindow, error):
+            case let ._routesLoaded(display, error):
                 state.displayRoutes = display
-                state.inWindow = inWindow
                 state.lastError = error
                 return .none
             }
