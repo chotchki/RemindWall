@@ -34,8 +34,9 @@ The app uses **The Composable Architecture (TCA)** from Point-Free throughout.
 
 **Feature Modules (TCA Reducers):**
 - `AppNavigation/` - Top-level navigation between settings and dashboard screens
-- `Dashboard/` - Main dashboard combining slideshow, alerts, calendar events, and tag scanning
-- `EditSettingsNew/TopLevel/` - Main settings form (album picker, calendar picker, screen off schedule, trackee list)
+- `Dashboard/` - Main dashboard: slideshow + the card rail (`CardModel.swift`, see `SPEC-DASHBOARD.md`) fed by bus/traffic/calendar surfaces, battery chips, med alert overlay, tag scanning
+- `EditSettingsNew/TopLevel/` - Main settings form (album picker, calendar picker, screen off schedule, battery alerts, trackee list) plus `SettingsResolver` (syncs album/calendar descriptors to local ids)
+- `EditSettingsNew/BusSettings/` - Bus alerts settings (API key, monitored stops, window)
 - `EditSettingsNew/Trackees/` - Trackee CRUD and detail views
 - `EditSettingsNew/Reminders/` - Reminder time management per trackee
 - `Slideshow/` - Photo gallery with Ken Burns animation and live photo support
@@ -44,16 +45,19 @@ The app uses **The Composable Architecture (TCA)** from Point-Free throughout.
 - `ScreenOffMonitor/` - Scheduled screen dimming based on time-of-day rules
 
 **Data Layer:**
-- `Dao/` - SQLite database using Point-Free's `sqlite-data`. Contains schema with `Trackee` and `ReminderTime` tables
+- `Dao/` - SQLite database using Point-Free's `sqlite-data`. Schema: `Trackee`, `ReminderTime`, `Setting` (+ the `.syncedSetting` SharedKey over it), `MonitoredStop`, `MonitoredRoute`
 - `AppModel/` - App state definitions
 
 **Framework Wrappers:**
 - `CalendarAsync/` - EventKit async wrapper
+- `HomeKitAsync/` - HomeKit battery statuses as plain values (live store behind canImport; no HomeKit on pure macOS)
 - `PhotoKitAsync/` - Photos framework async wrapper with mock support
-- `ScreenControl/` - Screen brightness control (UIKit on iOS, DDC/CI over I2C on macCatalyst for external monitors)
+- `ScreenControl/` - Screen brightness control (UIKit on iOS, DDC/CI via the ddcd daemon on macCatalyst)
+- `TrafficAPI/` - Drive-time ETAs over MKDirections
+- `TransitAPI/` - OneBusAway arrivals (API key via `TransitKeyStore`)
 
 **Shared Types:**
-- `AppTypes/` - Core value types: `ReminderPart`, `ScreenOffSchedule`, `CalendarId`, `TagSerial`, `SlotName`, `AlbumLocalId`
+- `AppTypes/` - Core value types: `ReminderPart`, `ScreenOffSchedule`, `AlertWindow` (née `BusWindow`), `CalendarId`, `TagSerial`, `SlotName`, `AlbumLocalId`, descriptors (`AlbumDescriptor`, `CalendarDescriptor`, `HomeOrigin`), setting key constants
 - `Utility/` - Small helpers (hex conversion, emoji checking)
 
 ### Key Patterns
@@ -66,22 +70,28 @@ The app uses **The Composable Architecture (TCA)** from Point-Free throughout.
 
 **Tagged Types:** IDs use `Tagged<Self, UUID>` for type safety (e.g., `Trackee.ID`, `ReminderTime.ID`).
 
-**Shared State:** Uses `@Shared(.appStorage(...))` for persisted settings that multiple features observe (e.g., screen off schedule, selected album).
+**Shared State:** Portable settings use `@Shared(.syncedSetting(...))` — a custom SharedKey over the CloudKit-synced `settings` table (Dao) — so a change on one device lands on all of them. Device-local values (album/calendar local identifiers) stay on `@Shared(.appStorage(...))` as caches of their synced descriptors.
 
 ### Feature Hierarchy
 
 ```
 AppNavigationFeature
 ├── ScreenOffMonitorFeature
+├── SettingsResolverFeature (descriptor -> local id reconcile)
 ├── DashboardFeature
 │   ├── SlideShowFeature
 │   ├── AlertLoaderFeature
 │   ├── CalendarEventsFeature
+│   ├── BusArrivalsFeature
+│   ├── BatteryAlertsFeature
+│   ├── TrafficAlertsFeature
 │   └── TagScanLoaderFeature
 └── SettingsFeature (TopLevel)
     ├── AlbumPickerFeature
     ├── CalendarPickerFeature
     ├── ScreenOffSettingFeature
+    ├── BusSettingsFeature
+    │   └── MonitoredStopsFeature
     └── TrackeesFeature
         └── TrackeeDetailFeature
             └── RemindersFeature
