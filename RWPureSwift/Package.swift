@@ -19,6 +19,7 @@ let package = Package(
         .library(name: "EditSettingsNew_TopLevel", targets: ["EditSettingsNew_TopLevel"]),
         .library(name: "EditSettingsNew_Trackees", targets: ["EditSettingsNew_Trackees"]),
         
+        .library(name: "HomeKitAsync", targets: ["HomeKitAsync"]),
         .library(name: "PhotoKitAsync", targets: ["PhotoKitAsync"]),
         .library(name: "ScreenControl", targets: ["ScreenControl"]),
         .library(name: "ScreenOffMonitor", targets: ["ScreenOffMonitor"]),
@@ -156,6 +157,17 @@ let package = Package(
                         .product(name: "DependenciesTestSupport", package: "swift-dependencies")
                     ], path: "Tests/EditSettingsNewTests/Trackees"),
         
+        .target(name: "HomeKitAsync", dependencies: [
+            .product(
+                name: "Dependencies",
+                package: "swift-dependencies"
+            ),
+            .product(name: "DependenciesMacros", package: "swift-dependencies"),
+        ]),
+        .testTarget(name: "HomeKitAsyncTests", dependencies: [
+            "HomeKitAsync",
+            .product(name: "DependenciesTestSupport", package: "swift-dependencies"),
+        ]),
         .target(name: "PhotoKitAsync", dependencies: [
             .product(
                 name: "Dependencies",
