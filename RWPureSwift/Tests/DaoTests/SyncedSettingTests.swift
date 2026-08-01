@@ -154,6 +154,31 @@ struct SyncedSettingTests {
         }
     }
 
+    @Test("Rapid successive writes never revert to the earlier value")
+    func rapidWritesKeepLatest() async throws {
+        try await withDependencies {
+            $0.uuid = .incrementing
+            $0.date = .constant(Date(timeIntervalSince1970: 1000))
+            $0.defaultDatabase = try! $0.appDatabase()
+        } operation: {
+            @Dependency(\.defaultDatabase) var defaultDatabase
+            @Shared(.syncedSetting("rapid")) var value: String = "default"
+
+            // The first save's observation echo must not clobber the second
+            // in-memory write while its own save is still in flight.
+            $value.withLock { $0 = "one" }
+            $value.withLock { $0 = "two" }
+            try await $value.save()
+            try await Task.sleep(for: .milliseconds(100))
+
+            #expect(value == "two")
+            let stored = try await defaultDatabase.read { db in
+                try Setting.where { $0.key.eq("rapid") }.fetchOne(db)?.value
+            }
+            #expect(stored == "two")
+        }
+    }
+
     @Test("A save through the key cleans up duplicate rows for its key")
     func saveHealsDuplicateRows() async throws {
         try await withDependencies {

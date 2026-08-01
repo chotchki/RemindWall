@@ -8,7 +8,15 @@ import Foundation
 import GRDB
 import Sharing
 import SQLiteData
+import Synchronization
 import Tagged
+
+/// In-flight local save counts per setting key. While a local save is
+/// pending, observation emissions are suppressed: the in-memory value is
+/// newer than whatever the database says, and a stale echo of save N must
+/// never clobber write N+1. The final commit's emission (or the equality of
+/// in-memory with what was written) always reconciles.
+private let pendingSaves = Mutex<[String: Int]>([:])
 
 /// String round-trip for values stored through `.syncedSetting`.
 ///
@@ -164,6 +172,7 @@ public struct SyncedSettingKey<Value: Sendable>: SharedKey {
                     subscriber.yield(throwing: error)
                 }
             } receiveValue: { raw in
+                guard pendingSaves.withLock({ $0[key, default: 0] }) == 0 else { return }
                 if let value = decode(raw) {
                     subscriber.yield(value)
                 } else {
@@ -184,6 +193,7 @@ public struct SyncedSettingKey<Value: Sendable>: SharedKey {
         let row = encode(value).map { encoded in
             Setting(id: rowID, key: key, value: encoded, lastModified: date())
         }
+        pendingSaves.withLock { $0[key, default: 0] += 1 }
         database.asyncWrite { db in
             if let row {
                 try Setting.upsert { row }.execute(db)
@@ -198,6 +208,7 @@ public struct SyncedSettingKey<Value: Sendable>: SharedKey {
                 try Setting.where { $0.key.eq(key) }.delete().execute(db)
             }
         } completion: { _, result in
+            pendingSaves.withLock { $0[key] = max(0, ($0[key] ?? 1) - 1) }
             switch result {
             case .success:
                 continuation.resume()
