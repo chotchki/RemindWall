@@ -77,6 +77,7 @@ let package = Package(
             .target(name: "AppTypes"),
             .target(name: "CalendarAsync"),
             .target(name: "Dao"),
+            .target(name: "HomeKitAsync"),
             .target(name: "Slideshow"),
             .target(name: "TagScanLoader"),
             .target(name: "TransitAPI"),

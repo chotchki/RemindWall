@@ -12,6 +12,7 @@ public struct DashboardFeature: Sendable {
         public var alertLoaderState = AlertLoaderFeature.State()
         public var calendarEventsState = CalendarEventsFeature.State()
         public var busArrivalsState = BusArrivalsFeature.State()
+        public var batteryAlertsState = BatteryAlertsFeature.State()
         public var tagScanLoaderState = TagScanLoaderFeature.State()
 
         /// The dashboard owns assembly: sources contribute cards, this orders
@@ -33,6 +34,7 @@ public struct DashboardFeature: Sendable {
         case alertLoader(AlertLoaderFeature.Action)
         case calendarEvents(CalendarEventsFeature.Action)
         case busArrivals(BusArrivalsFeature.Action)
+        case batteryAlerts(BatteryAlertsFeature.Action)
         case tagScanLoader(TagScanLoaderFeature.Action)
         case delegate(Delegate)
         case tappedReturnToSettings
@@ -64,6 +66,10 @@ public struct DashboardFeature: Sendable {
             BusArrivalsFeature()
         }
 
+        Scope(state: \.batteryAlertsState, action: \.batteryAlerts) {
+            BatteryAlertsFeature()
+        }
+
         Scope(state: \.tagScanLoaderState, action: \.tagScanLoader) {
             TagScanLoaderFeature()
         }
@@ -77,6 +83,7 @@ public struct DashboardFeature: Sendable {
                     .send(.alertLoader(.startMonitoring)),
                     .send(.calendarEvents(.startMonitoring)),
                     .send(.busArrivals(.startMonitoring)),
+                    .send(.batteryAlerts(.startMonitoring)),
                     .send(.tagScanLoader(.startMonitoring))
                 )
 
@@ -92,7 +99,7 @@ public struct DashboardFeature: Sendable {
             case .tappedReturnToSettings:
                 return .send(.delegate(.returnToSettings))
 
-            case .slideshow, .alertLoader, .calendarEvents, .busArrivals, .tagScanLoader, .delegate:
+            case .slideshow, .alertLoader, .calendarEvents, .busArrivals, .batteryAlerts, .tagScanLoader, .delegate:
                 return .none
             }
         }
@@ -117,6 +124,11 @@ public struct DashboardView: View {
                 if let title = store.calendarEventsState.currentEventTitle {
                     NowView(title: title)
                         .transition(.slide)
+                }
+                if !store.batteryAlertsState.ambientChips.isEmpty {
+                    AmbientChipsView(chips: store.batteryAlertsState.ambientChips)
+                        .padding(.leading, 24)
+                        .padding(.top, 8)
                 }
                 Spacer()
                 RailView(rail: store.rail)
