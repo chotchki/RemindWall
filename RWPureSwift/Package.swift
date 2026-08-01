@@ -81,6 +81,7 @@ let package = Package(
             .target(name: "HomeKitAsync"),
             .target(name: "Slideshow"),
             .target(name: "TagScanLoader"),
+            .target(name: "TrafficAPI"),
             .target(name: "TransitAPI"),
             .target(name: "Utility"),
         ]),

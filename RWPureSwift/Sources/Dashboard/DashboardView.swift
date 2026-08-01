@@ -13,13 +13,16 @@ public struct DashboardFeature: Sendable {
         public var calendarEventsState = CalendarEventsFeature.State()
         public var busArrivalsState = BusArrivalsFeature.State()
         public var batteryAlertsState = BatteryAlertsFeature.State()
+        public var trafficAlertsState = TrafficAlertsFeature.State()
         public var tagScanLoaderState = TagScanLoaderFeature.State()
 
         /// The dashboard owns assembly: sources contribute cards, this orders
-        /// and caps them (SPEC-DASHBOARD; battery joins via H1, traffic via TR1).
+        /// and caps them (SPEC-DASHBOARD).
         public var rail: DashboardRail {
             DashboardRail.assemble(
-                busArrivalsState.railCards + calendarEventsState.railCards,
+                busArrivalsState.railCards
+                    + calendarEventsState.railCards
+                    + trafficAlertsState.railCards,
                 capacity: DashboardRail.platformCapacity
             )
         }
@@ -35,6 +38,7 @@ public struct DashboardFeature: Sendable {
         case calendarEvents(CalendarEventsFeature.Action)
         case busArrivals(BusArrivalsFeature.Action)
         case batteryAlerts(BatteryAlertsFeature.Action)
+        case trafficAlerts(TrafficAlertsFeature.Action)
         case tagScanLoader(TagScanLoaderFeature.Action)
         case delegate(Delegate)
         case tappedReturnToSettings
@@ -70,6 +74,10 @@ public struct DashboardFeature: Sendable {
             BatteryAlertsFeature()
         }
 
+        Scope(state: \.trafficAlertsState, action: \.trafficAlerts) {
+            TrafficAlertsFeature()
+        }
+
         Scope(state: \.tagScanLoaderState, action: \.tagScanLoader) {
             TagScanLoaderFeature()
         }
@@ -84,6 +92,7 @@ public struct DashboardFeature: Sendable {
                     .send(.calendarEvents(.startMonitoring)),
                     .send(.busArrivals(.startMonitoring)),
                     .send(.batteryAlerts(.startMonitoring)),
+                    .send(.trafficAlerts(.startMonitoring)),
                     .send(.tagScanLoader(.startMonitoring))
                 )
 
@@ -99,7 +108,7 @@ public struct DashboardFeature: Sendable {
             case .tappedReturnToSettings:
                 return .send(.delegate(.returnToSettings))
 
-            case .slideshow, .alertLoader, .calendarEvents, .busArrivals, .batteryAlerts, .tagScanLoader, .delegate:
+            case .slideshow, .alertLoader, .calendarEvents, .busArrivals, .batteryAlerts, .trafficAlerts, .tagScanLoader, .delegate:
                 return .none
             }
         }
