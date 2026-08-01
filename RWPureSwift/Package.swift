@@ -103,6 +103,7 @@ let package = Package(
             .product(name: "Dependencies", package: "swift-dependencies"),
             .target(name: "AppTypes"),
             .target(name: "Dao"),
+            .target(name: "TrafficAPI"),
             .target(name: "TransitAPI"),
         ], path: "Sources/EditSettingsNew/BusSettings"),
         .testTarget(name: "EditSettingsNew_BusSettingsTests",

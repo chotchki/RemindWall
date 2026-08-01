@@ -56,20 +56,21 @@ Why this phase: the DB tables (trackees, reminders, monitored stops) ride CloudK
 
 Why this phase: HomeKit accessories die silently — a sensor drops off the network and nobody notices until the automation it fed stops working. The wall dashboard is exactly where "front door lock at 15%" belongs. HomeKit ships on Catalyst 14+, but the kiosk Mac now runs sandboxed TestFlight builds (T1), and T1 taught us processing gates bite without warning — so the entitlement ride-along gets probed FIRST, not discovered at upload.
 
-- [ ] H1.1 - Probe: minimal HMHomeManager spike on both targets — homekit entitlement + NSHomeKitUsageDescription, confirm the sandboxed Catalyst build enumerates the home on the kiosk Mac AND passes TestFlight processing; outcome decides whether the Mac renders battery cards or iPads only
-- [ ] H1.2 - `HomeKitAsync/` wrapper (mirrors CalendarAsync): @DependencyClient enumerating accessories exposing the battery service -> [BatteryStatus] (accessory name, room, level %, statusLowBattery flag); auth status surface; mock testValue
-- [ ] H1.3 - Settings: master toggle + threshold % (alert = statusLowBattery set OR level below threshold), stored via S1's `.syncedSetting`; section mirrors the Bus Alerts template
-- [ ] H1.4 - `BatteryAlertsFeature` on the dashboard: gentle poll (batteries move over days — 30 min, not seconds); provisional chip rendering, final placement lands in D1; reducer tests on threshold math + poll loop
+- [ ] H1.1 - Probe: HMHomeManager spike on both targets — STAGED 2026-08-01 (homekit entitlement + NSHomeKitUsageDescription committed; H1.2/H1.4 give the poll): remaining = build on the kiosk Mac, enable Battery Alerts, confirm the sandboxed Catalyst build enumerates the home AND passes TestFlight processing; outcome decides whether the Mac renders battery chips or iPads only
+- [x] H1.2 - `HomeKitAsync/` wrapper (mirrors CalendarAsync): @DependencyClient enumerating accessories exposing the battery service -> [BatteryStatus] (accessory name, room, level %, statusLowBattery flag); auth status surface; mock testValue
+- [x] H1.3 - Settings: master toggle + threshold % (alert = statusLowBattery set OR level below threshold), stored via S1's `.syncedSetting`; section mirrors the Bus Alerts template
+- [x] H1.4 - `BatteryAlertsFeature` on the dashboard: gentle poll (batteries move over days — 30 min, not seconds); provisional chip rendering, final placement lands in D1; reducer tests on threshold math + poll loop
 - [ ] H1.5 - swift test green + kiosk e2e (pull a battery or pick a genuinely-low sensor, watch the chip appear)
 
+- [x] H1.6 - Battery window + discovered-batteries browser (decided at TR1.4 review): battery stays its own alert with a synced `batteryWindow` gating when chips show; settings gains a browser listing every battery-service accessory found (name, room, level, low flag) with refresh — HomeKit battery reporting is non-standard, see what the house actually says before trusting thresholds
 ## Phase D1 - Dashboard surface redesign (design first)
 
 Why this phase: the bottom edge is turning into a pile-up. Today: NowView top-left, UpNextView + BusArrivalsBar stacked at the bottom, AlertView overlaying everything, scan feedback on top of that — and H1 battery chips + TR1 traffic alerts are inbound with nowhere to go. Every widget got placed ad hoc when it landed; there is no priority model deciding what deserves the screen when several fire at once, on a display read from across the room. This phase is DESIGN FIRST — no implementation until the spec survives review.
 
 - [x] D1.1 - SPEC-DASHBOARD.md: inventory every surface current + planned (med overlay, calendar now/up-next, bus, battery, traffic, scan feedback); define priority tiers (emergency overlay / time-sensitive rail / ambient) and the interruption rules between them; gating rules (windows, screen-off interplay); type scale for across-the-room readability; max simultaneous cards + overflow behavior
-- [ ] D1.2 - Mockups for 2-3 candidate layouts — REVIEW GATE with chotchki; nothing below this line starts until a candidate is picked
-- [ ] D1.3 - Shared card model: features contribute typed cards (content, tier, gating), the dashboard renders a priority-ordered rail; unit tests on ordering + overflow
-- [ ] D1.4 - Migrate calendar, bus and battery surfaces onto the card model; med AlertView keeps its overlay-everything semantics (a missed dose still outranks the world)
+- [x] D1.2 - Mockups for 2-3 candidate layouts — REVIEW GATE with chotchki; nothing below this line starts until a candidate is picked
+- [x] D1.3 - Shared card model: features contribute typed cards (content, tier, gating), the dashboard renders a priority-ordered rail; unit tests on ordering + overflow
+- [x] D1.4 - Migrate calendar and bus surfaces onto the card model; med AlertView keeps its overlay-everything semantics (a missed dose still outranks the world). Battery has no surface to migrate yet — H1.4 lands directly on the model (AmbientChip)
 - [ ] D1.5 - swift test green + on-wall verification at viewing distance, iPad and Mac panel both
 
 ## Phase TR1 - Traffic / drive-time alerts
@@ -82,10 +83,11 @@ Why this phase: same job as bus arrivals but for the car — "leaving for X now 
 - `associatedTag` uniqueness constraint (schema migration) — N1.9 fixes the read side only
 - Sound policy for per-tap DB errors: `.error` is deliberately silent (a dead reader on the 30s backoff cycle must not buzz all night), so a DB-write failure in the dark gives no audio — the absent success ding is the only signal. Splitting infrastructure vs per-tap error cases would fix it; conscious tradeoff for now
 - Test seam for the decode path: N1.4's retry-while-validCard and N1.3's muteCard pipeline branch have no unit coverage — needs a protocol abstraction over TKSmartCardSlot/TKSmartCard to fake card behavior
-- [ ] TR1.1 - Generalize the window type: BusWindow's weekday-mask + time-range encoding becomes shared `AlertWindow` in AppTypes (typealias keeps BusWindow call sites and the stored "busWindow" string valid); traffic gets its own window via `.syncedSetting`
-- [ ] TR1.2 - `TrafficAPI/` target: @DependencyClient over MKDirections.calculateETA (origin, destination) -> ETA; typed errors; testValue stubs — mirrors TransitAPI minus the key store
-- [ ] TR1.3 - `MonitoredRoute` @Table + migration + SyncEngine registration: label, destination lat/lon + display name, normalMinutes, sortOrder; DaoTests cover insert/fetch/delete
-- [ ] TR1.4 - Settings CRUD mirroring MonitoredStops: home-origin picker (once) + per-route MKLocalSearch destination picker, normal-minutes field, window editor
-- [ ] TR1.5 - `TrafficAlertsFeature`: poll ~5 min inside the window, one card per route via D1's model, late styling when ETA > normal + threshold; reducer tests on window gating, late math and the error chip
+- [x] TR1.1 - Generalize the window type: BusWindow's weekday-mask + time-range encoding becomes shared `AlertWindow` in AppTypes (typealias keeps BusWindow call sites and the stored "busWindow" string valid); traffic gets its own window via `.syncedSetting`
+- [x] TR1.2 - `TrafficAPI/` target: @DependencyClient over MKDirections.calculateETA (origin, destination) -> ETA; typed errors; testValue stubs — mirrors TransitAPI minus the key store
+- [x] TR1.3 - `MonitoredRoute` @Table + migration + SyncEngine registration: label, destination lat/lon + display name, normalMinutes, sortOrder; DaoTests cover insert/fetch/delete
+- [ ] TR1.4 - Unified transit-alerts settings BUILD — sketch APPROVED 2026-08-01 (per-watch windows + per-watch toggles, no master switch; battery separate, see H1.6): one Alerts watch-list where bus stops and driving routes are peers (each row = what/where/when + toggle), watch detail with the shared window editor, add-alert flow (type -> bus stop lookup / MKLocalSearch destination + normal-minutes), Setup subscreen holding API key + test connection + home origin
+- [x] TR1.5 - `TrafficAlertsFeature`: poll ~5 min inside the window, one card per route via D1's model, late styling when ETA > normal + threshold; reducer tests on window gating, late math and the error chip
 - [ ] TR1.6 - swift test green + live e2e during a real rush hour
 
+- [x] TR1.7 - Per-watch windows + toggles (decided at TR1.4 review): `window` (nullable AlertWindow, nil = default) and `enabled` columns on MonitoredStop AND MonitoredRoute; BusArrivals/TrafficAlerts gate each watch by its own window+toggle; seed stop windows/enabled from legacy busWindow/busAlertsEnabled (settings row or appStorage) so the kiosk upgrades itself; legacy per-mode keys retire with TR1.4's UI

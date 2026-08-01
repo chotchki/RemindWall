@@ -31,7 +31,7 @@ public struct SettingsFeature {
         public var albumPickerState = AlbumPickerFeature.State()
         public var calendarPickerState = CalendarPickerFeature.State()
         public var screenOffSettingState = ScreenOffSettingFeature.State()
-        public var busSettingsState = BusSettingsFeature.State()
+        public var alertsState = AlertsSettingsFeature.State()
         public var path = StackState<TrackeeDetailFeature.State>()
         public var isBrightnessControlAvailable: Bool = true
         public var batterySettingsState = BatterySettingsFeature.State()
@@ -43,8 +43,7 @@ public struct SettingsFeature {
         case albumPicker(AlbumPickerFeature.Action)
         case batteryAlertsToggled(Bool)
         case batterySettings(BatterySettingsFeature.Action)
-        case busAlertsToggled(Bool)
-        case busSettings(BusSettingsFeature.Action)
+        case alerts(AlertsSettingsFeature.Action)
         case calendarPicker(CalendarPickerFeature.Action)
         case delegate(Delegate)
         case screenOffSetting(ScreenOffSettingFeature.Action)
@@ -78,8 +77,8 @@ public struct SettingsFeature {
             BatterySettingsFeature()
         }
 
-        Scope(state: \.busSettingsState, action: \.busSettings) {
-            BusSettingsFeature()
+        Scope(state: \.alertsState, action: \.alerts) {
+            AlertsSettingsFeature()
         }
 
         Scope(state: \.calendarPickerState, action: \.calendarPicker) {
@@ -97,12 +96,6 @@ public struct SettingsFeature {
             switch action {
             case let .batteryAlertsToggled(isOn):
                 state.batterySettingsState.$enabled.withLock { $0 = isOn }
-                return .none
-            case let .busAlertsToggled(isOn):
-                state.busSettingsState.$enabled.withLock { $0 = isOn }
-                if isOn, state.busSettingsState.window == nil {
-                    state.busSettingsState.$window.withLock { $0 = .default }
-                }
                 return .none
             case let .calendarToggled(isOn):
                 if isOn {
@@ -155,7 +148,7 @@ public struct SettingsFeature {
                 guard let detailState = state.path[id: id]
                 else { return .none }
                 return .send(.trackees(.deleteTrackee(detailState.trackee.id)))
-            case .batterySettings, .busSettings, .trackees, .albumPicker, .calendarPicker, .screenOffSetting, .path:
+            case .alerts, .batterySettings, .trackees, .albumPicker, .calendarPicker, .screenOffSetting, .path:
                 return .none
             }
         }.forEach(\.path, action: \.path) {
@@ -221,16 +214,11 @@ public struct SettingsView: View {
                 }
 
                 Section {
-                    if store.busSettingsState.enabled {
-                        BusSettingsView(
-                            store: store.scope(state: \.busSettingsState, action: \.busSettings)
-                        )
-                    }
+                    AlertsSettingsView(
+                        store: store.scope(state: \.alertsState, action: \.alerts)
+                    )
                 } header: {
-                    Toggle("Bus Alerts", isOn: Binding(
-                        get: { store.busSettingsState.enabled },
-                        set: { store.send(.busAlertsToggled($0)) }
-                    ))
+                    Text("Alerts")
                 }
 
                 Section {

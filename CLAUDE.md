@@ -36,7 +36,7 @@ The app uses **The Composable Architecture (TCA)** from Point-Free throughout.
 - `AppNavigation/` - Top-level navigation between settings and dashboard screens
 - `Dashboard/` - Main dashboard: slideshow + the card rail (`CardModel.swift`, see `SPEC-DASHBOARD.md`) fed by bus/traffic/calendar surfaces, battery chips, med alert overlay, tag scanning
 - `EditSettingsNew/TopLevel/` - Main settings form (album picker, calendar picker, screen off schedule, battery alerts, trackee list) plus `SettingsResolver` (syncs album/calendar descriptors to local ids)
-- `EditSettingsNew/BusSettings/` - Bus alerts settings (API key, monitored stops, window)
+- `EditSettingsNew/BusSettings/` - The unified Alerts settings: one watch-list where bus stops and driving routes are peers (per-watch windows + toggles), watch detail, add flows, Setup subscreen (API key + home origin), shared `AlertWindowEditorView`
 - `EditSettingsNew/Trackees/` - Trackee CRUD and detail views
 - `EditSettingsNew/Reminders/` - Reminder time management per trackee
 - `Slideshow/` - Photo gallery with Ken Burns animation and live photo support
@@ -90,8 +90,11 @@ AppNavigationFeature
     ├── AlbumPickerFeature
     ├── CalendarPickerFeature
     ├── ScreenOffSettingFeature
-    ├── BusSettingsFeature
-    │   └── MonitoredStopsFeature
+    ├── BatterySettingsFeature
+    ├── AlertsSettingsFeature
+    │   ├── WatchDetailFeature
+    │   ├── AddMonitoredStopFeature / AddDriveFeature
+    │   └── AlertsSetupFeature
     └── TrackeesFeature
         └── TrackeeDetailFeature
             └── RemindersFeature
