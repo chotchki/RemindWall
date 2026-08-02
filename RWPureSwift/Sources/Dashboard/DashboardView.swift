@@ -132,7 +132,9 @@ public struct DashboardView: View {
             VStack(alignment: .leading) {
                 if let title = store.calendarEventsState.currentEventTitle {
                     NowView(title: title)
-                        .transition(.slide)
+                        .padding(.leading, 24)
+                        .padding(.top, 24)
+                        .transition(.move(edge: .top).combined(with: .opacity))
                 }
                 if !store.batteryAlertsState.ambientChips.isEmpty {
                     AmbientChipsView(chips: store.batteryAlertsState.ambientChips)
