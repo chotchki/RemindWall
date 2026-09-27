@@ -40,7 +40,25 @@ public nonisolated struct ReminderTime: Equatable, Identifiable, Sendable {
     public var associatedTag: TagSerial?
     public var lastScan: Date?
     public var trackeeId: Trackee.ID
-    
+
+    public init(
+        id: ID,
+        weekDay: Int,
+        hour: Int,
+        minute: Int,
+        associatedTag: TagSerial?,
+        lastScan: Date?,
+        trackeeId: Trackee.ID
+    ) {
+        self.id = id
+        self.weekDay = weekDay
+        self.hour = hour
+        self.minute = minute
+        self.associatedTag = associatedTag
+        self.lastScan = lastScan
+        self.trackeeId = trackeeId
+    }
+
     public var reminderPart: ReminderPart {
         ReminderPart(weekDay: DaysOfWeek(rawValue: weekDay)!, hour: hour, minute: minute)
     }

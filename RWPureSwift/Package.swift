@@ -16,6 +16,7 @@ let package = Package(
         
         .library(name: "EditSettingsNew_BusSettings", targets: ["EditSettingsNew_BusSettings"]),
         .library(name: "EditSettingsNew_Reminders", targets: ["EditSettingsNew_Reminders"]),
+        .library(name: "EditSettingsNew_TagLookup", targets: ["EditSettingsNew_TagLookup"]),
         .library(name: "EditSettingsNew_TopLevel", targets: ["EditSettingsNew_TopLevel"]),
         .library(name: "EditSettingsNew_Trackees", targets: ["EditSettingsNew_Trackees"]),
         
@@ -127,6 +128,20 @@ let package = Package(
                         .product(name: "DependenciesTestSupport", package: "swift-dependencies")
                     ], path: "Tests/EditSettingsNewTests/Reminders"),
         
+        .target(name: "EditSettingsNew_TagLookup", dependencies: [
+            .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+            .product(name: "Dependencies", package: "swift-dependencies"),
+            .target(name: "AppTypes"),
+            .target(name: "Dao"),
+            .product(name: "Tagged", package: "swift-tagged"),
+            .target(name: "TagScanner"),
+        ], path: "Sources/EditSettingsNew/TagLookup"),
+        .testTarget(name: "EditSettingsNew_TagLookupTests",
+                    dependencies: [
+                        "EditSettingsNew_TagLookup",
+                        .product(name: "DependenciesTestSupport", package: "swift-dependencies")
+                    ], path: "Tests/EditSettingsNewTests/TagLookup"),
+
         .target(name: "EditSettingsNew_TopLevel",dependencies: [
             .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
             .product(
@@ -136,6 +151,7 @@ let package = Package(
             .target(name: "CalendarAsync"),
             .target(name: "Dao"),
             .target(name: "EditSettingsNew_BusSettings"),
+            .target(name: "EditSettingsNew_TagLookup"),
             .target(name: "EditSettingsNew_Trackees"),
             .target(name: "HomeKitAsync"),
             .target(name: "PhotoKitAsync"),

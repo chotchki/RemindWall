@@ -5,6 +5,7 @@ import DependenciesTestSupport
 import Foundation
 import Testing
 
+@testable import EditSettingsNew_TagLookup
 @testable import EditSettingsNew_Trackees
 @testable import EditSettingsNew_TopLevel
 
@@ -280,5 +281,33 @@ struct SettingsFeatureTests {
         await store.send(.batteryAlertsToggled(false)) {
             $0.batterySettingsState.$enabled.withLock { $0 = false }
         }
+    }
+
+    @Test("tag lookup opens as a sheet and dismissing it stops the scan loop")
+    func tagLookupPresentAndDismiss() async {
+        let cancelled = LockIsolated(false)
+        let store = TestStore(initialState: SettingsFeature.State()) {
+            SettingsFeature()
+        } withDependencies: {
+            // A reader that never produces a tap. A non-exhaustive TestStore
+            // does NOT fail on a leaked effect, so record the cancellation.
+            $0.tagReaderClient.nextTagId = {
+                do { try await Task.sleep(for: .seconds(1_000)) } catch { cancelled.setValue(true) }
+                return .noTag
+            }
+        }
+        store.exhaustivity = .off
+
+        await store.send(.tagLookupTapped) {
+            $0.tagLookup = TagLookupFeature.State()
+        }
+        await store.send(.tagLookup(.presented(.onAppear)))
+        await store.receive(\.tagLookup.presented._directoryLoaded)
+
+        await store.send(.tagLookup(.dismiss)) {
+            $0.tagLookup = nil
+        }
+        await store.finish()
+        #expect(cancelled.value)
     }
 }

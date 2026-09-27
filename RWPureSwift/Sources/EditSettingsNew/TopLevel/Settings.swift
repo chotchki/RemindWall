@@ -1,6 +1,7 @@
 import AppTypes
 import ComposableArchitecture
 import EditSettingsNew_BusSettings
+import EditSettingsNew_TagLookup
 import EditSettingsNew_Trackees
 import ScreenControl
 import SwiftUI
@@ -35,6 +36,7 @@ public struct SettingsFeature {
         public var path = StackState<TrackeeDetailFeature.State>()
         public var isBrightnessControlAvailable: Bool = true
         public var batterySettingsState = BatterySettingsFeature.State()
+        @Presents public var tagLookup: TagLookupFeature.State?
 
         public init(){}
     }
@@ -57,6 +59,8 @@ public struct SettingsFeature {
         case screenOffToggled(Bool)
         case slideshowToggled(Bool)
         case startSlideshow
+        case tagLookup(PresentationAction<TagLookupFeature.Action>)
+        case tagLookupTapped
 
         @CasePathable
         public enum Delegate: Equatable {
@@ -142,17 +146,24 @@ public struct SettingsFeature {
                 return .none
             case .startSlideshow:
                 return .send(.delegate(.startSlideshow))
+            case .tagLookupTapped:
+                state.tagLookup = TagLookupFeature.State()
+                return .none
             case .delegate:
                 return .none
             case let .path(.element(id: id, action: .delegate(.confirmDeletion))):
                 guard let detailState = state.path[id: id]
                 else { return .none }
                 return .send(.trackees(.deleteTrackee(detailState.trackee.id)))
-            case .alerts, .batterySettings, .trackees, .albumPicker, .calendarPicker, .screenOffSetting, .path:
+            case .alerts, .batterySettings, .trackees, .albumPicker, .calendarPicker, .screenOffSetting, .path, .tagLookup:
                 return .none
             }
         }.forEach(\.path, action: \.path) {
             TrackeeDetailFeature()
+        }
+        // Dismissal cancels the lookup's scan loop along with its state.
+        .ifLet(\.$tagLookup, action: \.tagLookup) {
+            TagLookupFeature()
         }
     }
 }
@@ -249,6 +260,25 @@ public struct SettingsView: View {
                 }
 
                 Section {
+                    Button {
+                        store.send(.tagLookupTapped)
+                    } label: {
+                        HStack {
+                            Label("Tag Lookup", systemImage: "sensor.tag.radiowaves.forward")
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                } header: {
+                    Text("Diagnostics")
+                } footer: {
+                    Text("Scan a cup to see whose it is and which slot it goes in.")
+                }
+
+                Section {
                     let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"
                     let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "Unknown"
                     LabeledContent("Version") {
@@ -266,6 +296,9 @@ public struct SettingsView: View {
             }
             .onAppear { store.send(.onAppear) }
             .onDisappear { store.send(.onDisappear) }
+            .sheet(item: $store.scope(state: \.$tagLookup, action: \.tagLookup)) { lookupStore in
+                TagLookupView(store: lookupStore)
+            }
             .navigationTitle("Settings")
             .toolbar {
                 ToolbarItem {
