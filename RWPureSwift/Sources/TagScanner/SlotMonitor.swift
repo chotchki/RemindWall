@@ -48,6 +48,12 @@ private final class CancelledWaiterIds: @unchecked Sendable {
     }
 }
 
+/// Where slot-list changes are handled. ctkd fires the slotNames KVO on its XPC
+/// queue, and slotNamed(_:) dispatch_syncs onto that same queue — calling it from
+/// inside the KVO callback is a self-deadlock libdispatch traps on (the app died
+/// every time the reader dropped off USB and re-enumerated).
+private let slotQueue = DispatchQueue(label: "RemindWall.SmartCardMonitor.slots")
+
 /// Wrapper to shuttle a non-Sendable TKSmartCardSlot across isolation boundaries.
 /// Safe because the slot is only read on the receiving side and not shared.
 private struct SlotBox: @unchecked Sendable {
@@ -92,6 +98,7 @@ actor SmartCardMonitor {
         initSuccess = true
 
         slotManager.publisher(for: \.slotNames)
+            .receive(on: slotQueue)
             .map { [weak slotManager] names -> AnyPublisher<SlotBox, Never> in
                 guard let slotManager else { return Empty().eraseToAnyPublisher() }
 
