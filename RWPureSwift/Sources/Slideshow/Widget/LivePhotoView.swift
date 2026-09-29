@@ -8,32 +8,54 @@ import SwiftUI
 import PhotosUI
 
 #if canImport(UIKit)
-public struct LivePhotoView: UIViewRepresentable {
+/// Player lifecycle is explicit: every slide mints a fresh view under the
+/// crossfade, so without it one PHLivePhotoView's player tears down while the
+/// next one's spins up.
+struct LivePhotoView: UIViewRepresentable {
     var livephoto: PHLivePhoto
 
-    public init(livephoto: PHLivePhoto) {
+    init(livephoto: PHLivePhoto) {
         self.livephoto = livephoto
     }
 
-    public func makeUIView(context: Context) -> PHLivePhotoView {
+    func makeCoordinator() -> DeferredPlayback {
+        DeferredPlayback()
+    }
+
+    func makeUIView(context: Context) -> PHLivePhotoView {
         let phlpv = PHLivePhotoView()
         phlpv.isMuted = true
-        phlpv.livePhoto = livephoto
-        phlpv.startPlayback(with: .full)
         phlpv.contentMode = .scaleAspectFill
+        Self.show(livephoto, in: phlpv, playback: context.coordinator)
         return phlpv
     }
 
-    public func sizeThatFits(_ proposal: ProposedViewSize, uiView: PHLivePhotoView, context: Context) -> CGSize {
+    func sizeThatFits(_ proposal: ProposedViewSize, uiView: PHLivePhotoView, context: Context) -> CGSize {
         proposal.replacingUnspecifiedDimensions()
     }
 
-    public func updateUIView(_ lpView: PHLivePhotoView, context: Context) {
+    func updateUIView(_ lpView: PHLivePhotoView, context: Context) {
         if livephoto != lpView.livePhoto {
-            lpView.livePhoto = livephoto
-            lpView.startPlayback(with: .full)
+            Self.show(livephoto, in: lpView, playback: context.coordinator)
         }
-        context.animate {}
+    }
+
+    /// Releases the player now instead of whenever the view deallocs, and
+    /// kills a start that hasn't fired yet.
+    static func dismantleUIView(_ lpView: PHLivePhotoView, coordinator: DeferredPlayback) {
+        coordinator.cancel()
+        lpView.stopPlayback()
+        lpView.livePhoto = nil
+    }
+
+    /// The key frame shows immediately (it carries the crossfade); motion
+    /// waits for the outgoing slide's player to be gone.
+    private static func show(_ livePhoto: PHLivePhoto, in lpView: PHLivePhotoView, playback: DeferredPlayback) {
+        lpView.stopPlayback()
+        lpView.livePhoto = livePhoto
+        playback.schedule(after: SlideShowFeature.livePhotoStartDelay) { [weak lpView] in
+            lpView?.startPlayback(with: .full)
+        }
     }
 }
 #endif

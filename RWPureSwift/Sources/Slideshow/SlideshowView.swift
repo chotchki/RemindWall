@@ -7,6 +7,12 @@ import SwiftUI
 @Reducer
 public struct SlideShowFeature: Sendable {
     static let slideUpdateDuration = Duration.seconds(10)
+    /// Slide-to-slide crossfade; SwiftUI dismantles the outgoing slide when it ends.
+    static let slideCrossfade: TimeInterval = 1.0
+    /// Live photo playback waits out the crossfade (plus slack for a busy main
+    /// thread) so the outgoing player is gone before the new one starts -
+    /// overlapping the two is where CoreMedia raced (kiosk crash 2026-09-28).
+    static let livePhotoStartDelay = Duration.seconds(slideCrossfade + 0.5)
 
     private enum CancelID { case timer }
 
@@ -135,7 +141,7 @@ public struct SlideshowView: View {
                     .accessibilityIdentifier("SlideshowLoading")
                 }
             }
-            .animation(.easeInOut(duration: 1.0), value: store.assetLoader?.asset.localIdentifier)
+            .animation(.easeInOut(duration: SlideShowFeature.slideCrossfade), value: store.assetLoader?.asset.localIdentifier)
             .onChange(of: reader.size, initial: true) { _, newSize in
                 store.send(.viewResized(newSize))
             }
